@@ -42,7 +42,7 @@ International-friendly framing. Explained via science (Nibirium, biotech, consci
 
 ### Engine
 
-- Unity 6 LTS + URP
+- Unity 6.5 beta (currently `6000.5.0b7`) + URP. JOY explicitly chose beta over Unity 6.0 LTS for newest features; accept risk of breaking changes between beta builds and that some 3rd-party assets (Opsive UCC, Behavior Designer, Convai) may not be tested against this version yet. Re-evaluate if beta blocks progress.
 - Force Text serialization (default Unity 6 - DO NOT change)
 
 ### Networking
