@@ -215,7 +215,7 @@ International-friendly framing. Explained via science (Nibirium, biotech, consci
 
 - Repo: `Second-Spawn` (matches GitHub repo name as-is)
 - Repo root: `D:\Projects\Second-Spawn`
-- Unity project subfolder: `D:\Projects\Second-Spawn\unity` (NOT at repo root - multi-stack repo: Unity at `unity/`, Go gateway at `backend/`, docs at `docs/`)
+- Unity project subfolder: `D:\Projects\Second-Spawn\Unity` (PascalCase, NOT at repo root - multi-stack repo: Unity at `Unity/`, Go gateway at `backend/`, docs at `docs/`)
 - C# code: Microsoft conventions (PascalCase classes, camelCase fields)
 - Branches: `feat/<short-desc>`, `fix/<short-desc>`, `chore/<short-desc>`
 

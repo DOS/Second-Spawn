@@ -20,19 +20,19 @@ Rationale: AGPL-3.0 is copyleft - any commercial fork must release source under 
 
 ## 3. Folder skeleton
 
-Create empty folders so the multi-stack repo is consistent. Unity project lives under `unity/` (not at repo root) to keep separation from `backend/`, `docs/`, etc. Run:
+Create empty folders so the multi-stack repo is consistent. Unity project lives under `Unity/` (PascalCase to match Unity's own folder convention - `Assets/`, `Packages/`, `ProjectSettings/` - not at repo root, to keep separation from `backend/`, `docs/`, etc.). Run:
 
 ```powershell
 cd D:\Projects\Second-Spawn
-New-Item -ItemType Directory -Force -Path unity, unity\Assets, unity\Assets\Scripts, unity\Assets\Scripts\Gameplay, unity\Assets\Scripts\Networking, unity\Assets\Scripts\AI, unity\Assets\Scripts\UI, unity\Assets\Scripts\NFT, unity\Assets\Art, unity\Assets\Audio, unity\Assets\Prefabs, unity\Assets\Scenes, unity\Assets\Settings, unity\Packages, unity\ProjectSettings, docs\design, backend\gateway, .claude\commands, .claude\templates | Out-Null
+New-Item -ItemType Directory -Force -Path Unity, Unity\Assets, Unity\Assets\Scripts, Unity\Assets\Scripts\Gameplay, Unity\Assets\Scripts\Networking, Unity\Assets\Scripts\AI, Unity\Assets\Scripts\UI, Unity\Assets\Scripts\NFT, Unity\Assets\Art, Unity\Assets\Audio, Unity\Assets\Prefabs, Unity\Assets\Scenes, Unity\Assets\Settings, Unity\Packages, Unity\ProjectSettings, docs\design, backend\gateway, .claude\commands, .claude\templates | Out-Null
 ```
 
 ## 4. Unity project init
 
 1. Open Unity Hub
 2. New Project -> 3D (URP) template -> Unity 6 LTS
-3. Project location: `D:\Projects\Second-Spawn\unity` (the `unity/` subfolder, NOT the repo root)
-4. Project name: `Second-Spawn` (Unity will create `unity/Assets/`, `unity/Packages/`, `unity/ProjectSettings/`, `unity/Library/`)
+3. Project location: `D:\Projects\Second-Spawn\Unity` (the `Unity/` subfolder, NOT the repo root)
+4. Project name: `Second-Spawn` (Unity will create `Unity/Assets/`, `Unity/Packages/`, `Unity/ProjectSettings/`, `Unity/Library/`)
 5. After creation, verify `Edit > Project Settings > Editor > Asset Serialization Mode = Force Text` (default in Unity 6, do NOT change)
 
 ## 5. Photon Fusion 2
@@ -40,7 +40,7 @@ New-Item -ItemType Directory -Force -Path unity, unity\Assets, unity\Assets\Scri
 1. Sign in to https://dashboard.photonengine.com
 2. Create app -> Fusion -> get App ID
 3. Install Fusion 2 SDK via Unity Package Manager (Git URL from Photon docs)
-4. Configure Photon App ID in `unity/Assets/Photon/Fusion/Resources/PhotonAppSettings.asset`
+4. Configure Photon App ID in `Unity/Assets/Photon/Fusion/Resources/PhotonAppSettings.asset`
 5. Read MetaDOS Fusion setup at `D:\Projects\MetaDOS` (read-only) to extract NetworkRunner pattern
 
 ## 6. Coplay unity-mcp (Claude Code <-> Unity Editor bridge)
@@ -58,7 +58,7 @@ Summary:
 
 1. Create Supabase project (reuse DOS.Me org)
 2. Get URL + anon key + service role key
-3. Service role key goes to backend `.env`, anon key OK in Unity `unity/Assets/Settings/SupabaseConfig.asset` (anon is public-safe)
+3. Service role key goes to backend `.env`, anon key OK in Unity `Unity/Assets/Settings/SupabaseConfig.asset` (anon is public-safe)
 4. Set up Auth providers (email + DOS Chain wallet sign-in)
 
 ## 8. GitLab workstation mirror
