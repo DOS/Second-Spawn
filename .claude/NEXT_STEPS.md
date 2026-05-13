@@ -34,17 +34,27 @@ Project at `D:\Projects\Second-Spawn\Unity`, name `Second Spawn` (with space, de
 - Asset Serialization Mode: Force Text (mode 2) - verified in `Unity/ProjectSettings/EditorSettings.asset`.
 - Render pipeline: URP 17.5.0.
 
-## 5. 🔜 Photon Fusion 2
+## 5. 🔜 Photon Fusion 2 (strategy locked in ADR 0006, JOY action required to install)
 
-Blocked on JOY having a Photon App ID.
+Blocked on JOY having a Photon App ID + the SDK installed. The SDK is a `.unitypackage` from photonengine.com that requires login to download - cannot be installed via UPM (no Git URL, no OpenUPM mirror).
 
-1. Sign in to [https://dashboard.photonengine.com](https://dashboard.photonengine.com)
-2. Create app -> Fusion -> get App ID
-3. Install Fusion 2 SDK via Unity Package Manager (Git URL from Photon docs)
-4. Configure Photon App ID in `Unity/Assets/Photon/Fusion/Resources/PhotonAppSettings.asset`
-5. Read MetaDOS Fusion setup at `D:\Projects\MetaDOS` (read-only) to extract NetworkRunner pattern
+Detailed step-by-step in [docs/setup/fusion-install.md](../docs/setup/fusion-install.md). Summary:
 
-Steps 3-5 can be automated via Unity MCP once active in the session (see Step 6).
+1. JOY: sign up at [dashboard.photonengine.com](https://dashboard.photonengine.com) (free)
+2. JOY: create a Fusion app -> copy the App ID
+3. JOY: download Fusion 2 SDK `.unitypackage` from <https://doc.photonengine.com/fusion/current/getting-started/sdk-download>
+4. JOY: import via Unity Editor menu **Assets > Import Package > Custom Package**
+5. JOY: paste the App ID into `Unity/Assets/Photon/Fusion/Resources/PhotonAppSettings.asset` AND `Unity/Assets/Settings/SecondSpawnConfig.asset`
+6. JOY: tell the AI agent "Fusion 2 SDK installed, App ID configured" - then the agent (Coplay Unity MCP) replaces the scaffold scripts in `Unity/Assets/Scripts/Networking/` with real Fusion `NetworkBehaviour` / `[Networked]` implementations per [docs/design/05-networking-architecture.md](../docs/design/05-networking-architecture.md).
+
+DO NOT import BR200 / Karts / Tanknarok template packages into this repo. Per [ADR 0006](../docs/adr/0006-fusion-2-scratch-over-template.md), patterns are extracted in a separate scratch project, never copied into the AGPL-3.0 source tree.
+
+Architecture reference:
+
+- [docs/adr/0001-photon-fusion-2.md](../docs/adr/0001-photon-fusion-2.md) - why Fusion 2
+- [docs/adr/0006-fusion-2-scratch-over-template.md](../docs/adr/0006-fusion-2-scratch-over-template.md) - scratch vs template decision
+- [docs/design/05-networking-architecture.md](../docs/design/05-networking-architecture.md) - full networking GDD
+- MetaDOS at `D:\Projects\MetaDOS` (read-only) - existing Fusion 2 BR pattern reference
 
 ## 6. ⏸ Coplay unity-mcp (Claude Code <-> Unity Editor bridge)
 
