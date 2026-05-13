@@ -26,11 +26,9 @@
 ## Repository Structure
 
 ```
-/Assets/          Unity project assets
-/Packages/        Unity package manifest
-/ProjectSettings/ Unity project settings
+/unity/           Unity project (Assets, Packages, ProjectSettings)
+/backend/        Go LLM gateway, server-side services
 /docs/            Design docs, ADRs, architecture
-/backend/         Go LLM gateway, server-side services
 /.claude/         AI agent context, templates, conventions
 ```
 
@@ -50,7 +48,7 @@ git lfs install
 git lfs pull
 ```
 
-Open in Unity Hub, let it compile, configure Photon app ID and Supabase URL in `Assets/Settings/`.
+Open the `unity/` subfolder in Unity Hub, let it compile, then configure Photon app ID and Supabase URL in `unity/Assets/Settings/`.
 
 ## Contributing
 

@@ -33,10 +33,10 @@
 *.preset text eol=lf
 *.terrainlayer text eol=lf
 
-# Project settings
-ProjectSettings/* text eol=lf
-Packages/manifest.json text eol=lf
-Packages/packages-lock.json text eol=lf
+# Project settings (Unity project lives under unity/ subfolder; glob also catches future nested Unity projects)
+**/ProjectSettings/* text eol=lf
+**/Packages/manifest.json text eol=lf
+**/Packages/packages-lock.json text eol=lf
 
 # Documentation
 *.md text eol=lf
