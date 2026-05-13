@@ -1,4 +1,4 @@
-<!-- SISTER FILE: ../AGENTS.md - keep in sync. Claude Code reads this (.claude/CLAUDE.md) auto on session start; Codex CLI / Cursor / Copilot read AGENTS.md at repo root. Both files MUST be identical except this header. See Hard Rule #8. -->
+<!-- SISTER FILE: .claude/CLAUDE.md - keep in sync. Codex CLI / Cursor / Copilot auto-load this (AGENTS.md) at repo root; Claude Code auto-loads .claude/CLAUDE.md. Both files MUST be identical except this header. See Hard Rule #8. -->
 
 # SECOND SPAWN - Project Context
 
