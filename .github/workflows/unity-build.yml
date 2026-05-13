@@ -1,0 +1,91 @@
+# Unity build + test via GameCI.
+#
+# REQUIRED SECRETS (configure in repo settings -> Secrets and variables -> Actions):
+#   UNITY_LICENSE          The personal license XML (see https://game.ci/docs/github/activation)
+#   UNITY_EMAIL            Unity account email
+#   UNITY_PASSWORD         Unity account password
+#
+# This workflow is staged but NOT yet enabled on push - the Unity project
+# under Unity/ is currently the URP template default with no SECOND SPAWN
+# scripts. Once first networked player + zone are in (slice phase 2 per
+# docs/design/02-vertical-slice-spec.md), uncomment the `on:` triggers
+# below and add the secrets.
+#
+# Until then the workflow can be triggered manually via workflow_dispatch.
+
+name: unity-build
+
+on:
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
+  #   paths:
+  #     - 'Unity/**'
+  #     - '.github/workflows/unity-build.yml'
+  # pull_request:
+  #   paths:
+  #     - 'Unity/**'
+  #     - '.github/workflows/unity-build.yml'
+
+jobs:
+  test:
+    name: Unity test (EditMode + PlayMode)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Cache Library
+        uses: actions/cache@v4
+        with:
+          path: Unity/Library
+          key: Library-${{ hashFiles('Unity/Assets/**', 'Unity/Packages/**', 'Unity/ProjectSettings/**') }}
+          restore-keys: Library-
+
+      - name: Run tests
+        uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: Unity
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          unityVersion: 6000.5.0b7
+
+  build-linux-server:
+    name: Build dedicated server (Linux headless)
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Cache Library
+        uses: actions/cache@v4
+        with:
+          path: Unity/Library
+          key: Library-${{ hashFiles('Unity/Assets/**', 'Unity/Packages/**', 'Unity/ProjectSettings/**') }}
+          restore-keys: Library-
+
+      - name: Build
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: Unity
+          targetPlatform: StandaloneLinux64
+          unityVersion: 6000.5.0b7
+          buildName: SecondSpawnServer
+          # Headless / dedicated server build flag - required for Photon Fusion
+          # Server Mode dedicated build that ships to Hetzner VPS.
+          customParameters: -batchmode -nographics -server
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SecondSpawnServer-Linux
+          path: build/StandaloneLinux64

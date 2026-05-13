@@ -1,0 +1,39 @@
+# Cross-editor consistency for Second Spawn.
+# Unity uses LF line endings via .gitattributes; this enforces the same
+# in editor on save (VS / Rider / VS Code / nvim).
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# C# uses 4-space indents per Microsoft convention
+[*.cs]
+indent_size = 4
+
+# Go uses tabs (gofmt enforced)
+[*.go]
+indent_style = tab
+indent_size = 4
+
+# Makefiles require tab indents
+[Makefile]
+indent_style = tab
+
+# Markdown: keep trailing whitespace meaningful (line breaks)
+[*.md]
+trim_trailing_whitespace = false
+
+# YAML strict 2-space (CI configs, Unity assets)
+[*.{yml,yaml}]
+indent_size = 2
+
+# Unity asset files - never edit by hand, do not enforce
+[*.{asset,prefab,unity,mat,anim,controller,meta,playable}]
+trim_trailing_whitespace = false
+insert_final_newline = false
