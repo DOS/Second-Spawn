@@ -1,0 +1,127 @@
+# Vertical Slice Spec: SECOND SPAWN
+
+*Status: Spec (slice not yet built)*
+*Created: 2026-05-14*
+*Target completion: 3-6 months from setup (T+3 to T+6 from 2026-05-14)*
+
+> Note: This is the SPEC version (planning the slice). After slice is built, rename to `02-vertical-slice-report.md` and fill the report template (build velocity, playtest results, recommendation PROCEED/PIVOT/KILL).
+
+---
+
+## Validation Question
+
+Can a solo player, in their first 30 minutes of unguided play in a single zone, experience all 3 core USPs (AI agent autoplay, reincarnation, cultivation tier-up) AND can a 1-person team (JOY + Claude Code AI agent) build this slice at representative quality in 3-6 months on the chosen tech stack (Unity 6.5 beta + Photon Fusion 2 + Supabase + Go gateway + thirdweb)?
+
+This is two questions in one: **does the design loop fun?** AND **is the architecture buildable?**
+
+---
+
+## Scope IN
+
+| System | Slice Scope |
+| ---- | ---- |
+| **Zone** | 1 small open area + 1 hub town |
+| **Character class** | 1 (use one of MetaDOS Hunter skins as preset hero) |
+| **Dungeon instance** | 1 (single instance with 1 boss encounter) |
+| **Boss with LLM dialogue** | 1 (Convai-driven, grounded in zone state) |
+| **Quest line** | 1 (3-5 quests sequential) |
+| **Reincarnation MVP** | Die -> SECOND token (test token, not real DOS Chain) -> respawn with reset equipment, partial cultivation tier carryover |
+| **AI agent autoplay** | Simple: agent farms one designated area when player offline. Visible activity log on return. |
+| **Cultivation tiers** | 2 of 6 playable (Awakening + Enhancement only) |
+| **NFT Hunter skin** | 1 skin equip flow + escrow contract (test net DOS Chain) |
+| **Multiplayer** | 4-20 players per zone instance via Photon Fusion 2 |
+| **Chat** | Basic global + zone via Supabase Realtime |
+| **Voice NPC** | NOT in slice (defer phase 2) |
+
+---
+
+## Scope OUT (explicitly cut from slice)
+
+- Guild / PvP (50v50 deferred)
+- Marketplace / trading (deferred)
+- Pet system (NFT pets deferred to post-slice)
+- Mount system (deferred)
+- Multiple zones (1 zone only)
+- Cultivation tier 3-6 (only Awakening + Enhancement)
+- Voice NPC (defer)
+- Full quest system (linear quest line of 3-5; no branching, no factional choice)
+- Crafting (deferred)
+- Day / night cycle (deferred)
+- Weather (deferred)
+
+---
+
+## Acceptance Criteria
+
+The slice is considered "done" when ALL of the following are true and verified by JOY + Claude Code reviewer:
+
+### Player experience (qualitative, playtest-verifiable)
+- [ ] A first-time player can complete the full quest line in 30-60 minutes without out-of-game tutorials
+- [ ] At least one playtester comments unprompted on the AI agent activity log being noticeable / interesting
+- [ ] At least one playtester deliberately dies to test reincarnation, observes that cultivation tier carries over
+- [ ] LLM boss dialogue does NOT feel chatbot-y - testers believe the boss "knows" current zone state
+
+### Technical (verifiable in code + tests)
+- [ ] Server-authoritative invariant: no client-side damage, position, or item validation. Verified by `code-review` skill pass on combat + inventory + NFT modules.
+- [ ] LLM intent validation: every NPC action goes through Go gateway. No API key in Unity client. Verified by grep + security audit.
+- [ ] AI agent inherits player rate limit + capability cap. Verified by integration test.
+- [ ] NFT escrow on equip; release on unequip. Verified on DOS Chain test net.
+- [ ] Photon Fusion 2 dedicated Server Mode build runs on Hetzner VPS, accepts 4-20 player connections in load test.
+- [ ] Supabase persists profile, inventory, quest progress, NFT lock state, cultivation tier across reincarnation cycles.
+- [ ] Multiplayer 4-20 players per zone holds 60Hz tick under load test (Fusion bots simulating 50 players for stress).
+
+### Process (verifiable in repo state)
+- [ ] All slice work merged to `main` via PR with `code-review` skill pass before merge (per JOY hard rule #4).
+- [ ] All ADRs that the slice motivated are written in `docs/adr/` (current count: 4; expect 6-10 by slice complete).
+- [ ] Per-system GDDs in `docs/design/` for Combat, AI agent, Reincarnation, NFT escrow, LLM NPC. (Currently only 04-cultivation-system.md drafted.)
+- [ ] Vertical Slice Report (`02-vertical-slice-report.md`) written with build velocity, playtest data, recommendation.
+
+---
+
+## Build Phases (target sequence)
+
+| Phase | Target Weeks | Output |
+| ---- | ---- | ---- |
+| 1. Setup + first commit | T+0 to T+1 | Unity project + Photon SDK + Supabase + Go gateway scaffold + repo structure |
+| 2. Networked player + zone | T+1 to T+4 | 1 zone Photon Fusion 2 multiplayer, Hunter skin spawn, ARPG controller (Opsive UCC) |
+| 3. NPC + LLM dialogue | T+4 to T+8 | Convai NPC in hub town, server-validated intent flow |
+| 4. Quest + dungeon | T+8 to T+12 | 1 quest line + 1 dungeon + 1 boss (LLM dialogue) |
+| 5. Cultivation + reincarnation | T+12 to T+16 | Tier 1+2 mechanics, death -> SECOND token -> reincarnation flow |
+| 6. NFT integration | T+16 to T+20 | Hunter skin equip + escrow on DOS Chain test net via thirdweb |
+| 7. AI agent offline | T+20 to T+24 | Server-side agent that farms designated area for offline player |
+| 8. Polish + playtest | T+24 to T+26 | Bug fixes, playtest sessions, vertical slice report |
+
+These are estimates. Real velocity will be measured during slice and updated.
+
+---
+
+## Success Recommendation Outcomes
+
+When slice is complete, decision tree:
+
+- **PROCEED** to alpha milestone if: all acceptance criteria met, playtest sentiment positive, build velocity sustainable.
+- **PIVOT** to revised design if: technical works but core loop falls flat (e.g., AI agent autoplay feels invisible, reincarnation feels punishing).
+- **KILL** if: tech stack proves unworkable solo (e.g., LLM cost runs 10x budget, dedicated server hosting infeasible).
+
+---
+
+## Out-of-band Decisions Required Before Phase Start
+
+| Decision | Phase Blocked | JOY Owner |
+| ---- | ---- | ---- |
+| SECOND token economy (cost per reincarnation, source, sink) | Phase 5 | JOY (input later) |
+| Hunter NFT integration approach (Option 1 vs Hybrid 1+3) | Phase 6 | JOY (input later) |
+| Voice NPC vendor | NOT in slice | Defer |
+| Hetzner VPS specs | Phase 8 (load test) | JOY |
+| Photon Fusion 2 license tier (post-Cloud-free-20-CCU) | Post-slice | JOY |
+
+---
+
+## Reference Material
+
+- High-level architecture: [docs/ARCHITECTURE.md](../ARCHITECTURE.md)
+- Pillars: [01-pillars.md](01-pillars.md)
+- Concept: [00-game-concept.md](00-game-concept.md)
+- ADRs (current): [docs/adr/](../adr/)
+- Setup runbook: [.claude/NEXT_STEPS.md](../../.claude/NEXT_STEPS.md)
+- MetaDOS reference: `D:\Projects\MetaDOS` (read-only, BR template, extract patterns only)
