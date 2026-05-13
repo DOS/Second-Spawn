@@ -1,0 +1,16 @@
+{
+    "name": "SecondSpawn.UI",
+    "rootNamespace": "SecondSpawn.UI",
+    "references": [
+        "SecondSpawn.Gameplay"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

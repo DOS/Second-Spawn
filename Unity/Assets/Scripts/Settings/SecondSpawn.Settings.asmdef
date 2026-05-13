@@ -1,0 +1,14 @@
+{
+    "name": "SecondSpawn.Settings",
+    "rootNamespace": "SecondSpawn.Settings",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

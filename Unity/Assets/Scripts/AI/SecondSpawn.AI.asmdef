@@ -1,0 +1,16 @@
+{
+    "name": "SecondSpawn.AI",
+    "rootNamespace": "SecondSpawn.AI",
+    "references": [
+        "SecondSpawn.Networking"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
