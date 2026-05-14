@@ -61,13 +61,18 @@ namespace SecondSpawn.Networking
             }
 
             var spawnPos = ComputeSpawnPosition(_spawnCounter);
-            var no = runner.Spawn(_playerPrefab, spawnPos, Quaternion.identity, player);
+            var spawnRoot = _spawnRoot;
+            runner.Spawn(_playerPrefab, spawnPos, Quaternion.identity, player,
+                onBeforeSpawned: (r, obj) =>
+                {
+                    // TODO(phase-B follow-up): documented Fusion 2 pattern for
+                    // pre-Spawned() reparent. Observed under Fusion 2.1.1 to
+                    // NOT stick - the NetworkObject still ends up at scene
+                    // root. Likely Fusion moves the GO into a runner-managed
+                    // scene after this callback; investigate Spawn flow.
+                    if (spawnRoot != null) obj.transform.SetParent(spawnRoot, worldPositionStays: true);
+                });
             _spawnCounter++;
-
-            if (_spawnRoot != null && no != null)
-            {
-                no.transform.SetParent(_spawnRoot, worldPositionStays: true);
-            }
             Debug.Log($"[PlayerSpawner] Spawned player cube for {player} at {spawnPos}");
         }
 
@@ -111,6 +116,9 @@ namespace SecondSpawn.Networking
         public void OnSceneLoadStart(NetworkRunner runner) { }
         public void OnSessionListUpdated(NetworkRunner runner, List<SessionInfo> sessionList) { }
         public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason) { }
+
+#pragma warning disable CS0618 // SimulationMessagePtr is obsolete in Fusion 2.1+ but the interface still requires the implementation per Photon/Fusion/release_history.txt line 408.
         public void OnUserSimulationMessage(NetworkRunner runner, SimulationMessagePtr message) { }
+#pragma warning restore CS0618
     }
 }
