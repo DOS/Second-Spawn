@@ -32,7 +32,7 @@ namespace SecondSpawn.Settings
     {
         [Header("Environment")]
         [Tooltip("Affects logging, telemetry, and which endpoints are used.")]
-        public Environment Environment = Environment.Development;
+        public BuildEnvironment Environment = BuildEnvironment.Development;
 
         [Header("Gateway")]
         [Tooltip("Base URL of the Go LLM gateway. All LLM + NFT calls go through here.")]
@@ -53,7 +53,7 @@ namespace SecondSpawn.Settings
         [Tooltip("Public DOS Chain RPC endpoint. Signing keys NEVER live here.")]
         public string DosChainRpcUrl = "";
 
-        public enum Environment
+        public enum BuildEnvironment
         {
             Development,
             Staging,

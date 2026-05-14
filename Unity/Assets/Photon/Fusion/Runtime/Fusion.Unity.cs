@@ -3741,7 +3741,10 @@ namespace Fusion {
       }
 
       public int GetHashCode(Scene obj) {
-        return obj.handle;
+        // SECOND SPAWN PATCH (2026-05-14): Unity 6.5 deprecated Scene.handle implicit
+        // int cast (CS0619 hard error). Use (int).GetRawData() until Photon ships fix.
+        // Restore to "return obj.handle;" when upgrading Fusion 2.x past 2.0.12.
+        return (int)obj.handle.GetRawData();
       }
     }
 
@@ -3898,7 +3901,9 @@ namespace Fusion {
         result.Append("<Invalid>");
       }
 
-      result.Append(", handle:").Append(scene.handle);
+      // SECOND SPAWN PATCH (2026-05-14): Unity 6.5 deprecated Scene.handle implicit
+      // int cast. Use (int).GetRawData() until Photon Fusion 2.x update.
+      result.Append(", handle:").Append((int)scene.handle.GetRawData());
       result.Append("]");
       return result.ToString();
     }

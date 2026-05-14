@@ -588,7 +588,9 @@ namespace Fusion {
         // create a root GO for all the gameObjects in the newly loaded scene
         var newSceneRoot = new GameObject($"[{scene.name}]").AddComponent<MultiPeerSceneRoot>();
         newSceneRoot.SceneRef    = sceneRef;
-        newSceneRoot.SceneHandle = scene.handle;
+        // SECOND SPAWN PATCH (2026-05-14): Unity 6.5 deprecated Scene.handle implicit
+        // int cast (CS0619). Use (int).GetRawData() until Photon Fusion 2.x update.
+        newSceneRoot.SceneHandle = (int)scene.handle.GetRawData();
         newSceneRoot.Scene       = scene;
         newSceneRoot.ScenePath   = scene.path;
 

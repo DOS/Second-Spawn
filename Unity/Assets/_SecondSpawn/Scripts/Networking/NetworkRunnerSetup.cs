@@ -54,7 +54,10 @@ namespace SecondSpawn.Networking
                 GameMode = mode,
                 SessionName = _sessionName,
                 PlayerCount = _maxPlayersPerZone,
-                SceneManager = gameObject.AddComponent<NetworkSceneManagerDefault>(),
+                // SceneManager is intentionally omitted for the smoke test - Fusion's
+                // default behavior keeps the active scene loaded. Slice phase 2 will
+                // wire NetworkSceneManagerDefault (or a custom INetworkSceneManager)
+                // when zone-instance scene loading is needed.
             };
 
             var result = await _runner.StartGame(startArgs);
