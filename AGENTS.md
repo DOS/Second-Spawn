@@ -152,9 +152,19 @@ International-friendly framing. Explained via science (Nibirium, biotech, consci
 
 ### Primary
 
-- **Claude Code Desktop (Windows native)** - main dev driver
-- **Coplay unity-mcp** (CoplayDev/unity-mcp) - bridges Claude to Unity Editor (asset, scene, script, component manipulation)
-- **Codex CLI rescue skill** - 2nd opinion / refactor / review when Claude is stuck (use `codex:rescue` skill, NOT standalone Codex App)
+- **Claude Desktop (Windows MS Store, "Code" mode)** - main dev driver. The agent process is `local-agent-mode-unity-mcp` per Coplay Bridge "Other Connections" panel; the host binary is `C:\Program Files\WindowsApps\Claude_<version>_x64__pzs8sxrjxfjjc\app\Claude.exe`. Coplay's Bridge labels the high-level integration as "Claude Code" (their umbrella name for Anthropic coding products) but the actual connecting client is Claude Desktop's Code-mode subprocess. NOT standalone Claude Code.
+- **Coplay unity-mcp** (CoplayDev/unity-mcp) - bridges the agent to Unity Editor (asset, scene, script, component manipulation). Bridge runs inside Unity Editor as part of `com.unity.ai.assistant`. Only ONE direct connection allowed at a time on Personal tier; Unity AI subscription Seat assignment grants the slot.
+- **Codex CLI rescue skill** - 2nd opinion / refactor / review when the primary agent is stuck (use `codex:rescue` skill, NOT standalone Codex App).
+
+### Sustainable MCP workflow (post 2026-05-14 debug)
+
+Cap = 1 direct connection on JOY's Unity AI trial Seat. To avoid connection-revoke storms when multiple AI clients fight for the slot:
+
+1. In Unity Editor: Project Settings > AI > Unity MCP Server > Integrations - keep ONLY "Claude Code" Configured (green dot). Disable Cursor, Windsurf, Claude Desktop integration, VSCode GitHub Copilot, Kiro, Codex, Gemini.
+2. Quit Codex Desktop entirely (system tray) when working with the primary agent. Codex spawns its own MCP client that competes for the cap=1 slot.
+3. After restarting Claude Desktop, accept the fresh `local-agent-mode-unity-mcp` connection in Other Connections panel (PID changes per process restart, so previous approval does not carry over).
+4. If MCP probes return "Connection revoked" repeatedly, kill orphan `relay_win.exe` processes via Task Manager, then Stop+Start the Unity Bridge in the Project Settings panel.
+5. Keep `com.unity.ai.assistant` package pinned at `2.7.0-pre.3` (current). Do NOT downgrade to 2.6.0-pre.1 - that grandfathered free MCP but lacks the entitlement-aware cap negotiation. With trial Seat assigned, pre.3 works.
 
 ### Optional
 
@@ -218,8 +228,9 @@ International-friendly framing. Explained via science (Nibirium, biotech, consci
 - Repo: `Second-Spawn` (matches GitHub repo name as-is)
 - Repo root: `D:\Projects\Second-Spawn`
 - Unity project subfolder: `D:\Projects\Second-Spawn\Unity` (PascalCase, NOT at repo root - multi-stack repo: Unity at `Unity/`, Go gateway at `backend/`, docs at `docs/`)
-- C# code: Microsoft conventions (PascalCase classes, camelCase fields)
+- C# code: Microsoft conventions (PascalCase classes, camelCase fields with `_` prefix for private serialized)
 - Branches: `feat/<short-desc>`, `fix/<short-desc>`, `chore/<short-desc>`
+- **Unity-specific conventions** (folder structure, asmdef pattern, scene organization, naming rules): see [docs/setup/unity-conventions.md](docs/setup/unity-conventions.md). MUST follow before creating, renaming, or organizing any Unity asset, script, or folder.
 
 ### Documentation Language
 
