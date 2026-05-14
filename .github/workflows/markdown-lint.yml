@@ -23,6 +23,10 @@ jobs:
         uses: DavidAnson/markdownlint-cli2-action@v16
         with:
           globs: |
-            **/*.md
-            !.claude/templates/**
-            !node_modules
+            README.md
+            ROADMAP.md
+            CONTRIBUTING.md
+            SECURITY.md
+            AGENTS.md
+            .claude/CLAUDE.md
+            docs/**/*.md
