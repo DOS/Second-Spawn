@@ -7,7 +7,7 @@
 
 ## Core Fantasy
 
-You are a Hunter in a 2050 post-apocalyptic world where consciousness can be transferred to synthetic bodies. Your character has a life that does not pause when yours does, advances through a 6-tier cultivation ladder, and meets death as a transition rather than an end.
+You are a Hunter in a 2050 post-apocalyptic world where consciousness can be transferred to synthetic bodies. Your character has a life that does not pause when yours does, advances through a 6-tier cultivation ladder, spends time as a real resource, and meets death as a transition rather than an end.
 
 ---
 
@@ -15,7 +15,7 @@ You are a Hunter in a 2050 post-apocalyptic world where consciousness can be tra
 
 | Rank | Aesthetic | How Our Game Delivers It |
 | ---- | ---- | ---- |
-| 1 | **Challenge** | Cultivation tier-up gates, LLM-adaptive dungeon bosses, permanent body death |
+| 1 | **Challenge** | Cultivation tier-up gates, time pressure, LLM-adaptive dungeon bosses, permanent body death |
 | 2 | **Discovery** | MetaDOS lore depth + LLM NPCs revealing world state + emergent agent stories |
 | 3 | **Fellowship** | 4-20 player zones, guild PvP, agent-to-agent socialization across timezones |
 
@@ -81,7 +81,38 @@ You are a Hunter in a 2050 post-apocalyptic world where consciousness can be tra
 
 ---
 
-### Pillar 3: LLM as world citizen, not chatbot
+### Pillar 3: Time is life, time is money
+
+**One-Sentence Definition**: Time is both the current body's remaining operating life and a spendable gameplay currency; earning and spending time creates the core survival-economy tension inherited from MetaDOS and adapted for SECOND SPAWN.
+
+**Target Aesthetics Served**: Challenge (time pressure), Autonomy (spend/conserve decisions), Discovery (finding time sources and sinks)
+
+**Design Test**: When debating any economy or survival-pressure feature, this pillar says: time should create meaningful tactical tradeoffs without becoming a pure nuisance timer.
+
+#### What This Means for Each Department
+
+| Department | This Pillar Says... | Example |
+| ---- | ---- | ---- |
+| **Game Design** | Time is not just gold; it is tied to body survival | Spend time at a shrine for supplies, but risk entering the next fight closer to death. |
+| **Engineering** | Time mutations are server-authoritative and auditable | Client requests `SpendBodyTime`; server validates zone, cost, and body state before applying. |
+| **Narrative** | Synthetic bodies have finite operating life | NPCs talk about bodies "running out of time" as biotech failure, not magic. |
+| **Economy** | Keep `BodyTime` and `SECOND token` distinct until an ADR says otherwise | BodyTime creates tactical pressure; SECOND token gates reincarnation. |
+
+#### Serving This Pillar
+- Body time meter exists in danger zones or dungeons
+- Player can earn time from combat or objectives
+- Player can spend time on one useful service in the vertical slice
+- Zero body time triggers body death and reincarnation flow
+
+#### Violating This Pillar
+- Time is only a UI timer with no spend choice
+- Time can be bought directly in a pay-to-win loop
+- Client-side code grants or spends time without server validation
+- Time drain is constant everywhere and makes exploration feel punished
+
+---
+
+### Pillar 4: LLM as world citizen, not chatbot
 
 **One-Sentence Definition**: NPCs are first-class actors in the world that remember the player, ground their dialogue in current world state (location, faction, quest progress), and never have the authority to change game state directly - they emit intents that the server validates.
 
@@ -112,7 +143,7 @@ You are a Hunter in a 2050 post-apocalyptic world where consciousness can be tra
 
 ---
 
-### Pillar 4: Server-authoritative gameplay (open-source defense)
+### Pillar 5: Server-authoritative gameplay (open-source defense)
 
 **One-Sentence Definition**: All gameplay logic runs on the dedicated server; the Unity client is a thin UI + input forwarder; the open-source AGPL-3.0 codebase assumes attackers have full source and the architecture must remain secure under that assumption.
 
@@ -145,7 +176,8 @@ You are a Hunter in a 2050 post-apocalyptic world where consciousness can be tra
 
 - **NOT a full open-world MMORPG** - we have instance-based zones (~20 players), not seamless single-shard. WoW/FFXIV-scale would blow scope and cost.
 - **NOT a Chinese cultivation novel game** - cultivation framing is sci-fi (Nibirium, biotech, consciousness transfer). International-friendly. No qi, no immortals, no sect politics as primary loop.
-- **NOT pay-to-win** - SECOND token gates reincarnation cost; NFT cosmetic / equipment have utility but are bounded by cultivation tier. NOT power-for-cash.
+- **NOT pay-to-win** - SECOND token gates reincarnation cost; `BodyTime` is a gameplay economy and must not become direct power-for-cash.
+- **NOT a passive countdown survival game** - time pressure supports ARPG decisions; it does not replace combat, cultivation, or AI agent play.
 - **NOT a chatbot game** - LLM NPCs are world citizens with grounded memory + rate limits. Dialogue is constrained by quest / faction / location, not free-form roleplay.
 - **NOT mobile-first** - PC Steam audience first. Mobile companion app is a possible future, not core.
 - **NOT host-mode multiplayer in production** - Photon Server Mode dedicated only. Host Mode is dev-only.
@@ -160,8 +192,9 @@ When pillars conflict, use this priority order. Higher-priority pillars win when
 | ---- | ---- | ---- |
 | 1 | **Server-authoritative gameplay** | If we lose this, the public AGPL-3.0 codebase becomes a cheat tutorial; everything else collapses. |
 | 2 | **AI agent 24/7** | This is the unique hook the entire concept is built on; remove it and SECOND SPAWN is just another ARPG. |
-| 3 | **LLM as world citizen** | This delivers the AI agent feel + NPC depth; without it, both pillar 2 and the discovery aesthetic suffer. |
-| 4 | **Reincarnation, not respawn** | Critical to identity but tunable; we could ship with weak reincarnation if the other pillars are strong, less true in reverse. |
+| 3 | **Reincarnation, not respawn** | Critical to identity and death loop; time expiration and body death depend on this remaining meaningful. |
+| 4 | **Time is life, time is money** | Signature MetaDOS lineage mechanic; must support death pressure without overpowering the rest of the game. |
+| 5 | **LLM as world citizen** | This delivers the AI agent feel + NPC depth; without it, both pillar 2 and the discovery aesthetic suffer. |
 
 **Resolution Process**:
 1. Identify which pillars are in tension
@@ -177,25 +210,25 @@ When pillars conflict, use this priority order. Higher-priority pillars win when
 | Need | Which Pillar Serves It | How |
 | ---- | ---- | ---- |
 | **Autonomy** | AI agent 24/7 | Player chooses what to delegate to agent vs play actively |
-| **Competence** | Reincarnation + Server-authoritative | Cultivation tier ladder is the explicit mastery measure; server-validated combat means skill-based wins are real |
+| **Competence** | Reincarnation + Time-as-currency + Server-authoritative | Cultivation tier ladder is the explicit mastery measure; time tradeoffs and server-validated combat make skill-based wins real |
 | **Relatedness** | LLM as world citizen + AI agent | NPCs remember player; agents bridge social distance across timezones |
 
-All three SDT needs covered. ✓
+All three SDT needs covered.
 
 ---
 
 ## Pillar Validation Checklist
 
-- [x] **Count**: 4 pillars (within 3-5 target)
+- [x] **Count**: 5 pillars (within 3-5 target)
 - [x] **Falsifiable**: each makes a testable claim
 - [x] **Constraining**: each forces saying no to specific common patterns
 - [x] **Cross-departmental**: design / engineering / narrative / security tables filled
 - [x] **Design-tested**: each has a concrete decision test
-- [x] **Anti-pillars defined**: 6 explicit "NOT" statements
+- [x] **Anti-pillars defined**: 7 explicit "NOT" statements
 - [x] **Priority-ranked**: clear conflict-resolution order
 - [x] **MDA-aligned**: pillars serve top 3 aesthetics (Challenge, Discovery, Fellowship)
 - [x] **SDT coverage**: Autonomy, Competence, Relatedness all served
-- [x] **Memorable**: 4 pillars, each one phrase
+- [x] **Memorable**: 5 pillars, each one phrase
 - [x] **Core fantasy served**: every pillar traces back to "your character has a life that does not pause"
 
 ---

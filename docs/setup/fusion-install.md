@@ -76,13 +76,13 @@ cd D:\Projects\Second-Spawn
 claude
 ```
 
-Then tell it: "Fusion 2 SDK installed, App ID configured. Wire up the NetworkRunnerProvider per docs/design/05-networking-architecture.md."
+Then tell it: "Fusion 2 SDK installed, App ID configured. Wire up the NetworkRunnerSetup per docs/design/05-networking-architecture.md."
 
 The AI agent will:
 
 1. Verify Fusion assemblies are loaded (`Fusion.Runtime`, `Fusion.Common`, etc).
 2. Replace the scaffold code in `Assets/_SecondSpawn/Scripts/Networking/*.cs` with real `NetworkBehaviour` / `[Networked]` property implementations.
-3. Hook up `NetworkRunnerProvider` to start a Host Mode session in dev.
+3. Hook up `NetworkRunnerSetup` to start a Host Mode session in dev.
 4. Create a simple test: spawn a `NetworkPlayer` cube on player join, replicate position at 60Hz.
 5. Commit + push.
 

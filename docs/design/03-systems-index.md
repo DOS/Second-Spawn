@@ -9,13 +9,14 @@
 
 SECOND SPAWN is a hybrid MMO + top-down ARPG. The mechanical scope spans:
 
-- ARPG core (combat, movement, character controller via Opsive UCC)
+- ARPG core (combat, movement, minimal controller baseline first; Opsive UCC evaluated after baseline)
 - Multiplayer networking (Photon Fusion 2 dedicated server)
 - Persistence (Supabase Postgres + Realtime side-channel)
 - LLM NPCs (Convai phase 1, Go gateway phase 2)
 - AI agent autoplay (server-side, capability-capped)
 - Cultivation 6-tier progression
 - Reincarnation loop (death -> SECOND token -> new body)
+- Time-as-currency body lifespan economy
 - NFT integration (DOS Chain via thirdweb)
 - Server-authoritative invariants (anti-cheat assumes open source)
 
@@ -28,7 +29,7 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 | # | System | Category | Priority | Status | Design Doc | Depends On |
 | --- | ---- | ---- | ---- | ---- | ---- | ---- |
 | 1 | NetworkRunner / Photon Fusion 2 setup | Core | MVP | Not started | (TDD pending) | - |
-| 2 | Player Controller (Opsive UCC integration) | Core | MVP | Not started | (TDD pending) | NetworkRunner |
+| 2 | Player Controller (minimal baseline, Opsive UCC evaluation later) | Core | MVP | Drafted | [07-player-controller-prototype.md](07-player-controller-prototype.md) | NetworkRunner |
 | 3 | Camera (top-down ARPG) | Core | MVP | Not started | (TDD pending) | Player Controller |
 | 4 | Input system (Unity Input System) | Core | MVP | Not started | - | Player Controller |
 | 5 | Zone scene management (1 zone vertical slice) | Core | MVP | Not started | (TDD pending) | NetworkRunner |
@@ -41,6 +42,7 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 | 12 | Cultivation 6-tier (slice: tier 1-2) | Progression | MVP | Drafted | [04-cultivation-system.md](04-cultivation-system.md) | Persistence |
 | 13 | Reincarnation flow (death -> SECOND -> new body) | Progression | VS | Not started | (TDD pending) | Cultivation, NFT escrow, Persistence |
 | 14 | SECOND token economy | Economy | VS | Not designed | (GDD pending - JOY input) | DOS Chain integration |
+| 36 | Time-as-currency (`BodyTime`) | Economy | VS | Drafted | [08-time-as-currency.md](08-time-as-currency.md) | Reincarnation, Combat, Persistence |
 | 15 | NFT inventory (Hunter skin slice scope) | Economy | VS | Not started | (TDD pending) | thirdweb-api MCP, Persistence |
 | 16 | NFT escrow (lock on equip, release on unequip) | Economy | VS | Not started | (TDD pending) | NFT inventory, DOS Chain |
 | 17 | Loot / drop tables | Economy | VS | Not started | (TDD pending) | Combat, persistence |
@@ -63,7 +65,7 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 | 34 | Telemetry / monitoring (Sentry + Grafana) | Meta | Alpha | Deferred | - | All systems |
 | 35 | Onboarding / tutorial | Meta | VS | Deferred (assume slice = no tutorial) | - | All gameplay systems |
 
-**Total: 35 systems identified for slice scope.**
+**Total: 36 systems identified for slice scope.**
 
 ---
 
@@ -74,7 +76,7 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 | **Core** | Foundation systems everything depends on | 5 (NetworkRunner, Controller, Camera, Input, Zone management) |
 | **Gameplay** | The systems that make the game fun | 6 (Combat, NPC dialogue, Quest, Dungeon, Boss LLM, AI agent) |
 | **Progression** | How the player grows over time | 2 (Cultivation, Reincarnation) |
-| **Economy** | Resource creation and consumption | 4 (SECOND token, NFT inventory, NFT escrow, Loot) |
+| **Economy** | Resource creation and consumption | 5 (SECOND token, Time-as-currency, NFT inventory, NFT escrow, Loot) |
 | **Persistence** | Save state and continuity | 5 (Profile, Inventory, Quest, Cultivation, Auth) |
 | **UI** | Player-facing information displays | 6 (HUD, Inventory UI, NPC dialogue UI, Quest tracker, Reincarnation UI, Agent log) |
 | **Audio** | Sound and music systems | 1 (placeholder for slice) |
@@ -95,7 +97,7 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 
 ### Core Layer (depends on foundation)
 
-6. Player Controller / Opsive UCC (#2) - depends on: NetworkRunner
+6. Player Controller baseline / Opsive evaluation (#2) - depends on: NetworkRunner
 7. Camera (#3) - depends on: Player Controller
 8. Input system (#4) - depends on: Player Controller
 9. Zone scene management (#5) - depends on: NetworkRunner
@@ -118,25 +120,26 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 20. NFT escrow (#16) - depends on: NFT inventory, DOS Chain
 21. Loot / drop tables (#17) - depends on: Combat, Persistence
 22. Reincarnation flow (#13) - depends on: Cultivation, NFT escrow, Persistence
-23. SECOND token economy (#14) - depends on: DOS Chain integration, Reincarnation
-24. AI agent for offline players (#11) - depends on: NetworkRunner, LLM gateway, intent schema, Cultivation, Combat
+23. Time-as-currency (#36) - depends on: Reincarnation, Combat, Persistence
+24. SECOND token economy (#14) - depends on: DOS Chain integration, Reincarnation
+25. AI agent for offline players (#11) - depends on: NetworkRunner, LLM gateway, intent schema, Cultivation, Combat, Time-as-currency
 
 ### Presentation Layer (depends on features)
 
-25. HUD (#23)
-26. Inventory UI (#24)
-27. NPC dialogue UI (#25)
-28. Quest tracker UI (#26)
-29. Reincarnation UI (#27)
-30. AI agent activity log UI (#28)
-31. Audio (#29)
+26. HUD (#23)
+27. Inventory UI (#24)
+28. NPC dialogue UI (#25)
+29. Quest tracker UI (#26)
+30. Reincarnation UI (#27)
+31. AI agent activity log UI (#28)
+32. Audio (#29)
 
 ### Meta Layer
 
-32. Anti-cheat verification (#33) - cuts across everything
-33. Quest progress persistence (#20) - depends on: Quest system
-34. Telemetry (#34) - depends on: everything
-35. Onboarding (#35) - depends on: all gameplay (deferred for slice)
+33. Anti-cheat verification (#33) - cuts across everything
+34. Quest progress persistence (#20) - depends on: Quest system
+35. Telemetry (#34) - depends on: everything
+36. Onboarding (#35) - depends on: all gameplay (deferred for slice)
 
 ---
 
@@ -148,6 +151,7 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 | LLM intent validation (#31) + safety (#32) | Security | Open-source codebase + LLM = injection / abuse vector | Reuse DOSafe patterns; per-NPC memory cap; per-player rate limit |
 | NFT escrow (#16) | Technical | Latency between Unity equip action and DOS Chain confirmation | Optimistic UI + reconcile-on-failure; cache lock state in Supabase |
 | Reincarnation flow (#13) | Design | Cultivation carryover too generous = no death weight; too punitive = grind | Tune cost during slice playtests |
+| Time-as-currency (#36) | Design + Economy | Constant drain can feel oppressive; weak drain can feel invisible | Start with danger-zone drain, one earn source, one spend sink |
 | Photon Fusion 2 dedicated server (#1) | Technical | Solo dev capacity to run dedicated infra | Slice uses Photon Cloud free 20 CCU; production migration is post-slice |
 | Convai SDK in Unity (#7) | Technical | 3rd-party SDK may not test against Unity 6.5 beta | Have phase 2 fallback (Go gateway + custom LLM) ready in design |
 
@@ -162,7 +166,7 @@ Aligned with [02-vertical-slice-spec.md](02-vertical-slice-spec.md) build phases
 | 1 | NetworkRunner setup (#1) | Phase 1 | M | Reference MetaDOS BR template |
 | 2 | Auth (#22) | Phase 1 | M | Reuse DOS.Me Supabase pattern |
 | 3 | Profile persistence (#18) | Phase 1 | S | |
-| 4 | Player Controller / Opsive UCC (#2) | Phase 2 | L | 3rd-party integration; verify Unity 6.5 beta compatibility |
+| 4 | Player Controller baseline / Opsive evaluation (#2) | Phase 2 | M | Build minimal Fusion controller first; evaluate Opsive in isolation after baseline |
 | 5 | Camera + Input (#3, #4) | Phase 2 | S | Standard URP |
 | 6 | Zone scene management (#5) | Phase 2 | M | |
 | 7 | Combat (#6) | Phase 2 | L | Server-authoritative critical |
@@ -174,13 +178,14 @@ Aligned with [02-vertical-slice-spec.md](02-vertical-slice-spec.md) build phases
 | 13 | Boss LLM dialogue (#10) | Phase 4 | M | Layered on NPC dialogue |
 | 14 | Cultivation system (#12) | Phase 5 | L | GDD already drafted at `04-cultivation-system.md` |
 | 15 | Reincarnation flow (#13) | Phase 5 | L | |
-| 16 | NFT inventory (#15) + escrow (#16) | Phase 6 | L | DOS Chain test net |
-| 17 | SECOND token economy (#14) | Phase 6 | M | JOY input required first |
-| 18 | AI agent for offline players (#11) | Phase 7 | XL | Highest-risk system |
-| 19 | UI cluster (#23-#28) | Throughout phases 2-7 | XL | Build incrementally |
-| 20 | Audio placeholder (#29) | Phase 8 | S | Slice-quality only |
-| 21 | Chat (#30) | Phase 8 | M | Supabase Realtime |
-| 22 | Polish + playtest | Phase 8 | XL | |
+| 16 | Time-as-currency (#36) | Phase 6 | M | BodyTime meter, one earn source, one spend sink |
+| 17 | NFT inventory (#15) + escrow (#16) | Phase 7 | L | DOS Chain test net |
+| 18 | SECOND token economy (#14) | Phase 7 | M | JOY input required first |
+| 19 | AI agent for offline players (#11) | Phase 8 | XL | Highest-risk system |
+| 20 | UI cluster (#23-#28) | Throughout phases 2-8 | XL | Build incrementally |
+| 21 | Audio placeholder (#29) | Phase 9 | S | Slice-quality only |
+| 22 | Chat (#30) | Phase 9 | M | Supabase Realtime |
+| 23 | Polish + playtest | Phase 9 | XL | |
 
 Effort estimate: S = 1-3 days, M = 4-7 days, L = 1-2 weeks, XL = 2-4 weeks (solo dev + AI agent).
 
@@ -190,8 +195,8 @@ Effort estimate: S = 1-3 days, M = 4-7 days, L = 1-2 weeks, XL = 2-4 weeks (solo
 
 | Metric | Count |
 | ---- | ---- |
-| Total systems identified | 35 |
-| Design docs started | 1 (cultivation) |
+| Total systems identified | 36 |
+| Design docs started | 4 (cultivation, overview design, player controller prototype, time-as-currency) |
 | Design docs reviewed | 0 |
 | Design docs approved | 0 |
 | MVP systems with TDD started | 0 |

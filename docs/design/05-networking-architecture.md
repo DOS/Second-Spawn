@@ -1,6 +1,6 @@
 # Networking Architecture (Photon Fusion 2)
 
-*Status: Draft (architecture-only; integration code stub until JOY installs Fusion 2 SDK per [docs/setup/fusion-install.md](../setup/fusion-install.md))*
+*Status: Draft with Phase B smoke-test implementation*
 *Created: 2026-05-14*
 *Implements Pillar*: AI agent 24/7, LLM as world citizen, Server-authoritative gameplay
 
@@ -76,9 +76,9 @@ The dedicated server NEVER trusts the LLM. All LLM responses parse into structur
 
 ## Networked types we will own
 
-The actual implementations land in `Assets/_SecondSpawn/Scripts/Networking/` (assembly `SecondSpawn.Networking`) as Fusion 2 SDK is installed. Below is the architecture; code stubs are in place pre-SDK.
+The actual implementations land in `Assets/_SecondSpawn/Scripts/Networking/` (assembly `SecondSpawn.Networking`). Phase B has a smoke-test implementation for runner startup, keyboard input, player spawn, and placeholder networked movement.
 
-### `NetworkRunnerProvider` (MonoBehaviour, singleton)
+### `NetworkRunnerSetup` (MonoBehaviour, singleton)
 
 - Owns the `NetworkRunner` lifecycle.
 - Reads `SecondSpawnConfig` for Photon App ID + environment.
@@ -190,14 +190,15 @@ Numbers will be re-validated with Fusion bot load test (per `02-vertical-slice-s
 
 | Element | Status | Where |
 |---|---|---|
-| Photon Fusion 2 SDK installed | NOT YET (JOY action) | [docs/setup/fusion-install.md](../setup/fusion-install.md) |
-| `NetworkRunnerProvider` scaffold | Scaffold only (no Fusion API yet) | `Unity/Assets/_SecondSpawn/Scripts/Networking/NetworkRunnerSetup.cs` |
-| `NetworkPlayer` scaffold | Scaffold only | `Unity/Assets/_SecondSpawn/Scripts/Networking/NetworkPlayer.cs` |
-| `NetworkInputProvider` scaffold | Scaffold only | `Unity/Assets/_SecondSpawn/Scripts/Networking/NetworkInputProvider.cs` |
+| Photon Fusion 2 SDK installed | Installed: Fusion 2.1.1-RC after ADR 0007 resolution | `Unity/Assets/Photon/` |
+| `NetworkRunnerSetup` | Phase B smoke-test implementation | `Unity/Assets/_SecondSpawn/Scripts/Networking/NetworkRunnerSetup.cs` |
+| `NetworkPlayer` | Phase B placeholder networked player cube state | `Unity/Assets/_SecondSpawn/Scripts/Networking/NetworkPlayer.cs` |
+| `NetworkInputProvider` | Phase B keyboard input provider | `Unity/Assets/_SecondSpawn/Scripts/Networking/NetworkInputProvider.cs` |
+| `PlayerSpawner` | Phase B server-authoritative join spawn/despawn | `Unity/Assets/_SecondSpawn/Scripts/Networking/PlayerSpawner.cs` |
 | `NetworkZone` | Not started | TBD |
 | `IntentBridge` | Not started | will live next to `internal/intent` in backend/gateway concepts |
 | `OfflineAgentRunner` | Not started | server-only, Phase 7 |
-| Test scene | Default `SampleScene.unity` (URP template) - to rename when Fusion bootstrap lands | `Unity/Assets/_SecondSpawn/Scenes/` |
+| Test scene | `ZoneTest_Hub.unity` with scene-root `_NetworkBootstrap` | `Unity/Assets/_SecondSpawn/Scenes/ZoneTest_Hub.unity` |
 | Load test (Fusion bots) | Not started | Phase 8 |
 
 ---

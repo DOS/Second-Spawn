@@ -53,6 +53,7 @@ High-level architecture overview. For detailed component design see `docs/design
 ### Dedicated Game Server (Photon Fusion 2 Server Mode)
 
 - Source of truth for in-zone state (position, HP, combat, drops)
+- Source of truth for `BodyTime` earn, spend, drain, transfer, and expiration
 - Validates every action intent (from player input or AI agent)
 - Persists durable state to Supabase Postgres (snapshots + events)
 - Triggers LLM gateway for NPC dialogue when triggered
@@ -70,7 +71,7 @@ High-level architecture overview. For detailed component design see `docs/design
 ### Supabase Backend
 
 - **Auth:** Reuse DOS.Me pattern (email / wallet / OAuth)
-- **Postgres:** durable state (profile, inventory, quest progress, NFT lock state, cultivation tier, character history)
+- **Postgres:** durable state (profile, inventory, quest progress, NFT lock state, cultivation tier, character history, reincarnation and time-as-currency events)
 - **Realtime:** chat global, presence, friend list, party invite, notification (NOT combat / movement)
 - **Storage:** avatar, screenshot, UGC
 
@@ -90,6 +91,7 @@ High-level architecture overview. For detailed component design see `docs/design
 - Wallet auth via sign-message
 - Escrow contract when NFT is equipped in-game
 - SECOND token transactions for reincarnation
+- Future time-economy settlement only if a later ADR decides `BodyTime` can convert to or from token resources
 
 ### Redis
 
@@ -104,6 +106,7 @@ High-level architecture overview. For detailed component design see `docs/design
 3. **API keys live only in Go gateway env.** Never in Unity client, never in Supabase Edge Function reaching the client.
 4. **NFT lock is on-chain.** When equipped, escrow contract holds. Server reads on-chain state, does not assume off-chain.
 5. **AI agent inherits player limits.** No agent can do what a real player cannot.
+6. **Time mutations are server-authoritative.** `BodyTime` is gameplay state; client, LLM, and AI agents can only request validated time intents.
 
 ## Open Architecture Questions
 

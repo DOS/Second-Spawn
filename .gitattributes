@@ -7,6 +7,8 @@
 *.cginc text eol=lf
 *.hlsl text eol=lf
 *.compute text eol=lf
+*.asmdef text eol=lf
+*.asmref text eol=lf
 *.uss text eol=lf
 *.uxml text eol=lf
 
