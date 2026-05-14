@@ -150,21 +150,22 @@ International-friendly framing. Explained via science (Nibirium, biotech, consci
 
 ## AI Agent Tools
 
-### Primary
+### Primary Workflow
 
-- **Claude Desktop (Windows MS Store, "Code" mode)** - main dev driver. The agent process is `local-agent-mode-unity-mcp` per Coplay Bridge "Other Connections" panel; the host binary is `C:\Program Files\WindowsApps\Claude_<version>_x64__pzs8sxrjxfjjc\app\Claude.exe`. Coplay's Bridge labels the high-level integration as "Claude Code" (their umbrella name for Anthropic coding products) but the actual connecting client is Claude Desktop's Code-mode subprocess. NOT standalone Claude Code.
-- **Coplay unity-mcp** (CoplayDev/unity-mcp) - bridges the agent to Unity Editor (asset, scene, script, component manipulation). Bridge runs inside Unity Editor as part of `com.unity.ai.assistant`. Only ONE direct connection allowed at a time on Personal tier; Unity AI subscription Seat assignment grants the slot.
-- **Codex CLI rescue skill** - 2nd opinion / refactor / review when the primary agent is stuck (use `codex:rescue` skill, NOT standalone Codex App).
+- **Codex (this environment)** - default daily operator for code, docs, ADRs, backend, repo hygiene, Unity MCP inspection, and targeted Unity scene/script edits. Codex has more available capacity than Claude Code Max and is the normal first stop for SECOND SPAWN work.
+- **CoplayDev MCP for Unity** (`com.coplaydev.unity-mcp`) - primary Unity Editor bridge for agents. Preferred transport is HTTP Local at `http://127.0.0.1:8080` from `Window > MCP For Unity`. Configure clients from the MCP For Unity Client Configuration tab. For Codex, select `Codex` and click `Configure`.
+- **Claude Code Max / Claude Desktop Code mode** - specialty agent for high-value architecture critique, code review, brainstorming, and Unity-heavy tasks where Codex gets blocked. Use scarce Claude budget deliberately.
+- **Unity official MCP / Unity AI Assistant** (`com.unity.ai.assistant`) - optional / legacy path only. Do not treat it as the primary workflow because the 2026-05-14 debug session found seat/cap/connection instability compared with CoplayDev MCP.
 
-### Sustainable MCP workflow (post 2026-05-14 debug)
+### Sustainable MCP Workflow (post 2026-05-14 debug)
 
-Cap = 1 direct connection on JOY's Unity AI trial Seat. To avoid connection-revoke storms when multiple AI clients fight for the slot:
-
-1. In Unity Editor: Project Settings > AI > Unity MCP Server > Integrations - keep ONLY "Claude Code" Configured (green dot). Disable Cursor, Windsurf, Claude Desktop integration, VSCode GitHub Copilot, Kiro, Codex, Gemini.
-2. Quit Codex Desktop entirely (system tray) when working with the primary agent. Codex spawns its own MCP client that competes for the cap=1 slot.
-3. After restarting Claude Desktop, accept the fresh `local-agent-mode-unity-mcp` connection in Other Connections panel (PID changes per process restart, so previous approval does not carry over).
-4. If MCP probes return "Connection revoked" repeatedly, kill orphan `relay_win.exe` processes via Task Manager, then Stop+Start the Unity Bridge in the Project Settings panel.
-5. Keep `com.unity.ai.assistant` package pinned at `2.7.0-pre.3` (current). Do NOT downgrade to 2.6.0-pre.1 - that grandfathered free MCP but lacks the entitlement-aware cap negotiation. With trial Seat assigned, pre.3 works.
+1. Codex is primary for day-to-day implementation. Claude Code Max is an escalation/reviewer, not the always-on driver.
+2. Use CoplayDev MCP for Unity over `localhost:8080` as the normal Unity bridge.
+3. Only one agent may mutate Unity scenes, prefabs, package imports, or project settings at a time. Read-only inspection by the next agent is OK after the previous agent reports dirty files and current console state.
+4. Every agent switch must leave a handoff using `docs/setup/agent-handoff.md`.
+5. Unity package imports happen one package per commit, in this order unless JOY changes it: Opsive Ultimate Character Controller, Behavior Designer, Convai.
+6. Before claiming Unity work is complete, check the Unity console and active scene through MCP or the Editor.
+7. Significant commits still require independent reviewer pass per Hard Rule #7.
 
 ### Optional
 
@@ -231,6 +232,7 @@ Cap = 1 direct connection on JOY's Unity AI trial Seat. To avoid connection-revo
 - C# code: Microsoft conventions (PascalCase classes, camelCase fields with `_` prefix for private serialized)
 - Branches: `feat/<short-desc>`, `fix/<short-desc>`, `chore/<short-desc>`
 - **Unity-specific conventions** (folder structure, asmdef pattern, scene organization, naming rules): see [docs/setup/unity-conventions.md](docs/setup/unity-conventions.md). MUST follow before creating, renaming, or organizing any Unity asset, script, or folder.
+- **Agent handoff conventions** (Codex-primary workflow, Claude escalation, MCP ownership, commit handoff): see [docs/setup/agent-handoff.md](docs/setup/agent-handoff.md). MUST follow before switching agents or handing off Unity work.
 
 ### Documentation Language
 
@@ -241,6 +243,9 @@ Cap = 1 direct connection on JOY's Unity AI trial Seat. To avoid connection-revo
 ### Git Workflow
 
 - Default branch: `main`
+- Stable branch: `main` only receives reviewed, smoke-tested changes from `dev`
+- Daily working branch: `dev`
+- Feature work: create a separate branch/worktree from `dev`, then PR back into `dev`
 - Public repo open source from day 1
 - License: AGPL-3.0 (code) + CC-BY-NC 4.0 (assets)
 - All PRs reviewed via Claude Code review skill before merge

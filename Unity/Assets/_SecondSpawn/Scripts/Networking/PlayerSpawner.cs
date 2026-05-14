@@ -9,8 +9,7 @@ namespace SecondSpawn.Networking
     /// Server-authoritative player spawner. On
     /// <see cref="OnPlayerJoined"/>, the server spawns the configured
     /// player prefab with input authority assigned to the joining player
-    /// and reparents the spawned NetworkObject under
-    /// <see cref="_spawnRoot"/> (the scene's _DynamicObjects bucket).
+    /// player prefab with input authority assigned to the joining player.
     ///
     /// <para>Per <c>docs/design/05-networking-architecture.md</c> + Pillar
     /// 4 (Server-authoritative gameplay), only the server creates
@@ -27,9 +26,6 @@ namespace SecondSpawn.Networking
     {
         [SerializeField, Tooltip("Player_NetworkCube prefab spawned per joining player. Must have NetworkObject + NetworkPlayer components.")]
         private NetworkObject _playerPrefab;
-
-        [SerializeField, Tooltip("Scene Transform that owns spawned player objects (e.g. _DynamicObjects).")]
-        private Transform _spawnRoot;
 
         [SerializeField, Tooltip("Radius of the spawn ring around origin (units).")]
         private float _spawnRingRadius = 3f;
@@ -61,17 +57,7 @@ namespace SecondSpawn.Networking
             }
 
             var spawnPos = ComputeSpawnPosition(_spawnCounter);
-            var spawnRoot = _spawnRoot;
-            runner.Spawn(_playerPrefab, spawnPos, Quaternion.identity, player,
-                onBeforeSpawned: (r, obj) =>
-                {
-                    // TODO(phase-B follow-up): documented Fusion 2 pattern for
-                    // pre-Spawned() reparent. Observed under Fusion 2.1.1 to
-                    // NOT stick - the NetworkObject still ends up at scene
-                    // root. Likely Fusion moves the GO into a runner-managed
-                    // scene after this callback; investigate Spawn flow.
-                    if (spawnRoot != null) obj.transform.SetParent(spawnRoot, worldPositionStays: true);
-                });
+            runner.Spawn(_playerPrefab, spawnPos, Quaternion.identity, player);
             _spawnCounter++;
             Debug.Log($"[PlayerSpawner] Spawned player cube for {player} at {spawnPos}");
         }

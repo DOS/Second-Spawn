@@ -25,7 +25,7 @@ Current structure (committed as of 2026-05-14, post-migration from flat layout):
 Unity/Assets/
 ├── _SecondSpawn/                 # ALL custom SECOND SPAWN assets live here
 │   ├── Scenes/
-│   │   └── SampleScene.unity     # URP template default - rename when slice phase 2 starts
+│   │   └── ZoneTest_Hub.unity    # Phase B Fusion smoke-test hub scene
 │   ├── Scripts/                  # Custom code, one subfolder per assembly
 │   │   ├── AI/                   # SecondSpawn.AI assembly
 │   │   ├── Gameplay/             # SecondSpawn.Gameplay
@@ -33,6 +33,8 @@ Unity/Assets/
 │   │   ├── NFT/                  # SecondSpawn.NFT (DOS Chain via thirdweb gateway)
 │   │   ├── Settings/             # SecondSpawn.Settings (ScriptableObject configs)
 │   │   └── UI/                   # SecondSpawn.UI
+│   ├── Prefabs/
+│   │   └── Player_NetworkCube.prefab  # Phase B placeholder network player
 │   ├── Settings/                 # URP renderer + pipeline assets, project ScriptableObject configs
 │   └── InputSystem_Actions.inputactions   # Player input bindings
 └── Photon/                       # 3rd-party SDK, kept at Assets root per Unity import default
@@ -129,12 +131,12 @@ public sealed class FooConfig : ScriptableObject { ... }
 
 ## Scene organization
 
-Apply to the first real scene (post slice phase 2 wiring; SampleScene.unity is the URP template and will be replaced):
+Apply to the first real scene:
 
 ```text
 Scene root:
+├── _NetworkBootstrap   # Scene-root object required by Fusion/Unity DontDestroyOnLoad
 ├── _Managers           # Underscore prefix: persistent objects pinned at top of hierarchy
-│   └── NetworkRunnerSetup
 ├── _Cameras
 │   └── PlayerCamera (top-down ARPG perspective)
 ├── _Lights
@@ -142,10 +144,12 @@ Scene root:
 ├── _UI
 │   └── HUDController
 ├── World               # Static environment
-└── _DynamicObjects     # Runtime-spawned content (player, NPCs, loot)
+└── _DynamicObjects     # Non-Fusion runtime-spawned content bucket
 ```
 
 Underscore-prefixed groups stay at the top of the Hierarchy view (Unity sorts case-insensitive but underscores precede letters).
+
+Phase B networking note (2026-05-14): `_NetworkBootstrap` is intentionally a scene-root object, not a child of `_Managers`, because Fusion and Unity call `DontDestroyOnLoad` on runner-owned objects and Unity only allows that for root GameObjects. Runtime-spawned Fusion `NetworkObject` instances are also accepted at runner/scene root for Phase B; do not force-parent them under `_DynamicObjects` unless a future ADR defines a networked parent strategy.
 
 ## Scripting conventions reinforced from Hard Rules
 
@@ -174,9 +178,9 @@ Items below are KNOWN deviations to address as work lands; not blockers for curr
 
 | Deviation | Reason | Resolution |
 |---|---|---|
-| `_SecondSpawn/Scenes/SampleScene.unity` is URP template default | Project just initialized | Rename to `ZoneTest_Hub.unity` when slice phase 2 networking goes into a real scene; rebuild hierarchy per "Scene organization" above |
 | `_SecondSpawn/Settings/SecondSpawnConfig.asset` instance not yet created | Domain reload gate - asmdef compiled but type not loaded into AppDomain at scaffold-write time | JOY clicks Editor menu Assets > Create > Second Spawn > Project Config + saves to `_SecondSpawn/Settings/SecondSpawnConfig.asset`. One-time. |
-| `_SecondSpawn/Materials/`, `Textures/`, `Audio/`, `Prefabs/`, `Animations/` do not exist | No art assets imported yet | Create when first asset of that type lands. Do NOT pre-create empty (Unity guidance: empty folders break VCS) |
+| `_SecondSpawn/Materials/`, `Textures/`, `Audio/`, `Animations/` do not exist | No art assets imported yet | Create when first asset of that type lands. Do NOT pre-create empty (Unity guidance: empty folders break VCS) |
+| `_NetworkBootstrap` at scene root instead of under `_Managers` | Fusion / Unity `DontDestroyOnLoad` root requirement | Accepted Phase B convention. Keep root unless future network scene architecture replaces it. |
 | No `_SecondSpawn/Scripts/<module>/Editor/` subfolders | No editor-only scripts yet | Add per the asmdef convention above when first editor tool is needed |
 | No `_SecondSpawn/Scripts/<module>/Tests/` subfolders | No tests yet | Add per asmdef convention when first test lands; CI workflow `.github/workflows/unity-build.yml` already references `unity-test-runner` for both EditMode and PlayMode |
 | Photon SDK demos / menu samples kept (`Photon/FusionDemos`, `Photon/FusionMenu`) | JOY decision (2026-05-14): "thêm 1 thư mục thôi, để như hiện tại" - low project-view cost | Keep as-is. Revisit only if cleanup needed for ship build size |
@@ -190,6 +194,7 @@ Items below are KNOWN deviations to address as work lands; not blockers for curr
 | Per-zone scene naming | **`Zone_<Name>.unity`** | Group-by-type then name (e.g., `Zone_DesertHub.unity`, `Zone_DungeonAwakening.unity`) |
 | Boss scene naming | **`Boss_<Name>.unity`** as separate file, additive load | Slice phase 4 wires this when first dungeon ships |
 | Photon FusionDemos + FusionMenu cleanup | **Keep as-is** | JOY: "thêm 1 thư mục thôi, để như hiện tại có sao đâu". Revisit if ship build size becomes concern |
+| Fusion runtime object parent bucket | **Do not force-parent spawned NetworkObjects under `_DynamicObjects` for Phase B** | Root-level spawned NetworkObjects match Fusion runner-scene ownership. Revisit when a networked parent strategy is needed. |
 
 ## References
 
