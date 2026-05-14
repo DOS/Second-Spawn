@@ -1,7 +1,12 @@
 {
     "name": "SecondSpawn.Networking",
     "rootNamespace": "SecondSpawn.Networking",
-    "references": [],
+    "references": [
+        "Fusion.Runtime",
+        "Fusion.Common",
+        "Fusion.Realtime",
+        "Unity.InputSystem"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

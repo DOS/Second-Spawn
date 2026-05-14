@@ -1,43 +1,93 @@
+using System.Collections.Generic;
+using Fusion;
+using Fusion.Sockets;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace SecondSpawn.Networking
 {
     /// <summary>
-    /// Collects Unity Input System input each Fusion tick and submits it
-    /// to the <c>NetworkRunner</c> as a structured intent (NOT a command).
+    /// Fusion 2 input contract. The struct is the wire format - it must be
+    /// blittable (no reference types). Each field consumes bandwidth every
+    /// network tick, so keep this lean.
     ///
-    /// <para>The server treats every input as a suggestion - it validates
-    /// against authoritative state before mutating any
-    /// <c>[Networked]</c> property. This is the cornerstone of Pillar 4
-    /// (Server-authoritative gameplay) in
-    /// <c>docs/design/01-pillars.md</c>.</para>
-    ///
-    /// <para>Scaffold: the actual Fusion 2 <c>INetworkInput</c>
-    /// implementation goes here post-SDK-install
-    /// (see <c>docs/setup/fusion-install.md</c>).</para>
-    ///
-    /// <para>POST-SDK-INSTALL implementation outline:</para>
-    /// <list type="number">
-    ///   <item>Implement <c>INetworkRunnerCallbacks.OnInput(NetworkRunner, NetworkInput)</c>.</item>
-    ///   <item>Define a struct <c>SecondSpawnInput : INetworkInput</c>
-    ///         carrying: movement axis, ability slot, target id,
-    ///         intent flag (interact / equip / reincarnate).</item>
-    ///   <item>In <c>OnInput</c>, read the Unity Input System
-    ///         (<c>InputSystem_Actions.inputactions</c>) and populate
-    ///         the struct, then <c>input.Set(...)</c>.</item>
-    ///   <item>Server consumes the input each tick via
-    ///         <c>GetInput()</c>; do NOT trust without validation.</item>
-    /// </list>
-    ///
-    /// <para>The offline AI agent shares this code path: when the player
-    /// is offline, the server-side <c>OfflineAgentRunner</c> populates
-    /// the same input struct from LLM-derived intents. Inputs from
-    /// the agent are rate-limited + capability-capped identically to
-    /// inputs from the human (Pillar 1, anti-abuse).</para>
+    /// <para>Server treats every input as a SUGGESTION, not a command
+    /// (Pillar 4 Server-authoritative gameplay). The server validates each
+    /// field in <see cref="NetworkPlayer.FixedUpdateNetwork"/> before
+    /// mutating <c>[Networked]</c> state.</para>
     /// </summary>
-    public sealed class NetworkInputProvider : MonoBehaviour
+    public struct NetworkInputData : INetworkInput
     {
-        // TODO (post-SDK-install): implement INetworkRunnerCallbacks +
-        // SecondSpawnInput struct per the summary.
+        public float HorizontalAxis;
+        public float VerticalAxis;
+        public NetworkBool Interact;
+        public NetworkBool AbilitySlot1;
+    }
+
+    /// <summary>
+    /// Collects Unity Input System input each Fusion tick and submits it
+    /// to the <see cref="NetworkRunner"/> as <see cref="NetworkInputData"/>.
+    ///
+    /// <para>The same code path is shared with the offline AI agent: when
+    /// <see cref="NetworkPlayer.IsAgentControlled"/> is true, the
+    /// server-side <c>OfflineAgentRunner</c> populates the input struct from
+    /// LLM-derived intents and the rest of the pipeline is identical -
+    /// rate-limited + capability-capped per Pillar 1 anti-abuse.</para>
+    /// </summary>
+    [DisallowMultipleComponent]
+    public sealed class NetworkInputProvider : MonoBehaviour, INetworkRunnerCallbacks
+    {
+        private NetworkRunner _runner;
+
+        private void Awake()
+        {
+            _runner = GetComponent<NetworkRunner>();
+            if (_runner != null) _runner.AddCallbacks(this);
+        }
+
+        private void OnDestroy()
+        {
+            if (_runner != null) _runner.RemoveCallbacks(this);
+        }
+
+        public void OnInput(NetworkRunner runner, NetworkInput input)
+        {
+            // Vertical slice: read raw keyboard via Unity Input System.
+            // Slice phase 2 will route through InputSystem_Actions
+            // (Assets/InputSystem_Actions.inputactions) for rebinding.
+            var kb = Keyboard.current;
+            if (kb == null) return;
+
+            var data = new NetworkInputData
+            {
+                HorizontalAxis = (kb.dKey.isPressed ? 1f : 0f) - (kb.aKey.isPressed ? 1f : 0f),
+                VerticalAxis = (kb.wKey.isPressed ? 1f : 0f) - (kb.sKey.isPressed ? 1f : 0f),
+                Interact = kb.eKey.isPressed,
+                AbilitySlot1 = kb.digit1Key.isPressed,
+            };
+
+            input.Set(data);
+        }
+
+        // Unused callbacks - implement so INetworkRunnerCallbacks is satisfied.
+        // Real handlers land as slice phase 2+ features need them.
+        public void OnConnectedToServer(NetworkRunner runner) { }
+        public void OnConnectFailed(NetworkRunner runner, NetAddress remoteAddress, NetConnectFailedReason reason) { }
+        public void OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token) { }
+        public void OnCustomAuthenticationResponse(NetworkRunner runner, Dictionary<string, object> data) { }
+        public void OnDisconnectedFromServer(NetworkRunner runner, NetDisconnectReason reason) { }
+        public void OnHostMigration(NetworkRunner runner, HostMigrationToken hostMigrationToken) { }
+        public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input) { }
+        public void OnObjectEnterAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player) { }
+        public void OnObjectExitAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player) { }
+        public void OnPlayerJoined(NetworkRunner runner, PlayerRef player) { }
+        public void OnPlayerLeft(NetworkRunner runner, PlayerRef player) { }
+        public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress) { }
+        public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, System.ArraySegment<byte> data) { }
+        public void OnSceneLoadDone(NetworkRunner runner) { }
+        public void OnSceneLoadStart(NetworkRunner runner) { }
+        public void OnSessionListUpdated(NetworkRunner runner, List<SessionInfo> sessionList) { }
+        public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason) { }
+        public void OnUserSimulationMessage(NetworkRunner runner, SimulationMessagePtr message) { }
     }
 }
