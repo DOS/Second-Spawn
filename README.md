@@ -10,13 +10,14 @@
 
 - **AI Agent 24/7** - Your character keeps playing when you are offline. An LLM-driven agent farms, quests, and socializes on your behalf.
 - **Reincarnation** - Death is permanent for the body. Transfer your consciousness to a new synthetic body using SECOND tokens. Progression resets - this is a roguelike-MMO hybrid.
+- **Time-as-Currency** - Time is both your current body's survival resource and a spendable economy resource, adapted from MetaDOS.
 - **Sci-fi Cultivation** - 6-tier progression system (Awakening -> Ascension), explained through Nibirium-enhanced biotech and consciousness science.
 - **LLM-Powered NPCs** - NPCs remember you, have personality, and react to your history.
 - **NFT Integration** - Inherit assets from the MetaDOS universe. Hunter skins, weapons, pets on DOS Chain.
 
 ## Tech Stack
 
-- Unity 6 LTS + URP
+- Unity 6.5 beta + URP
 - Photon Fusion 2 (dedicated server mode in production)
 - Supabase (auth, Postgres, realtime, storage)
 - Go LLM gateway (server-authoritative LLM intent validation)
@@ -32,11 +33,15 @@
 /.claude/         AI agent context, templates, conventions
 ```
 
+Public docs are published from `/docs` to GitBook:
+
+<https://dos.gitbook.io/second-spawn/>
+
 ## Build (early stage)
 
 Requirements:
 
-- Unity 6 LTS
+- Unity 6.5 beta `6000.5.0b7`
 - Git LFS
 - Photon Fusion 2 app ID
 - Supabase project (or local Postgres for offline dev)

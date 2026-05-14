@@ -7,7 +7,7 @@
 
 ## Elevator Pitch
 
-> A near-future post-apocalyptic top-down ARPG where your character keeps playing when you log off — an LLM-driven AI agent quests, farms, and socializes with NPCs and other players' agents on your behalf. Death is permanent for the body; reincarnation transfers your consciousness to a new synthetic body via SECOND tokens, resetting progression in a roguelike-MMO hybrid set in the MetaDOS universe.
+> A near-future post-apocalyptic top-down ARPG where your character keeps playing when you log off - an LLM-driven AI agent quests, farms, and socializes with NPCs and other players' agents on your behalf. Time is both your body's remaining life and a spendable resource. Death is permanent for the body; reincarnation transfers your consciousness to a new synthetic body via SECOND tokens, resetting progression in a roguelike-MMO hybrid set in the MetaDOS universe.
 
 ---
 
@@ -20,7 +20,7 @@
 | **Target Audience** | ARPG players who like progression-reset roguelike loops + LLM-driven NPC interaction; MMO-curious solo players who can't commit 4-hour grind sessions |
 | **Player Count** | Multiplayer 4-20 per instance zone, 50v50 guild PvP at later phases |
 | **Session Length** | 30-90 min active play; offline AI agent extends progress without active play |
-| **Monetization** | [TODO: JOY decide - SECOND token gating reincarnation cost is the proposed sink; cosmetic NFT marketplace is a candidate] |
+| **Monetization** | [TODO: JOY decide - SECOND token gating reincarnation cost is the proposed sink; time-as-currency is a gameplay economy, not automatically a monetization currency; cosmetic NFT marketplace is a candidate] |
 | **Estimated Scope** | Vertical slice 3-6 months; full vision multi-year |
 | **Comparable Titles** | Diablo IV, Path of Exile 2, Lost Ark (combat); EVE Online (player-driven economy aspiration); Black Desert (open trades); novel reference: AI agent autoplay has no direct comparable |
 
@@ -36,11 +36,12 @@ The fantasy is "your character has a life that does not pause when yours does."
 
 ## Unique Hook
 
-It's like Diablo IV with persistent online zones, AND ALSO **your character keeps playing when you are offline** - an LLM-driven agent farms, quests, and socializes with NPCs and other players' agents on your behalf, and **death triggers reincarnation** with a partial-reset roguelike progression loop.
+It's like Diablo IV with persistent online zones, AND ALSO **your character keeps playing when you are offline** - an LLM-driven agent farms, quests, and socializes with NPCs and other players' agents on your behalf. **Time is your life and your currency**, and **death triggers reincarnation** with a partial-reset roguelike progression loop.
 
-The hook passes the "and also" test on two axes simultaneously:
+The hook passes the "and also" test on three axes simultaneously:
 1. AI agent autoplay (offline persistence in a multiplayer ARPG is near-unique)
 2. Reincarnation as the death loop (instead of corpse run / repair cost / equipment loss)
+3. Time-as-currency (every body has a time budget that can be earned, spent, and lost)
 
 ---
 
@@ -58,11 +59,11 @@ The hook passes the "and also" test on two axes simultaneously:
 
 ### Core Mechanics (3-5 systems generating the dynamics)
 
-1. Top-down ARPG action combat (Opsive Ultimate Character Controller)
+1. Top-down ARPG action combat (minimal Fusion controller first; Opsive Ultimate Character Controller is an evaluation candidate)
 2. LLM-driven NPC dialogue with server-validated intent (Convai phase 1, custom Go gateway phase 2)
 3. AI agent autonomous control of player character when offline (server-authoritative, capability-capped)
 4. Reincarnation via SECOND token cost (consciousness transfer, partial cultivation tier carryover)
-5. Cultivation 6-tier progression (Awakening -> Ascension), gated by milestones
+5. Time-as-currency body lifespan economy (earn/spend body time; zero time triggers body death)
 
 ---
 
@@ -71,7 +72,7 @@ The hook passes the "and also" test on two axes simultaneously:
 | Need | How This Game Satisfies It | Strength |
 | ---- | ---- | ---- |
 | **Autonomy** | Choose how to spend time online vs delegate to AI agent; choose reincarnation timing; choose cultivation path | Core |
-| **Competence** | Cultivation tier-up is the explicit mastery ladder; combat skill ceiling via Opsive controller depth | Core |
+| **Competence** | Cultivation tier-up is the explicit mastery ladder; combat skill ceiling comes from the final movement/combat controller after prototype validation | Core |
 | **Relatedness** | LLM NPCs remember you across sessions; guild + zone fellowship; agent-to-agent socialization | Supporting |
 
 ### Player Type Appeal (Bartle)
@@ -112,8 +113,9 @@ Complete a quest line or dungeon clear; converse with hub-town NPCs (LLM-driven)
 
 1. **AI agent 24/7** - the character is always playing
 2. **Reincarnation, not respawn** - death has weight; SECOND token cost
-3. **LLM as world citizen, not chatbot** - NPCs are server-validated agents in the world
-4. **Server-authoritative gameplay** - public open-source repo means anti-cheat assumes attacker has full source
+3. **Time is life, time is money** - time is the body's survival budget and a spendable resource
+4. **LLM as world citizen, not chatbot** - NPCs are server-validated agents in the world
+5. **Server-authoritative gameplay** - public open-source repo means anti-cheat assumes attacker has full source
 
 ---
 
@@ -124,6 +126,7 @@ Complete a quest line or dungeon clear; converse with hub-town NPCs (LLM-driven)
 | Diablo IV | Top-down ARPG action combat, item / loot loops | No paragon board grind; reincarnation replaces seasonal reset |
 | Path of Exile 2 | Skill / passive depth, build expression | Less crafting-first; more character-narrative-driven via LLM NPCs |
 | Lost Ark | Multi-instance zone hubs, guild raids structure | Smaller zone size (~20 players); LLM agents instead of scripted NPCs |
+| In Time (2011) | Time as survival resource and currency | Adapted through synthetic-body lifespan, not direct film setting or theme |
 | EVE Online | Player-driven economy, persistent universe consequence | Solo-friendly via AI agent; not a single-shard nightmare |
 | MetaDOS (BR) | Hunter skin NFT system, Photon Fusion 2 networking patterns | Different genre (ARPG, not BR); persistent zones, not match rounds |
 
@@ -166,6 +169,7 @@ See [docs/ARCHITECTURE.md](../ARCHITECTURE.md) for system diagram + critical inv
 ### Design Risks
 - AI agent offline play may feel either invisible (player doesn't notice progress) or invasive (agent does things player wouldn't choose)
 - Cultivation tier pacing: too slow = grind; too fast = no mastery feeling
+- Time-as-currency may feel oppressive if time drain is constant, or invisible if it only appears at death
 - LLM NPCs may feel chatbot-like if they don't ground in world state (location, quest progress, faction)
 
 ### Technical Risks
@@ -179,10 +183,11 @@ See [docs/ARCHITECTURE.md](../ARCHITECTURE.md) for system diagram + critical inv
 
 ### Scope Risks
 - Solo dev + AI agent (Claude Code) + 3-6 month vertical slice on novel architecture is tight
-- 3rd-party assets (Opsive UCC, Behavior Designer, Convai) may not be tested against Unity 6.5 beta
+- 3rd-party assets (Opsive UCC, Behavior Designer, Convai) may not be tested against Unity 6.5 beta. Opsive is not mandatory for the first movement prototype until it proves value against the minimal controller baseline.
 
 ### Open Questions (need JOY input later)
 - SECOND token economy: reincarnation cost, source, sink. (Open Decision Point in CLAUDE.md.)
+- BodyTime economy: where time drains, how players earn it, how they spend it, and whether conversion to/from SECOND token ever exists.
 - Hunter NFT integration: Option 1 (preset hero) vs Hybrid 1+3 (modular pieces)
 - Voice NPC vendor: OpenAI Realtime vs ElevenLabs vs self-host
 - Final game name (SECOND SPAWN is codename)
@@ -193,7 +198,7 @@ See [docs/ARCHITECTURE.md](../ARCHITECTURE.md) for system diagram + critical inv
 
 See [02-vertical-slice-spec.md](02-vertical-slice-spec.md).
 
-**Core hypothesis**: A solo player can experience all 3 USPs (AI agent autoplay, reincarnation, cultivation tier-up) inside a single zone within 30 minutes of first play, without requiring out-of-game tutorials.
+**Core hypothesis**: A solo player can experience the signature hooks (AI agent autoplay, reincarnation, time-as-currency, cultivation tier-up) inside a single zone within 30 minutes of first play, without requiring out-of-game tutorials.
 
 ---
 
@@ -202,4 +207,4 @@ See [02-vertical-slice-spec.md](02-vertical-slice-spec.md).
 - [ ] JOY review and refine this concept doc (especially monetization line + open questions)
 - [ ] Finalize [01-pillars.md](01-pillars.md) (preview pillars listed above need design tests added)
 - [ ] Build vertical slice per [02-vertical-slice-spec.md](02-vertical-slice-spec.md)
-- [ ] Per-system GDDs as systems are designed (cultivation already started in [04-cultivation-system.md](04-cultivation-system.md); combat, AI agent, reincarnation, NFT escrow, LLM NPC pending)
+- [ ] Per-system GDDs as systems are designed (cultivation started in [04-cultivation-system.md](04-cultivation-system.md); time-as-currency started in [08-time-as-currency.md](08-time-as-currency.md); combat, AI agent, reincarnation, NFT escrow, LLM NPC pending)

@@ -2,15 +2,16 @@
 
 ## Vertical Slice (Months 1-6) - CURRENT
 
-Goal: One playable zone, one class, one dungeon, reincarnation MVP, AI agent prototype.
+Goal: One playable zone, one class, one dungeon, time-as-currency MVP, reincarnation MVP, AI agent prototype.
 
 - [ ] Unity 6 project init + Fusion 2 setup
 - [ ] Reuse MetaDOS Fusion boilerplate patterns
-- [ ] Opsive Character Controller integration
+- [ ] Minimal Fusion player controller baseline, then Opsive Character Controller evaluation
 - [ ] Supabase auth + profile (reuse DOS.Me pattern)
 - [ ] One hub zone with 5 NPCs (Convai)
 - [ ] One dungeon instance with 1 boss
 - [ ] Reincarnation flow (death -> SECOND token -> respawn with reset)
+- [ ] Time-as-currency MVP (BodyTime meter, one earn source, one spend sink)
 - [ ] Cultivation tier 1-2 (Awakening, Enhancement)
 - [ ] One Hunter NFT skin equippable (DOS Chain integration)
 - [ ] AI agent prototype (offline player farms designated area)

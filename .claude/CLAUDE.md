@@ -12,11 +12,12 @@ This file is the primary context for any AI coding agent working on this reposit
 - **Setting:** Near-future ~2050, post-apocalyptic, MetaDOS universe
 - **Tone:** Dark sci-fi, cyberpunk, cultivation-progression, AI NPC society
 
-## Three Core USPs (DO NOT LOSE TRACK)
+## Four Signature Features (DO NOT LOSE TRACK)
 
 1. **AI Agent 24/7** - When the player is offline, an LLM-driven AI agent fully controls their character (farms, quests, socializes with NPCs and other players' agents). When the player returns, they take over control. This is a near-unique feature in MMO/ARPG space.
 2. **Reincarnation with progression reset** - Death is permanent for the body. Consciousness transfers to a new body via SECOND token or special item. Progression resets (roguelike-MMO hybrid). Cultivation tier may carry over partial.
-3. **Consciousness transfer to NPC/synthetic bodies** - Sci-fi explanation (mind upload, synthetic bodies, Nibirium-enhanced cloning). NOT spiritual reincarnation.
+3. **Time-as-Currency** - Time is both the current body's survival resource and a spendable economy resource, adapted from MetaDOS and the `In Time` inspiration. Running out of body time triggers death/reincarnation; spending time creates hard tactical tradeoffs.
+4. **Consciousness transfer to NPC/synthetic bodies** - Sci-fi explanation (mind upload, synthetic bodies, Nibirium-enhanced cloning). NOT spiritual reincarnation.
 
 ## Cultivation System (sci-fi, not Chinese-style)
 
@@ -37,6 +38,7 @@ International-friendly framing. Explained via science (Nibirium, biotech, consci
 - Dungeon / instance separate
 - Guild PvP up to 50v50
 - Top-down ARPG action combat
+- Time-as-currency economy: body time can be earned, spent, transferred later, and lost on body death unless explicit conversion rules say otherwise
 - Pet system: NFT-based, 1 equip slot, NOT looted from bosses (marketplace + breeding only)
 - Mount system: movement only, no mounted combat (reduce animation workload)
 
@@ -115,7 +117,7 @@ International-friendly framing. Explained via science (Nibirium, biotech, consci
   - Pets (1 equip slot, marketplace + breeding only, no boss drop)
 - **Wallet auth:** Sign-message pattern via thirdweb or Supabase + DOS Chain
 - **In-game lock:** Escrow contract when equipped, release on unequip
-- **SECOND token:** Used for reincarnation cost (token economy needs design)
+- **SECOND token:** Used for reincarnation cost (token economy needs design). Keep distinct from `BodyTime` unless a future ADR explicitly merges them.
 
 ### Version Control
 
@@ -238,6 +240,8 @@ International-friendly framing. Explained via science (Nibirium, biotech, consci
 
 - All code, comments, docs, commits, PR titles, README, ROADMAP: **English**
 - Communication with JOY (this user): Vietnamese (per global CLAUDE.md)
+- `/docs` is published publicly to GitBook at `https://dos.gitbook.io/second-spawn/`. Keep docs public-safe, English-canonical, and readable by non-repo visitors.
+- Vietnamese companion notes may live under `docs/vi/`, but English docs are the source of truth. If Vietnamese notes conflict with English canonical docs, English wins.
 - No em-dashes anywhere - use `-` (hyphen) only
 
 ### Git Workflow
@@ -276,6 +280,7 @@ Scope:
 - 1 boss with LLM dialogue (Convai)
 - 1 questline (3-5 quests)
 - Reincarnation MVP (die -> SECOND token -> respawn with reset)
+- Time-as-currency MVP (body time meter, earn/spend loop, zero time triggers reincarnation placeholder)
 - AI agent control (simple: agent farms one designated area when player offline)
 - 2 cultivation tiers playable (Awakening + Enhancement)
 - NFT Hunter skin equip + escrow
@@ -307,6 +312,7 @@ OUT of scope for vertical slice:
 
 - Final game name (SECOND SPAWN is codename, may rename after vertical slice playable)
 - SECOND token economy design (cost per reincarnation, source, sink)
+- BodyTime tuning (where time drains, how it is earned, how it can be spent, and whether it can convert to/from SECOND token)
 - Hunter NFT integration approach: Option 1 (preset hero) vs Hybrid 1+3 (modular pieces)
 - Phase 2 LLM model split (when to use Haiku vs Sonnet)
 - Voice NPC vendor (OpenAI Realtime vs ElevenLabs vs self-host)

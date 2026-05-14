@@ -10,7 +10,7 @@
 
 ## Validation Question
 
-Can a solo player, in their first 30 minutes of unguided play in a single zone, experience all 3 core USPs (AI agent autoplay, reincarnation, cultivation tier-up) AND can a 1-person team (JOY + Claude Code AI agent) build this slice at representative quality in 3-6 months on the chosen tech stack (Unity 6.5 beta + Photon Fusion 2 + Supabase + Go gateway + thirdweb)?
+Can a solo player, in their first 30 minutes of unguided play in a single zone, experience the signature hooks (AI agent autoplay, reincarnation, time-as-currency, cultivation tier-up) AND can a 1-person team (JOY + AI agents) build this slice at representative quality in 3-6 months on the chosen tech stack (Unity 6.5 beta + Photon Fusion 2 + Supabase + Go gateway + thirdweb)?
 
 This is two questions in one: **does the design loop fun?** AND **is the architecture buildable?**
 
@@ -26,6 +26,7 @@ This is two questions in one: **does the design loop fun?** AND **is the archite
 | **Boss with LLM dialogue** | 1 (Convai-driven, grounded in zone state) |
 | **Quest line** | 1 (3-5 quests sequential) |
 | **Reincarnation MVP** | Die -> SECOND token (test token, not real DOS Chain) -> respawn with reset equipment, partial cultivation tier carryover |
+| **Time-as-currency MVP** | Body time meter, earn time from a small objective, spend time on one useful service, zero time triggers reincarnation placeholder |
 | **AI agent autoplay** | Simple: agent farms one designated area when player offline. Visible activity log on return. |
 | **Cultivation tiers** | 2 of 6 playable (Awakening + Enhancement only) |
 | **NFT Hunter skin** | 1 skin equip flow + escrow contract (test net DOS Chain) |
@@ -59,6 +60,7 @@ The slice is considered "done" when ALL of the following are true and verified b
 - [ ] A first-time player can complete the full quest line in 30-60 minutes without out-of-game tutorials
 - [ ] At least one playtester comments unprompted on the AI agent activity log being noticeable / interesting
 - [ ] At least one playtester deliberately dies to test reincarnation, observes that cultivation tier carries over
+- [ ] At least one playtester notices time-as-currency as a meaningful tradeoff, not just a timer
 - [ ] LLM boss dialogue does NOT feel chatbot-y - testers believe the boss "knows" current zone state
 
 ### Technical (verifiable in code + tests)
@@ -73,7 +75,7 @@ The slice is considered "done" when ALL of the following are true and verified b
 ### Process (verifiable in repo state)
 - [ ] All slice work merged to `main` via PR with `code-review` skill pass before merge (per JOY hard rule #4).
 - [ ] All ADRs that the slice motivated are written in `docs/adr/` (current count: 4; expect 6-10 by slice complete).
-- [ ] Per-system GDDs in `docs/design/` for Combat, AI agent, Reincarnation, NFT escrow, LLM NPC. (Currently only 04-cultivation-system.md drafted.)
+- [ ] Per-system GDDs in `docs/design/` for Combat, AI agent, Reincarnation, Time-as-currency, NFT escrow, LLM NPC. (Cultivation and Time-as-currency are drafted.)
 - [ ] Vertical Slice Report (`02-vertical-slice-report.md`) written with build velocity, playtest data, recommendation.
 
 ---
@@ -83,13 +85,14 @@ The slice is considered "done" when ALL of the following are true and verified b
 | Phase | Target Weeks | Output |
 | ---- | ---- | ---- |
 | 1. Setup + first commit | T+0 to T+1 | Unity project + Photon SDK + Supabase + Go gateway scaffold + repo structure |
-| 2. Networked player + zone | T+1 to T+4 | 1 zone Photon Fusion 2 multiplayer, Hunter skin spawn, ARPG controller (Opsive UCC) |
+| 2. Networked player + zone | T+1 to T+4 | 1 zone Photon Fusion 2 multiplayer, Hunter skin spawn, minimal ARPG controller first, Opsive UCC evaluated after baseline |
 | 3. NPC + LLM dialogue | T+4 to T+8 | Convai NPC in hub town, server-validated intent flow |
 | 4. Quest + dungeon | T+8 to T+12 | 1 quest line + 1 dungeon + 1 boss (LLM dialogue) |
 | 5. Cultivation + reincarnation | T+12 to T+16 | Tier 1+2 mechanics, death -> SECOND token -> reincarnation flow |
-| 6. NFT integration | T+16 to T+20 | Hunter skin equip + escrow on DOS Chain test net via thirdweb |
-| 7. AI agent offline | T+20 to T+24 | Server-side agent that farms designated area for offline player |
-| 8. Polish + playtest | T+24 to T+26 | Bug fixes, playtest sessions, vertical slice report |
+| 6. Time-as-currency | T+16 to T+18 | Body time meter, one earn source, one spend sink, zero-time reincarnation trigger |
+| 7. NFT integration | T+18 to T+22 | Hunter skin equip + escrow on DOS Chain test net via thirdweb |
+| 8. AI agent offline | T+22 to T+25 | Server-side agent that farms designated area for offline player |
+| 9. Polish + playtest | T+25 to T+27 | Bug fixes, playtest sessions, vertical slice report |
 
 These are estimates. Real velocity will be measured during slice and updated.
 
@@ -100,7 +103,7 @@ These are estimates. Real velocity will be measured during slice and updated.
 When slice is complete, decision tree:
 
 - **PROCEED** to alpha milestone if: all acceptance criteria met, playtest sentiment positive, build velocity sustainable.
-- **PIVOT** to revised design if: technical works but core loop falls flat (e.g., AI agent autoplay feels invisible, reincarnation feels punishing).
+- **PIVOT** to revised design if: technical works but core loop falls flat (e.g., AI agent autoplay feels invisible, reincarnation feels punishing, time-as-currency feels like a nuisance timer).
 - **KILL** if: tech stack proves unworkable solo (e.g., LLM cost runs 10x budget, dedicated server hosting infeasible).
 
 ---
@@ -110,6 +113,7 @@ When slice is complete, decision tree:
 | Decision | Phase Blocked | JOY Owner |
 | ---- | ---- | ---- |
 | SECOND token economy (cost per reincarnation, source, sink) | Phase 5 | JOY (input later) |
+| BodyTime economy tuning (drain, earn, spend, transfer, conversion rules) | Phase 6 | JOY (input later) |
 | Hunter NFT integration approach (Option 1 vs Hybrid 1+3) | Phase 6 | JOY (input later) |
 | Voice NPC vendor | NOT in slice | Defer |
 | Hetzner VPS specs | Phase 8 (load test) | JOY |
