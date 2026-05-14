@@ -8,7 +8,6 @@ namespace SecondSpawn.Networking
     /// <summary>
     /// Server-authoritative player spawner. On
     /// <see cref="OnPlayerJoined"/>, the server spawns the configured
-    /// player prefab with input authority assigned to the joining player
     /// player prefab with input authority assigned to the joining player.
     ///
     /// <para>Per <c>docs/design/05-networking-architecture.md</c> + Pillar
@@ -57,7 +56,8 @@ namespace SecondSpawn.Networking
             }
 
             var spawnPos = ComputeSpawnPosition(_spawnCounter);
-            runner.Spawn(_playerPrefab, spawnPos, Quaternion.identity, player);
+            var playerObject = runner.Spawn(_playerPrefab, spawnPos, Quaternion.identity, player);
+            runner.SetPlayerObject(player, playerObject);
             _spawnCounter++;
             Debug.Log($"[PlayerSpawner] Spawned player cube for {player} at {spawnPos}");
         }
@@ -65,13 +65,9 @@ namespace SecondSpawn.Networking
         public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
         {
             if (!runner.IsServer) return;
-            foreach (var no in runner.GetAllNetworkObjects())
+            if (runner.TryGetPlayerObject(player, out var playerObject))
             {
-                if (no.InputAuthority == player)
-                {
-                    runner.Despawn(no);
-                    break;
-                }
+                runner.Despawn(playerObject);
             }
         }
 
