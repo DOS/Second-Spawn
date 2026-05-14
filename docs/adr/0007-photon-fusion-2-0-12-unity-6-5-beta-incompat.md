@@ -1,8 +1,22 @@
 # ADR 0007: Photon Fusion 2.0.12 - Unity 6.5 beta API incompatibility
 
-**Status:** Open - blocking, awaiting JOY decision
+**Status:** RESOLVED 2026-05-14 by upgrading Photon Fusion 2.0.12 -> 2.1.1-RC. Most CS0619 errors fixed upstream; 1 remaining (`EditorUtility.InstanceIDToObject`) patched inline with `SECOND SPAWN PATCH` marker. Phase A smoke test confirmed: Host session ready on Photon Cloud, Player 1 joined.
 **Date:** 2026-05-14
 **Deciders:** JOY (sole decision-maker, solo dev)
+
+## Resolution
+
+JOY downloaded `Photon-Fusion-2.1.1-Release-Candidate-2037.unitypackage` and we imported over 2.0.12. Most Unity 6.5 API deprecations were fixed in Fusion 2.1's source. Remaining issues + their fixes:
+
+1. **`Statistics/Scripts/` 2.0.12 leftover folder** caused `FusionStatistics` duplicate class definitions. Deleted the leftover folder via `AssetDatabase.DeleteAsset` (then re-imported 2.1.1 to restore the new flat `Statistics/` files).
+2. **`NetworkInputProvider.OnReliableDataReceived` signature change**: Fusion 2.1.1 changed the signature from `System.ArraySegment<byte>` to `System.ReadOnlySpan<byte>`. Updated our implementation.
+3. **`EditorUtility.InstanceIDToObject(int)` (CS0619, Fusion.Unity.Editor.cs:15076)**: Unity 6.5 upgraded the deprecation from warning to hard error. Patched with `EditorUtility.EntityIdToObject(id)` inline, marked with `SECOND SPAWN PATCH` so the patch can be reverted when Photon ships a Unity 6.5-aware Fusion 2.1.2+.
+4. **`SecondSpawn.Networking` not in `AssembliesToWeave`**: Fusion 2.1+ codegen weaver only processes assemblies listed in `NetworkProjectConfig.AssembliesToWeave`. Default was `Assembly-CSharp` + `Assembly-CSharp-firstpass` only. Added `SecondSpawn.Networking`, `SecondSpawn.Gameplay`, `SecondSpawn.AI` so any current or future scripts using `INetworkInput` / `NetworkBehaviour` / `[Networked]` get woven properly. Without this, `NetworkInputData` failed runtime with `ArgumentOutOfRangeException: ... has no attribute Fusion.NetworkInputWeavedAttribute`.
+5. **Mistakenly added `[NetworkInput]` attribute to `NetworkInputData` struct**: Fusion's `NetworkInput` is an interface (`INetworkInput`), not an attribute. Reverted - the weaver auto-injects `NetworkInputWeavedAttribute` based on the interface implementation when the assembly is in `AssembliesToWeave`.
+
+After these fixes, smoke test passed: `Host session ready. SessionInfo=SecondSpawn-Zone-Default IsServer=True` + `[Fusion] adding player [Player:1]`.
+
+## Original context (kept for record)
 
 ## Context
 

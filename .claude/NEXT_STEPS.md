@@ -34,13 +34,9 @@ Project at `D:\Projects\Second-Spawn\Unity`, name `Second Spawn` (with space, de
 - Asset Serialization Mode: Force Text (mode 2) - verified in `Unity/ProjectSettings/EditorSettings.asset`.
 - Render pipeline: URP 17.5.0.
 
-## ⚠️ BLOCKER (2026-05-14): Photon Fusion 2.0.12 vs Unity 6.5 beta API incompat
+## ✅ Photon Fusion 2.1.1-RC running clean (2026-05-14)
 
-Phase A smoke test revealed Photon Fusion 2.0.12 has 5+ Unity 6.5-deprecated API calls in its editor source that block compile. 3 of these were patched in `Assets/Photon/Fusion/Runtime/` with `SECOND SPAWN PATCH` markers, but the remaining ones in `Fusion.Unity.Editor.cs` need a strategic decision before more patches land.
-
-See [docs/adr/0007-photon-fusion-2-0-12-unity-6-5-beta-incompat.md](../docs/adr/0007-photon-fusion-2-0-12-unity-6-5-beta-incompat.md) for the 4 options (patch all / downgrade Unity 6.0 LTS / wait Photon update / switch framework). AI agent recommends Option B (downgrade Unity 6.0 LTS) per the re-evaluation trigger embedded in ADR 0005.
-
-**Until JOY decides**: networking work (Phase A smoke test, Phase B slice phase 2 prep) is parked. Non-networking tracks are safe to continue (Supabase setup, Go gateway, design docs).
+Phase A smoke test passed. Host session live on Photon Cloud, Player 1 joined. See [docs/adr/0007](../docs/adr/0007-photon-fusion-2-0-12-unity-6-5-beta-incompat.md) for the resolution path (Fusion 2.0.12 -> 2.1.1-RC + 4 fixes).
 
 ## 5. 🔜 Photon Fusion 2 (strategy locked in ADR 0006, JOY action required to install)
 
