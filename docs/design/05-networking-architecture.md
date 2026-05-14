@@ -76,7 +76,7 @@ The dedicated server NEVER trusts the LLM. All LLM responses parse into structur
 
 ## Networked types we will own
 
-The actual implementations land in `Assets/Scripts/Networking/` (assembly `SecondSpawn.Networking`) as Fusion 2 SDK is installed. Below is the architecture; code stubs are in place pre-SDK.
+The actual implementations land in `Assets/_SecondSpawn/Scripts/Networking/` (assembly `SecondSpawn.Networking`) as Fusion 2 SDK is installed. Below is the architecture; code stubs are in place pre-SDK.
 
 ### `NetworkRunnerProvider` (MonoBehaviour, singleton)
 
@@ -191,13 +191,13 @@ Numbers will be re-validated with Fusion bot load test (per `02-vertical-slice-s
 | Element | Status | Where |
 |---|---|---|
 | Photon Fusion 2 SDK installed | NOT YET (JOY action) | [docs/setup/fusion-install.md](../setup/fusion-install.md) |
-| `NetworkRunnerProvider` scaffold | Scaffold only (no Fusion API yet) | `Unity/Assets/Scripts/Networking/NetworkRunnerSetup.cs` |
-| `NetworkPlayer` scaffold | Scaffold only | `Unity/Assets/Scripts/Networking/NetworkPlayer.cs` |
-| `NetworkInputProvider` scaffold | Scaffold only | `Unity/Assets/Scripts/Networking/NetworkInputProvider.cs` |
+| `NetworkRunnerProvider` scaffold | Scaffold only (no Fusion API yet) | `Unity/Assets/_SecondSpawn/Scripts/Networking/NetworkRunnerSetup.cs` |
+| `NetworkPlayer` scaffold | Scaffold only | `Unity/Assets/_SecondSpawn/Scripts/Networking/NetworkPlayer.cs` |
+| `NetworkInputProvider` scaffold | Scaffold only | `Unity/Assets/_SecondSpawn/Scripts/Networking/NetworkInputProvider.cs` |
 | `NetworkZone` | Not started | TBD |
 | `IntentBridge` | Not started | will live next to `internal/intent` in backend/gateway concepts |
 | `OfflineAgentRunner` | Not started | server-only, Phase 7 |
-| Test scene | Default `SampleScene.unity` (URP template) - to rename when Fusion bootstrap lands | `Unity/Assets/Scenes/` |
+| Test scene | Default `SampleScene.unity` (URP template) - to rename when Fusion bootstrap lands | `Unity/Assets/_SecondSpawn/Scenes/` |
 | Load test (Fusion bots) | Not started | Phase 8 |
 
 ---

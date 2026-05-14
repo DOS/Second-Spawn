@@ -48,7 +48,7 @@ git lfs install
 git lfs pull
 ```
 
-Open the `Unity/` subfolder in Unity Hub, let it compile, then configure Photon app ID and Supabase URL in `Unity/Assets/Settings/`.
+Open the `Unity/` subfolder in Unity Hub, let it compile, then configure Photon app ID and Supabase URL in `Unity/Assets/_SecondSpawn/Settings/SecondSpawnConfig.asset`.
 
 ## Contributing
 

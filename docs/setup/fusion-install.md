@@ -43,7 +43,7 @@ Fusion ships several Plugins/ subfolders + a `Photon/` runtime folder. These con
 1. In Unity Project view, navigate to `Assets/Photon/Fusion/Resources/PhotonAppSettings.asset` (path Photon creates).
 2. Paste the App ID from Step 1 into the field labeled **App Id Fusion**.
 3. Save (Ctrl+S).
-4. Also paste the same App ID into `Assets/Settings/SecondSpawnConfig.asset` -> `PhotonAppId` field (once that .asset exists - see "Create SecondSpawnConfig asset" below).
+4. Also paste the same App ID into `Assets/_SecondSpawn/Settings/SecondSpawnConfig.asset` -> `PhotonAppId` field (once that .asset exists - see "Create SecondSpawnConfig asset" below).
 
 ## Step 5: Create the SecondSpawnConfig asset
 
@@ -51,7 +51,7 @@ The ScriptableObject definition was scaffolded in commit `f04aa3b` but the `.ass
 
 1. Focus Unity Editor and wait for recompile (look for spinner in bottom-right).
 2. After compile, menu: **Assets > Create > Second Spawn > Project Config**.
-3. Save the new asset at `Assets/Settings/SecondSpawnConfig.asset`.
+3. Save the new asset at `Assets/_SecondSpawn/Settings/SecondSpawnConfig.asset`.
 4. Set the fields in Inspector:
    - **Environment**: Development
    - **GatewayBaseUrl**: `http://localhost:8080` (for now)
@@ -81,7 +81,7 @@ Then tell it: "Fusion 2 SDK installed, App ID configured. Wire up the NetworkRun
 The AI agent will:
 
 1. Verify Fusion assemblies are loaded (`Fusion.Runtime`, `Fusion.Common`, etc).
-2. Replace the scaffold code in `Assets/Scripts/Networking/*.cs` with real `NetworkBehaviour` / `[Networked]` property implementations.
+2. Replace the scaffold code in `Assets/_SecondSpawn/Scripts/Networking/*.cs` with real `NetworkBehaviour` / `[Networked]` property implementations.
 3. Hook up `NetworkRunnerProvider` to start a Host Mode session in dev.
 4. Create a simple test: spawn a `NetworkPlayer` cube on player join, replicate position at 60Hz.
 5. Commit + push.

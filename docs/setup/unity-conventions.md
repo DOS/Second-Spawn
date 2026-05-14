@@ -17,45 +17,50 @@ In priority order when conventions conflict:
 
 ## Folder structure (Assets/ root)
 
-Current structure (committed as of 2026-05-14):
+We adopt the `_<ProjectName>/` wrapper pattern (community-standard, Tim D. Hoffmann + several AAA studios) so all custom SECOND SPAWN assets sort visibly above 3rd-party SDK imports in the Unity Project view. Underscore prefix pins the wrapper to the top alphabetically.
+
+Current structure (committed as of 2026-05-14, post-migration from flat layout):
 
 ```text
 Unity/Assets/
-├── Photon/                       # 3rd-party SDK, isolated per Unity guidance
-│   ├── Fusion/
-│   ├── FusionDemos/
-│   ├── FusionMenu/
-│   └── PhotonLibs/
-├── Scenes/
-│   └── SampleScene.unity         # URP template default - rename when slice phase 2 starts
-├── Scripts/                      # Custom code, one subfolder per assembly
-│   ├── AI/                       # SecondSpawn.AI assembly
-│   ├── Gameplay/                 # SecondSpawn.Gameplay
-│   ├── Networking/               # SecondSpawn.Networking (Photon Fusion 2 wiring)
-│   ├── NFT/                      # SecondSpawn.NFT (DOS Chain via thirdweb gateway)
-│   ├── Settings/                 # SecondSpawn.Settings (ScriptableObject configs)
-│   └── UI/                       # SecondSpawn.UI
-├── Settings/                     # URP renderer + pipeline assets (Unity-managed)
-└── InputSystem_Actions.inputactions   # Player input bindings (slice phase 2 uses this)
+├── _SecondSpawn/                 # ALL custom SECOND SPAWN assets live here
+│   ├── Scenes/
+│   │   └── SampleScene.unity     # URP template default - rename when slice phase 2 starts
+│   ├── Scripts/                  # Custom code, one subfolder per assembly
+│   │   ├── AI/                   # SecondSpawn.AI assembly
+│   │   ├── Gameplay/             # SecondSpawn.Gameplay
+│   │   ├── Networking/           # SecondSpawn.Networking (Photon Fusion 2 wiring)
+│   │   ├── NFT/                  # SecondSpawn.NFT (DOS Chain via thirdweb gateway)
+│   │   ├── Settings/             # SecondSpawn.Settings (ScriptableObject configs)
+│   │   └── UI/                   # SecondSpawn.UI
+│   ├── Settings/                 # URP renderer + pipeline assets, project ScriptableObject configs
+│   └── InputSystem_Actions.inputactions   # Player input bindings
+└── Photon/                       # 3rd-party SDK, kept at Assets root per Unity import default
+    ├── Fusion/
+    ├── FusionDemos/              # SDK sample scenes (kept as-is per JOY decision)
+    ├── FusionMenu/               # SDK sample scenes (kept as-is per JOY decision)
+    └── PhotonLibs/
 ```
 
-Folders to add as content lands (do NOT create empty - empty folders break version control unless `.keep` placeholder is added; we follow Unity's recommendation to create only what is needed):
+Folders to add INSIDE `_SecondSpawn/` as content lands (do NOT create empty - Unity guidance: empty folders break VCS unless `.keep` placeholder is added; create only what is needed):
 
-- `Materials/` - per asset type, not per character (Unity guidance: do NOT organize by domain)
-- `Textures/`
-- `Audio/`
-- `Prefabs/`
-- `Animations/`
-- `Editor/` - editor-only scripts, with its own asmdef per Unity guidance
+- `_SecondSpawn/Materials/` - per asset type, NOT per character (Unity guidance: do NOT organize by domain)
+- `_SecondSpawn/Textures/`
+- `_SecondSpawn/Audio/`
+- `_SecondSpawn/Prefabs/`
+- `_SecondSpawn/Animations/`
+- `_SecondSpawn/Scripts/<Module>/Editor/` - editor-only scripts, with its own asmdef per Unity guidance
 
-3rd-party assets (when imported beyond Photon):
+3rd-party assets (when imported beyond Photon) stay at `Assets/<Vendor>/` root, NOT inside `_SecondSpawn/`. The wrapper is for OUR code only:
 
 - Opsive Ultimate Character Controller -> `Assets/Opsive/`
 - Behavior Designer -> `Assets/BehaviorDesigner/`
 - Convai -> `Assets/Convai/`
 - Synty / Quaternius packs -> `Assets/Synty/<pack-name>/` or `Assets/Quaternius/<pack-name>/`
 
-Each 3rd-party folder is treated as immutable; modifications go through wrapper scripts in `Assets/Scripts/...`.
+Each 3rd-party folder is treated as immutable; modifications go through wrapper scripts in `_SecondSpawn/Scripts/...`.
+
+Migration note (2026-05-14): all custom assets that previously lived flat at `Assets/Scripts/`, `Assets/Scenes/`, `Assets/Settings/`, `Assets/InputSystem_Actions.inputactions` were moved into `Assets/_SecondSpawn/...` via Unity's `AssetDatabase.MoveAsset` (preserves GUIDs + cross-references). Photon was NOT moved - it stays at `Assets/Photon/` per the rule above.
 
 ## Naming conventions
 
@@ -84,22 +89,22 @@ Following Unity's "one assembly per logical module" guidance + the scaffold alre
 
 | Asmdef | Path | RootNamespace | References |
 |---|---|---|---|
-| `SecondSpawn.Gameplay` | `Assets/Scripts/Gameplay/` | `SecondSpawn.Gameplay` | (Opsive UCC when imported) |
-| `SecondSpawn.Networking` | `Assets/Scripts/Networking/` | `SecondSpawn.Networking` | `Fusion.Runtime`, `Fusion.Common`, `Fusion.Realtime`, `Unity.InputSystem` |
-| `SecondSpawn.AI` | `Assets/Scripts/AI/` | `SecondSpawn.AI` | `SecondSpawn.Networking` |
-| `SecondSpawn.UI` | `Assets/Scripts/UI/` | `SecondSpawn.UI` | `SecondSpawn.Gameplay` |
-| `SecondSpawn.NFT` | `Assets/Scripts/NFT/` | `SecondSpawn.NFT` | (thirdweb-api MCP server-side; client-side will reference Supabase wallet auth wrapper) |
-| `SecondSpawn.Settings` | `Assets/Scripts/Settings/` | `SecondSpawn.Settings` | (none - leaf, ScriptableObject configs) |
+| `SecondSpawn.Gameplay` | `Assets/_SecondSpawn/Scripts/Gameplay/` | `SecondSpawn.Gameplay` | (Opsive UCC when imported) |
+| `SecondSpawn.Networking` | `Assets/_SecondSpawn/Scripts/Networking/` | `SecondSpawn.Networking` | `Fusion.Runtime`, `Fusion.Common`, `Fusion.Realtime`, `Unity.InputSystem` |
+| `SecondSpawn.AI` | `Assets/_SecondSpawn/Scripts/AI/` | `SecondSpawn.AI` | `SecondSpawn.Networking` |
+| `SecondSpawn.UI` | `Assets/_SecondSpawn/Scripts/UI/` | `SecondSpawn.UI` | `SecondSpawn.Gameplay` |
+| `SecondSpawn.NFT` | `Assets/_SecondSpawn/Scripts/NFT/` | `SecondSpawn.NFT` | (thirdweb-api MCP server-side; client-side will reference Supabase wallet auth wrapper) |
+| `SecondSpawn.Settings` | `Assets/_SecondSpawn/Scripts/Settings/` | `SecondSpawn.Settings` | (none - leaf, ScriptableObject configs) |
 
 When adding editor-only scripts in any module:
 
-- Create `Assets/Scripts/<module>/Editor/` subfolder
+- Create `Assets/_SecondSpawn/Scripts/<module>/Editor/` subfolder
 - Add asmdef `SecondSpawn.<Module>.Editor.asmdef` with platform Editor only
 - Reference parent asmdef + UnityEditor
 
 When a module needs Tests:
 
-- Create `Assets/Scripts/<module>/Tests/` subfolder
+- Create `Assets/_SecondSpawn/Scripts/<module>/Tests/` subfolder
 - Add asmdef `SecondSpawn.<Module>.Tests.asmdef` with `optionalUnityReferences: ["TestAssemblies"]`
 - Reference `SecondSpawn.<module>` + `nunit.framework`
 
@@ -120,7 +125,7 @@ public sealed class FooConfig : ScriptableObject { ... }
 
 `menuName` ALWAYS prefixed with `Second Spawn/` so the create menu groups SECOND SPAWN scriptables together (Inspector right-click > Create > Second Spawn > ...).
 
-`fileName` matches the class name. Asset instances live in `Assets/Settings/<Name>.asset` for project-global configs, or under the relevant feature folder for feature-local configs.
+`fileName` matches the class name. Asset instances live in `Assets/_SecondSpawn/Settings/<Name>.asset` for project-global configs, or under the relevant feature folder for feature-local configs.
 
 ## Scene organization
 
@@ -169,22 +174,22 @@ Items below are KNOWN deviations to address as work lands; not blockers for curr
 
 | Deviation | Reason | Resolution |
 |---|---|---|
-| `Assets/Scenes/SampleScene.unity` is URP template default | Project just initialized | Rename to `ZoneTest_Hub.unity` when slice phase 2 networking goes into a real scene; rebuild hierarchy per "Scene organization" above |
-| `Assets/Settings/SecondSpawnConfig.asset` instance not yet created | Domain reload gate - asmdef compiled but type not loaded into AppDomain at scaffold-write time | JOY clicks Editor menu Assets > Create > Second Spawn > Project Config + saves to `Assets/Settings/SecondSpawnConfig.asset`. One-time. |
-| `Assets/Materials/`, `Assets/Textures/`, `Assets/Audio/`, `Assets/Prefabs/`, `Assets/Animations/` do not exist | No art assets imported yet | Create when first asset of that type lands. Do NOT pre-create empty (Unity guidance: empty folders break VCS) |
-| No `Assets/Editor/` or per-module `Editor/` subfolders | No editor-only scripts yet | Add per the asmdef convention above when first editor tool is needed |
-| No `Assets/Tests/` or per-module `Tests/` subfolders | No tests yet | Add per asmdef convention when first test lands; CI workflow `.github/workflows/unity-build.yml` already references `unity-test-runner` for both EditMode and PlayMode |
-| Photon SDK demos / menu samples imported (`Photon/FusionDemos`, `Photon/FusionMenu`) | Default unitypackage import included them | Defer cleanup decision to post slice phase 2 - removing now risks breaking sample references; revisit after first real scene works |
+| `_SecondSpawn/Scenes/SampleScene.unity` is URP template default | Project just initialized | Rename to `ZoneTest_Hub.unity` when slice phase 2 networking goes into a real scene; rebuild hierarchy per "Scene organization" above |
+| `_SecondSpawn/Settings/SecondSpawnConfig.asset` instance not yet created | Domain reload gate - asmdef compiled but type not loaded into AppDomain at scaffold-write time | JOY clicks Editor menu Assets > Create > Second Spawn > Project Config + saves to `_SecondSpawn/Settings/SecondSpawnConfig.asset`. One-time. |
+| `_SecondSpawn/Materials/`, `Textures/`, `Audio/`, `Prefabs/`, `Animations/` do not exist | No art assets imported yet | Create when first asset of that type lands. Do NOT pre-create empty (Unity guidance: empty folders break VCS) |
+| No `_SecondSpawn/Scripts/<module>/Editor/` subfolders | No editor-only scripts yet | Add per the asmdef convention above when first editor tool is needed |
+| No `_SecondSpawn/Scripts/<module>/Tests/` subfolders | No tests yet | Add per asmdef convention when first test lands; CI workflow `.github/workflows/unity-build.yml` already references `unity-test-runner` for both EditMode and PlayMode |
+| Photon SDK demos / menu samples kept (`Photon/FusionDemos`, `Photon/FusionMenu`) | JOY decision (2026-05-14): "thêm 1 thư mục thôi, để như hiện tại" - low project-view cost | Keep as-is. Revisit only if cleanup needed for ship build size |
 
-## Open questions for JOY
+## Resolved decisions (2026-05-14)
 
-| Question | Why it matters | Proposed default |
+| Question | JOY decision | Notes |
 |---|---|---|
-| Adopt `_Project` wrapper folder convention? (community style guide recommends `Assets/_Project/<all custom>/` so 3rd-party assets sort visibly below) | Cleaner Unity Editor Project view; non-trivial refactor cost | NOT adopt for now. Photon SDK is the only 3rd-party + clearly named. Revisit if 3+ 3rd-party SDKs land |
-| Adopt `Assets/_Scripts/` underscore prefix? | Pins Scripts/ at top of Project view alphabetically | NOT adopt. PascalCase consistency wins; Project view sort is configurable per-user |
-| Naming for per-zone scenes: `Zone_<Name>.unity` or `<Name>Zone.unity`? | Determines how scenes sort in Editor | `Zone_<Name>.unity` (group by type, then name) |
-| Naming for boss scenes: `Boss_<Name>.unity` or part of zone scene? | Slice phase 4 (dungeon + boss) | `Boss_<Name>.unity` separate scene loaded additively when player enters dungeon |
-| Photon FusionDemos + FusionMenu - keep, mark deferred, or remove? | They are sample scenes that bloat the project view | Mark deferred (move to `Assets/Photon/_Samples/` subfolder OR add to `.gitignore` if removed). Defer to JOY |
+| Adopt wrapper folder convention? | **YES, `_SecondSpawn/`** (chose project-name over generic `_Game` or `_Project`) | Migrated 2026-05-14. JOY rationale: "chỉ có Photon mới là cost thấp đó. Đợi 100 cái plugin, asset folder rồi làm thì sao?" - migrate now while only 1 SDK exists |
+| Adopt `_Scripts/` underscore prefix INSIDE `_SecondSpawn/`? | **NO** | Redundant; `_SecondSpawn/` already pinned to top. PascalCase sub-folders (`Scripts/`, `Scenes/`, `Settings/`). |
+| Per-zone scene naming | **`Zone_<Name>.unity`** | Group-by-type then name (e.g., `Zone_DesertHub.unity`, `Zone_DungeonAwakening.unity`) |
+| Boss scene naming | **`Boss_<Name>.unity`** as separate file, additive load | Slice phase 4 wires this when first dungeon ships |
+| Photon FusionDemos + FusionMenu cleanup | **Keep as-is** | JOY: "thêm 1 thư mục thôi, để như hiện tại có sao đâu". Revisit if ship build size becomes concern |
 
 ## References
 

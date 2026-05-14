@@ -44,8 +44,8 @@ Detailed step-by-step in [docs/setup/fusion-install.md](../docs/setup/fusion-ins
 2. JOY: create a Fusion app -> copy the App ID
 3. JOY: download Fusion 2 SDK `.unitypackage` from <https://doc.photonengine.com/fusion/current/getting-started/sdk-download>
 4. JOY: import via Unity Editor menu **Assets > Import Package > Custom Package**
-5. JOY: paste the App ID into `Unity/Assets/Photon/Fusion/Resources/PhotonAppSettings.asset` AND `Unity/Assets/Settings/SecondSpawnConfig.asset`
-6. JOY: tell the AI agent "Fusion 2 SDK installed, App ID configured" - then the agent (Coplay Unity MCP) replaces the scaffold scripts in `Unity/Assets/Scripts/Networking/` with real Fusion `NetworkBehaviour` / `[Networked]` implementations per [docs/design/05-networking-architecture.md](../docs/design/05-networking-architecture.md).
+5. JOY: paste the App ID into `Unity/Assets/Photon/Fusion/Resources/PhotonAppSettings.asset` AND `Unity/Assets/_SecondSpawn/Settings/SecondSpawnConfig.asset`
+6. JOY: tell the AI agent "Fusion 2 SDK installed, App ID configured" - then the agent (Coplay Unity MCP) replaces the scaffold scripts in `Unity/Assets/_SecondSpawn/Scripts/Networking/` with real Fusion `NetworkBehaviour` / `[Networked]` implementations per [docs/design/05-networking-architecture.md](../docs/design/05-networking-architecture.md).
 
 DO NOT import BR200 / Karts / Tanknarok template packages into this repo. Per [ADR 0006](../docs/adr/0006-fusion-2-scratch-over-template.md), patterns are extracted in a separate scratch project, never copied into the AGPL-3.0 source tree.
 
@@ -72,13 +72,13 @@ Once `unity-mcp` tools appear:
 
 1. Probe: list scenes, list assets root, confirm `SampleScene.unity` is the active scene.
 2. Create assembly definition skeleton:
-   - `Unity/Assets/Scripts/SecondSpawn.Gameplay.asmdef`
-   - `Unity/Assets/Scripts/SecondSpawn.Networking.asmdef`
-   - `Unity/Assets/Scripts/SecondSpawn.AI.asmdef` (offline AI agent runtime)
-   - `Unity/Assets/Scripts/SecondSpawn.UI.asmdef`
-   - `Unity/Assets/Scripts/SecondSpawn.NFT.asmdef`
+   - `Unity/Assets/_SecondSpawn/Scripts/Gameplay/SecondSpawn.Gameplay.asmdef`
+   - `Unity/Assets/_SecondSpawn/Scripts/Networking/SecondSpawn.Networking.asmdef`
+   - `Unity/Assets/_SecondSpawn/Scripts/AI/SecondSpawn.AI.asmdef` (offline AI agent runtime)
+   - `Unity/Assets/_SecondSpawn/Scripts/UI/SecondSpawn.UI.asmdef`
+   - `Unity/Assets/_SecondSpawn/Scripts/NFT/SecondSpawn.NFT.asmdef`
    - Place 1 placeholder `MonoBehaviour` (or `static class`) per asmdef so Unity tracks the folder + GUID.
-3. Create `Assets/Settings/SecondSpawnConfig.cs` ScriptableObject + the corresponding `.asset` instance with placeholder fields for `SupabaseURL`, `SupabaseAnonKey`, `GatewayBaseURL`.
+3. Create `Assets/_SecondSpawn/Scripts/Settings/SecondSpawnConfig.cs` ScriptableObject + the corresponding `.asset` instance at `Assets/_SecondSpawn/Settings/SecondSpawnConfig.asset` with placeholder fields for `SupabaseURL`, `SupabaseAnonKey`, `GatewayBaseURL`.
 4. Configure URP settings (single Universal Renderer, target 60Hz tick).
 5. Remove URP template tutorial assets that aren't needed: `Assets/Readme.asset`, `Assets/TutorialInfo/`. (Keep `InputSystem_Actions.inputactions` - we will use Input System.)
 6. Wait for JOY to provide Photon Fusion App ID before installing Fusion SDK (Step 5).
@@ -88,7 +88,7 @@ Once `unity-mcp` tools appear:
 
 1. Create Supabase project (reuse DOS.Me org)
 2. Get URL + anon key + service role key
-3. Service role key goes to `backend/gateway/.env` (gitignored), anon key OK in Unity `Unity/Assets/Settings/SecondSpawnConfig.asset` (anon is public-safe)
+3. Service role key goes to `backend/gateway/.env` (gitignored), anon key OK in Unity `Unity/Assets/_SecondSpawn/Settings/SecondSpawnConfig.asset` (anon is public-safe)
 4. Set up Auth providers (email + DOS Chain wallet sign-in)
 
 ## 8. ⏸ GitLab workstation mirror (defer until repo activity warrants)

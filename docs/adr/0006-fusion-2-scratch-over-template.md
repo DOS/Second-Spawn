@@ -87,7 +87,7 @@ open-source.
    read-only reference) for:
    - JOY's prior Fusion 2 architecture decisions
    - Adaptations Photon's BR200 needed to ship
-6. Implement our networking layer in `Assets/Scripts/Networking/` (the
+6. Implement our networking layer in `Assets/_SecondSpawn/Scripts/Networking/` (the
    `SecondSpawn.Networking` assembly we already scaffolded).
 7. Each Fusion concept lands with a comment header citing the source
    sample + page reference, so reviewers can validate we extracted
