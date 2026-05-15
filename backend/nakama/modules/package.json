@@ -1,0 +1,15 @@
+{
+  "name": "@second-spawn/nakama-modules",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "nakama-runtime": "https://github.com/heroiclabs/nakama-common#v1.45.0"
+  },
+  "devDependencies": {
+    "typescript": "5.4.5"
+  }
+}

@@ -86,6 +86,8 @@ appsettings.Local.json
 # Backend / gateway local dev
 backend/.env
 backend/node_modules/
+backend/**/node_modules/
+backend/**/build/
 backend/dist/
 
 # Photon credentials (if checked-in template)

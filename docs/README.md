@@ -16,16 +16,18 @@ This documentation is the canonical public design and architecture source for th
 
 ## Current Prototype Focus
 
-The current implementation focus is a thin, networked player-controller prototype:
+The current implementation focus is a thin, networked player-controller prototype plus a self-hostable game-backend base:
 
 - Minimal Fusion controller first.
 - Opsive Ultimate Character Controller evaluated after the baseline works.
+- Nakama OSS runs locally as the primary game-backend direction.
 - No large Unity asset imports until the movement, camera, and authority contract are verified.
 
 Relevant docs:
 
 - [Overview Design](design/06-overview-design.md)
 - [Networked Player Controller Prototype](design/07-player-controller-prototype.md)
+- [Nakama Backend Setup](setup/nakama-backend.md)
 
 ## Signature Features
 
@@ -40,4 +42,3 @@ Relevant docs:
 - Vietnamese notes may live under `docs/vi/` when needed, but English docs remain the source of truth.
 - If Vietnamese notes and English docs conflict, the English canonical docs win.
 - `/docs` is public-facing through GitBook. Do not place private credentials, internal-only secrets, or unpublished partner details here.
-

@@ -1,0 +1,15 @@
+name: second-spawn
+
+logger:
+  level: DEBUG
+
+session:
+  token_expiry_sec: 7200
+  refresh_token_expiry_sec: 604800
+
+console:
+  username: admin
+  password: password
+
+runtime:
+  path: /nakama/data/modules/build

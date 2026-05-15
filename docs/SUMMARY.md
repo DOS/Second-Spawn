@@ -28,10 +28,11 @@
 - [ADR 0007: Fusion 2.0.12 Unity 6.5 Beta Incompatibility](adr/0007-photon-fusion-2-0-12-unity-6-5-beta-incompat.md)
 - [ADR 0008: Codex Primary Agent Workflow](adr/0008-codex-primary-agent-workflow.md)
 - [ADR 0009: Fusion Networking Assembly Unsafe Code](adr/0009-fusion-networking-assembly-unsafe-code.md)
+- [ADR 0010: Nakama OSS Game Backend](adr/0010-nakama-oss-game-backend.md)
 
 ## Setup
 
 - [Agent Handoff](setup/agent-handoff.md)
 - [Fusion Install](setup/fusion-install.md)
+- [Nakama Backend](setup/nakama-backend.md)
 - [Unity Conventions](setup/unity-conventions.md)
-

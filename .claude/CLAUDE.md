@@ -66,12 +66,13 @@ International-friendly framing. Explained via science (Nibirium, biotech, consci
 
 ### Backend
 
-- **Supabase Auth** (reuse DOS.Me pattern, do not invent new auth)
-- **Supabase Postgres** (durable state: profile, inventory, quest progress, NFT lock state, cultivation tier)
-- **Supabase Realtime** (chat global, presence, friend, party invite, notification - NOT for combat / movement sync)
-- **Supabase Storage** (avatar, screenshot, UGC)
+- **Nakama OSS** (primary game backend: account mapping, server runtime RPCs, social/game metadata, profile, inventory, wallet, leaderboard, matchmaking-adjacent systems)
+- **Nakama Postgres** (separate database owned by Nakama; do not point Nakama at the Supabase app database)
+- **Supabase Auth** (identity bridge / app account layer, reusing DOS.Me pattern where useful)
+- **Supabase Postgres / Storage / Realtime** (app/admin/supporting data only, not authoritative gameplay and not Nakama-owned schema)
 - **Go LLM Gateway** (reuse DOSRouter pattern, self-host VPS, low-latency)
 - **Redis** (session, rate limit, transient cache)
+- **Hiro / Satori** (deferred; commercial / license-dependent, do not adopt without pricing review and ADR)
 
 ### LLM
 
@@ -303,7 +304,7 @@ OUT of scope for vertical slice:
 2. **NEVER let LLM mutate authoritative game state.** Server validates all intent.
 3. **NEVER put API keys (Anthropic, OpenAI, Convai, ElevenLabs) in Unity client.** All LLM calls go through Go gateway.
 4. **NEVER use Host Mode for production.** Server Mode dedicated only.
-5. **NEVER add Nakama, OpenAuth, or new auth / social stack.** Reuse Supabase + DOS.Me patterns.
+5. **NEVER add OpenAuth or replace the backend / auth / social stack without an ADR and JOY approval.** Nakama OSS is approved as the primary game-backend direction by ADR 0010. Hiro and Satori remain deferred until license and pricing are reviewed.
 6. **NEVER change Unity Asset Serialization away from Force Text.** Breaks LFS + diff.
 7. **NEVER claim "done" without reviewer pass** (JOY is non-coder, cannot review code himself).
 8. **ALWAYS edit BOTH `.claude/CLAUDE.md` and `AGENTS.md` together when updating project context.** They are sister files - Claude Code auto-loads CLAUDE.md, Codex CLI / Cursor / Copilot auto-load AGENTS.md. Edit one without the other = drift; the un-updated file lies to whichever agent reads it. Both files MUST be identical except for the sister-file comment header at line 1.
@@ -318,3 +319,4 @@ OUT of scope for vertical slice:
 - Voice NPC vendor (OpenAI Realtime vs ElevenLabs vs self-host)
 - Dedicated server hosting (Hetzner specs, region)
 - Photon Fusion 2 license tier when scaling beyond Cloud free 20 CCU
+- Hiro / Satori adoption and pricing
