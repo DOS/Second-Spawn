@@ -55,7 +55,7 @@ Deferred:
 
 - Unity SDK integration.
 - Supabase JWT verification / custom authentication bridge.
-- Production secret rotation and non-default Nakama keys.
+- Production secret rotation and non-default Nakama keys. The secret names are documented in `backend/nakama/.env.example`, but values are not committed.
 - Inventory, wallet, profile, quest, and SECOND token RPCs.
 - Production deployment hardening, including Prometheus Alertmanager or Grafana Telegram alerts.
 - Hiro, Satori, and Heroic Cloud.

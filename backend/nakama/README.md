@@ -74,6 +74,18 @@ Copy-Item .env.example .env
 docker compose -f docker-compose.supabase.yml up --build
 ```
 
+Before deploying outside local dev, also set non-default values for:
+
+- `NAKAMA_CONSOLE_USERNAME`
+- `NAKAMA_CONSOLE_PASSWORD`
+- `NAKAMA_CONSOLE_SIGNING_KEY`
+- `NAKAMA_SOCKET_SERVER_KEY`
+- `NAKAMA_SESSION_ENCRYPTION_KEY`
+- `NAKAMA_SESSION_REFRESH_ENCRYPTION_KEY`
+- `NAKAMA_RUNTIME_HTTP_KEY`
+
+Do not reuse the local `admin` / `password` console credentials in production.
+
 ## Alerting
 
 Nakama exposes Prometheus metrics on port `9100`. Telegram alerts should be wired through Prometheus Alertmanager or Grafana Alerting with secrets stored outside Git.
