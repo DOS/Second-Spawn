@@ -16,7 +16,7 @@ Adopt **Nakama OSS** as the primary game backend direction for SECOND SPAWN.
 
 Initial implementation lives in `backend/nakama/` and uses the official Heroic Labs Docker image, not copied source code or a fork. The monorepo stores only project configuration and custom SECOND SPAWN runtime modules.
 
-Supabase remains available for identity bridge, app/admin tooling, and DOS.Me ecosystem integration. Nakama owns its own Postgres database and schema. Do not point Nakama at the Supabase app database.
+Supabase remains available for identity bridge, app/admin tooling, and DOS.Me ecosystem integration. Nakama owns its own database schema. The preferred clean production shape is a separate Nakama Postgres database, but a Supabase project can host Nakama for MVP if Nakama uses a dedicated role and the isolated `second` schema.
 
 Photon Fusion remains the authoritative gameplay networking layer. Nakama is not responsible for frame-level movement, combat simulation, or Fusion object authority.
 
@@ -46,6 +46,7 @@ Included now:
 
 - Local Docker Compose setup for Nakama + Postgres.
 - Nakama Prometheus metrics port exposed for future monitoring and alerting.
+- Verified Supabase Session Pooler schema-isolated mode using schema `second`.
 - Pinned Nakama version and matching TypeScript runtime dependency.
 - Minimal TypeScript runtime module to prove module loading.
 - Documentation for local operation and upgrade policy.
@@ -54,6 +55,7 @@ Deferred:
 
 - Unity SDK integration.
 - Supabase JWT verification / custom authentication bridge.
+- Production secret rotation and non-default Nakama keys.
 - Inventory, wallet, profile, quest, and SECOND token RPCs.
 - Production deployment hardening, including Prometheus Alertmanager or Grafana Telegram alerts.
 - Hiro, Satori, and Heroic Cloud.
@@ -103,7 +105,7 @@ Deferred:
 
 ### Negative
 
-- Adds a second backend database beside Supabase.
+- Adds a second backend database beside Supabase, unless MVP production uses a schema-isolated Supabase project.
 - Requires clear ownership boundaries to avoid duplicated profile/inventory state.
 - Requires Docker and service operations earlier in the project.
 
@@ -123,6 +125,7 @@ Deferred:
 - Nakama Console is reachable on `127.0.0.1:7351`.
 - The custom TypeScript runtime logs a successful load message.
 - The `secondspawn_health` RPC returns a JSON health response after a test client authenticates.
+- Supabase Session Pooler mode can run Nakama migrations into schema `second`, start Nakama, and serve `secondspawn_health`.
 
 ## Related decisions
 

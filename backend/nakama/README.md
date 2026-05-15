@@ -53,6 +53,19 @@ When upgrading Nakama:
 - Supabase remains identity / app / admin layer only unless a future ADR changes this.
 - Hiro and Satori are deferred until license and pricing review.
 
+## Supabase Schema-Isolated Mode
+
+For MVP production, Nakama may use a Supabase project through the Session Pooler if it has a dedicated role and an isolated schema.
+
+Verified shape:
+
+- Schema: `second`
+- Role: `nakama_second`
+- Pooler: Session Pooler on port `5432`
+- Search path: `second, public`
+
+Do not use the Supabase `postgres` role for Nakama in production. Do not commit the connection string.
+
 ## Alerting
 
 Nakama exposes Prometheus metrics on port `9100`. Telegram alerts should be wired through Prometheus Alertmanager or Grafana Alerting with secrets stored outside Git.

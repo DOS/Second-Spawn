@@ -61,6 +61,45 @@ The RPC should return:
 - Supabase remains identity / app / admin layer unless a future ADR changes this.
 - Hiro and Satori are deferred until license and pricing review.
 
+## Supabase Schema-Isolated Mode
+
+For MVP production, Nakama can run against a Supabase project if it uses a dedicated role and isolated schema.
+
+Tested on 2026-05-15:
+
+- Supabase Session Pooler worked on port `5432`.
+- Schema name: `second`.
+- Role name: `nakama_second`.
+- Nakama 3.38.0 migrations created 20 tables in schema `second`.
+- Nakama server started against the Supabase pooler.
+- `secondspawn_health` RPC returned a valid response.
+
+Setup shape:
+
+```sql
+create schema if not exists second;
+create role nakama_second login password '<secret>';
+grant connect on database postgres to nakama_second;
+grant usage, create on schema second to nakama_second;
+alter role nakama_second in database postgres set search_path = second, public;
+```
+
+Use the Supabase **Session Pooler** URI for Nakama. Do not use Transaction Pooler for the running Nakama service.
+
+Connection username format:
+
+```text
+nakama_second.<supabase-project-ref>
+```
+
+Connection address shape:
+
+```text
+nakama_second.<supabase-project-ref>:<secret>@<region>.pooler.supabase.com:5432/postgres?sslmode=require
+```
+
+Do not commit this connection string. Store it in production secrets.
+
 ## Alerting
 
 Prometheus can scrape Nakama metrics from port `9100`. Telegram notifications should be handled by Prometheus Alertmanager or Grafana Alerting. Bot tokens and chat IDs must stay in local secrets, not in Git.
