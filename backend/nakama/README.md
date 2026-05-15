@@ -8,7 +8,7 @@ This folder stores project configuration and custom runtime modules only. Do not
 
 - Nakama OSS: `registry.heroiclabs.com/heroiclabs/nakama:3.38.0`
 - Nakama runtime types: `nakama-common#v1.45.0`
-- Postgres: `postgres:16-alpine`
+- Postgres: `postgres:16.14-alpine`
 
 Nakama owns its own Postgres database. Do not point it at the Supabase app database.
 
@@ -23,6 +23,7 @@ Endpoints:
 
 - Nakama HTTP API: `http://127.0.0.1:7350`
 - Nakama Console: `http://127.0.0.1:7351`
+- Nakama Prometheus metrics: `http://127.0.0.1:9100`
 - Console credentials: `admin` / `password`
 - Local Postgres: `127.0.0.1:5433`
 
@@ -51,3 +52,7 @@ When upgrading Nakama:
 - Nakama handles game backend and meta-game services.
 - Supabase remains identity / app / admin layer only unless a future ADR changes this.
 - Hiro and Satori are deferred until license and pricing review.
+
+## Alerting
+
+Nakama exposes Prometheus metrics on port `9100`. Telegram alerts should be wired through Prometheus Alertmanager or Grafana Alerting with secrets stored outside Git.

@@ -45,6 +45,7 @@ Supabase Auth / app data
 Included now:
 
 - Local Docker Compose setup for Nakama + Postgres.
+- Nakama Prometheus metrics port exposed for future monitoring and alerting.
 - Pinned Nakama version and matching TypeScript runtime dependency.
 - Minimal TypeScript runtime module to prove module loading.
 - Documentation for local operation and upgrade policy.
@@ -54,7 +55,7 @@ Deferred:
 - Unity SDK integration.
 - Supabase JWT verification / custom authentication bridge.
 - Inventory, wallet, profile, quest, and SECOND token RPCs.
-- Production deployment hardening.
+- Production deployment hardening, including Prometheus Alertmanager or Grafana Telegram alerts.
 - Hiro, Satori, and Heroic Cloud.
 
 ## Alternatives considered

@@ -12,7 +12,7 @@ See [ADR 0010](../adr/0010-nakama-oss-game-backend.md) for the decision.
 
 - Nakama OSS: `registry.heroiclabs.com/heroiclabs/nakama:3.38.0`
 - Nakama runtime types: `nakama-common#v1.45.0`
-- Postgres: `postgres:16-alpine`
+- Postgres: `postgres:16.14-alpine`
 
 Nakama owns its own Postgres database. Do not point Nakama at the Supabase app database.
 
@@ -27,6 +27,7 @@ Endpoints:
 
 - Nakama HTTP API: `http://127.0.0.1:7350`
 - Nakama Console: `http://127.0.0.1:7351`
+- Nakama Prometheus metrics: `http://127.0.0.1:9100`
 - Console credentials: `admin` / `password`
 - Local Nakama Postgres: `127.0.0.1:5433`
 
@@ -59,3 +60,7 @@ The RPC should return:
 - Nakama handles game backend and meta-game services.
 - Supabase remains identity / app / admin layer unless a future ADR changes this.
 - Hiro and Satori are deferred until license and pricing review.
+
+## Alerting
+
+Prometheus can scrape Nakama metrics from port `9100`. Telegram notifications should be handled by Prometheus Alertmanager or Grafana Alerting. Bot tokens and chat IDs must stay in local secrets, not in Git.
