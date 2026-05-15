@@ -16,7 +16,7 @@ Adopt **Nakama OSS** as the primary game backend direction for SECOND SPAWN.
 
 Initial implementation lives in `backend/nakama/` and uses the official Heroic Labs Docker image, not copied source code or a fork. The monorepo stores only project configuration and custom SECOND SPAWN runtime modules.
 
-Supabase remains available for identity bridge, app/admin tooling, and DOS.Me ecosystem integration. Nakama owns its own database schema. The preferred clean production shape is a separate Nakama Postgres database, but a Supabase project can host Nakama for MVP if Nakama uses a dedicated role and the isolated `second` schema.
+Supabase remains available for identity bridge, app/admin tooling, and DOS.Me ecosystem integration. Nakama owns its own database schema. For MVP production, the accepted shape is to host Nakama inside the Supabase project using dedicated role `nakama_second` and isolated schema `second`. This keeps operations simple while preserving a clean API boundary. A separate managed Postgres is a later operational isolation option, not a scale fix by itself.
 
 Photon Fusion remains the authoritative gameplay networking layer. Nakama is not responsible for frame-level movement, combat simulation, or Fusion object authority.
 
@@ -31,7 +31,7 @@ Unity client
   |------------------------------------------------> Nakama OSS
                                                         |
                                                         v
-                                                   Nakama Postgres
+                                      Supabase Postgres schema `second`
 
 Supabase Auth / app data
   ^                          Go LLM Gateway
@@ -102,12 +102,14 @@ Deferred:
 - Keeps game backend self-hostable and compatible with the open-source project direction.
 - Provides a clean place for server-authoritative meta-game RPCs.
 - Keeps Fusion focused on gameplay simulation.
+- Avoids an extra managed Postgres service for MVP production by using schema isolation in Supabase.
 
 ### Negative
 
-- Adds a second backend database beside Supabase, unless MVP production uses a schema-isolated Supabase project.
+- Adds Nakama as a backend API layer and operational surface.
 - Requires clear ownership boundaries to avoid duplicated profile/inventory state.
 - Requires Docker and service operations earlier in the project.
+- Requires discipline to keep schema `second` private and inaccessible through client-side Supabase APIs.
 
 ### Risks
 
@@ -117,6 +119,10 @@ Deferred:
   - Mitigation: only add RPCs needed by the current milestone.
 - **Commercial feature temptation:** Hiro/Satori may look convenient but change the cost profile.
   - Mitigation: defer until pricing and license review.
+- **Supabase schema exposure:** Supabase warns that RLS is disabled on Nakama tables.
+  - Mitigation: do not expose schema `second` through Supabase client APIs; treat it as private backend data accessed only by Nakama role `nakama_second`.
+- **Shared database blast radius:** Nakama and app data share the Supabase project in MVP production.
+  - Mitigation: monitor connection and query pressure, keep backups clear, and move schema `second` to a separate managed Postgres only if operational isolation becomes necessary.
 
 ## Validation criteria
 

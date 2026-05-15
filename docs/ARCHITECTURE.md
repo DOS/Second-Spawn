@@ -23,21 +23,29 @@ High-level architecture overview. For detailed component design see `docs/design
            |                  |
            |                  | LLM intent request
            v                  v
-   +---------------+   +----------------------------+
-   | Supabase      |   | Go LLM Gateway             |
-   | - Auth        |   | - Convai (phase 1)         |
-   | - Postgres    |   | - Anthropic + OpenAI (P2)  |
-   | - Realtime    |   | - RAG memory (pgvector)    |
-   | - Storage     |   | - Rate limit + safety      |
-   +---------------+   +-------------+--------------+
-           |                         |
-           v                         v
-   +---------------+   +----------------------------+
-   | DOS Chain     |   | Redis                      |
-   | (NFT, wallet) |   | - Session                  |
-   | via thirdweb  |   | - Rate limit               |
-   |               |   | - Transient cache          |
-   +---------------+   +----------------------------+
+   +------------------------------+   +----------------------------+
+   | Nakama OSS                   |   | Go LLM Gateway             |
+   | - Game API backend           |   | - Convai (phase 1)         |
+   | - Runtime RPC validation     |   | - Anthropic + OpenAI (P2)  |
+   | - Profile / inventory        |   | - RAG memory (pgvector)    |
+   | - Wallet / leaderboard       |   | - Rate limit + safety      |
+   +--------------+---------------+   +-------------+--------------+
+                  |                                 |
+                  v                                 v
+   +------------------------------+   +----------------------------+
+   | Supabase                     |   | Redis                      |
+   | - Auth / identity            |   | - Session                  |
+   | - Schema `second` for Nakama |   | - Rate limit               |
+   | - App/admin data             |   | - Transient cache          |
+   | - Storage / Realtime         |   +----------------------------+
+   +--------------+---------------+
+                  |
+                  v
+   +---------------+
+   | DOS Chain     |
+   | (NFT, wallet) |
+   | via thirdweb  |
+   +---------------+
 ```
 
 ## Component Responsibilities
@@ -45,7 +53,8 @@ High-level architecture overview. For detailed component design see `docs/design
 ### Unity Client
 
 - Render, input, local prediction
-- Communicates only with Fusion server and Supabase Auth
+- Communicates with Fusion server for gameplay, Supabase Auth for identity, and Nakama APIs for game backend state
+- NEVER reads or writes Nakama-owned tables directly through Supabase REST or Realtime
 - NEVER calls LLM API directly
 - NEVER holds API keys
 - Receives state updates via Fusion tick
@@ -55,7 +64,7 @@ High-level architecture overview. For detailed component design see `docs/design
 - Source of truth for in-zone state (position, HP, combat, drops)
 - Source of truth for `BodyTime` earn, spend, drain, transfer, and expiration
 - Validates every action intent (from player input or AI agent)
-- Persists durable state to Supabase Postgres (snapshots + events)
+- Persists durable meta-game state through Nakama server RPCs, not direct client writes
 - Triggers LLM gateway for NPC dialogue when triggered
 - Manages zone lifecycle (load / unload / spawn)
 - Tick rate: 30Hz (60Hz for boss encounters if needed)
@@ -68,12 +77,23 @@ High-level architecture overview. For detailed component design see `docs/design
 - Subject to same server validation as a real player
 - Inherits player's character cultivation tier + persona + history
 
-### Supabase Backend
+### Nakama Game Backend
 
-- **Auth:** Reuse DOS.Me pattern (email / wallet / OAuth)
-- **Postgres:** durable state (profile, inventory, quest progress, NFT lock state, cultivation tier, character history, reincarnation and time-as-currency events)
-- **Realtime:** chat global, presence, friend list, party invite, notification (NOT combat / movement)
+- Primary API backend for game-owned state
+- Runtime RPCs for profile, inventory, wallet, leaderboard, social, and future matchmaking-adjacent systems
+- Owns schema `second` in Supabase for MVP production, accessed by dedicated role `nakama_second`
+- Local dev uses Docker Postgres so developers can reset Nakama data without touching Supabase
+- Unity and tools talk to Nakama APIs, not directly to Nakama tables
+- Prometheus metrics exposed for monitoring and future Telegram alerts through Alertmanager or Grafana
+- Hiro and Satori are deferred until license and pricing review
+
+### Supabase Platform
+
+- **Auth:** identity provider and JWT issuer, reused from DOS.Me patterns where practical
+- **Postgres:** hosts app/admin data and may host Nakama-owned schema `second` for MVP production
+- **Realtime:** app-side chat, presence, friend list, party invite, notification only when not better handled by Nakama or Fusion
 - **Storage:** avatar, screenshot, UGC
+- **Security boundary:** schema `second` is private backend data; do not expose it to anon/authenticated Supabase client roles
 
 ### Go LLM Gateway (DOSRouter pattern)
 
@@ -107,6 +127,8 @@ High-level architecture overview. For detailed component design see `docs/design
 4. **NFT lock is on-chain.** When equipped, escrow contract holds. Server reads on-chain state, does not assume off-chain.
 5. **AI agent inherits player limits.** No agent can do what a real player cannot.
 6. **Time mutations are server-authoritative.** `BodyTime` is gameplay state; client, LLM, and AI agents can only request validated time intents.
+7. **Nakama-owned tables are private.** Unity clients never access schema `second` through Supabase APIs; Nakama is the API boundary.
+8. **Supabase schema isolation is an MVP production option.** It is acceptable only with dedicated role `nakama_second`, Session Pooler or direct persistent connection, rotated secrets, and non-default Nakama keys.
 
 ## Open Architecture Questions
 
@@ -115,3 +137,4 @@ High-level architecture overview. For detailed component design see `docs/design
 - LLM cost cap per player per day (need to design)
 - Hot reload for cultivation balance changes (config in Postgres vs git)
 - Replay system for cheat investigation (record Fusion ticks)
+- Whether schema `second` remains in Supabase long term or moves to a separate managed Postgres for operational isolation
