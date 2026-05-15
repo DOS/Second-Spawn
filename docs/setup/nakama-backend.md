@@ -100,6 +100,15 @@ nakama_second.<supabase-project-ref>:<secret>@<region>.pooler.supabase.com:5432/
 
 Do not commit this connection string. Store it in production secrets.
 
+Local run against Supabase:
+
+```powershell
+cd backend/nakama
+Copy-Item .env.example .env
+# Fill NAKAMA_DATABASE_ADDRESS in .env with the Session Pooler connection string.
+docker compose -f docker-compose.supabase.yml up --build
+```
+
 ## Alerting
 
 Prometheus can scrape Nakama metrics from port `9100`. Telegram notifications should be handled by Prometheus Alertmanager or Grafana Alerting. Bot tokens and chat IDs must stay in local secrets, not in Git.

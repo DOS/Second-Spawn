@@ -66,6 +66,14 @@ Verified shape:
 
 Do not use the Supabase `postgres` role for Nakama in production. Do not commit the connection string.
 
+Local run against Supabase:
+
+```powershell
+Copy-Item .env.example .env
+# Fill NAKAMA_DATABASE_ADDRESS in .env with the Session Pooler connection string.
+docker compose -f docker-compose.supabase.yml up --build
+```
+
 ## Alerting
 
 Nakama exposes Prometheus metrics on port `9100`. Telegram alerts should be wired through Prometheus Alertmanager or Grafana Alerting with secrets stored outside Git.
