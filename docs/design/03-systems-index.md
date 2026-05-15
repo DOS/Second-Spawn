@@ -29,7 +29,7 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 | # | System | Category | Priority | Status | Design Doc | Depends On |
 | --- | ---- | ---- | ---- | ---- | ---- | ---- |
 | 1 | NetworkRunner / Photon Fusion 2 setup | Core | MVP | Not started | (TDD pending) | - |
-| 2 | Player Controller (minimal baseline, Opsive UCC evaluation later) | Core | MVP | Drafted | [07-player-controller-prototype.md](07-player-controller-prototype.md) | NetworkRunner |
+| 2 | Player Controller (minimal baseline, Simple KCC spike, Opsive UCC evaluation later) | Core | MVP | Drafted | [07-player-controller-prototype.md](07-player-controller-prototype.md) | NetworkRunner |
 | 3 | Camera (top-down ARPG) | Core | MVP | Not started | (TDD pending) | Player Controller |
 | 4 | Input system (Unity Input System) | Core | MVP | Not started | - | Player Controller |
 | 5 | Zone scene management (1 zone vertical slice) | Core | MVP | Not started | (TDD pending) | NetworkRunner |
@@ -97,7 +97,7 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 
 ### Core Layer (depends on foundation)
 
-6. Player Controller baseline / Opsive evaluation (#2) - depends on: NetworkRunner
+6. Player Controller baseline / Simple KCC spike / Opsive evaluation (#2) - depends on: NetworkRunner
 7. Camera (#3) - depends on: Player Controller
 8. Input system (#4) - depends on: Player Controller
 9. Zone scene management (#5) - depends on: NetworkRunner
@@ -166,7 +166,7 @@ Aligned with [02-vertical-slice-spec.md](02-vertical-slice-spec.md) build phases
 | 1 | NetworkRunner setup (#1) | Phase 1 | M | Reference MetaDOS BR template |
 | 2 | Auth (#22) | Phase 1 | M | Reuse DOS.Me Supabase pattern |
 | 3 | Profile persistence (#18) | Phase 1 | S | |
-| 4 | Player Controller baseline / Opsive evaluation (#2) | Phase 2 | M | Build minimal Fusion controller first; evaluate Opsive in isolation after baseline |
+| 4 | Player Controller baseline / Simple KCC spike / Opsive evaluation (#2) | Phase 2 | M | Build minimal Fusion controller first; evaluate Simple KCC next; evaluate Opsive in isolation after that |
 | 5 | Camera + Input (#3, #4) | Phase 2 | S | Standard URP |
 | 6 | Zone scene management (#5) | Phase 2 | M | |
 | 7 | Combat (#6) | Phase 2 | L | Server-authoritative critical |
@@ -196,7 +196,7 @@ Effort estimate: S = 1-3 days, M = 4-7 days, L = 1-2 weeks, XL = 2-4 weeks (solo
 | Metric | Count |
 | ---- | ---- |
 | Total systems identified | 36 |
-| Design docs started | 4 (cultivation, overview design, player controller prototype, time-as-currency) |
+| Design docs started | 5 (cultivation, overview design, player controller prototype, time-as-currency, Pirate Adventure reference review) |
 | Design docs reviewed | 0 |
 | Design docs approved | 0 |
 | MVP systems with TDD started | 0 |

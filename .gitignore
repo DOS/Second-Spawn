@@ -91,6 +91,10 @@ backend/dist/
 # Photon credentials (if checked-in template)
 PhotonServerSettings.asset.local
 
+# Paid Unity Asset Store assets (installed locally via Package Manager > My Assets)
+Unity/Assets/ExplosiveLLC/
+Unity/Assets/ExplosiveLLC.meta
+
 # Claude Code worktrees (ephemeral, per-session branches)
 .claude/worktrees/
 

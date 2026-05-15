@@ -66,6 +66,9 @@ International-friendly framing. Explained via science (Nibirium, biotech, consci
 
 ### Backend
 
+- **Current baseline:** Supabase + Go LLM Gateway remains the default until a backend ADR replaces it.
+- **Nakama OSS:** Approved for a focused spike if research supports it. Do not adopt Nakama, Hiro, Satori, OpenAuth, or any new auth / social stack without an ADR and JOY approval.
+- **Hiro / Satori:** Commercial / license-dependent candidates only. Do not assume they are open-source drop-in dependencies.
 - **Supabase Auth** (reuse DOS.Me pattern, do not invent new auth)
 - **Supabase Postgres** (durable state: profile, inventory, quest progress, NFT lock state, cultivation tier)
 - **Supabase Realtime** (chat global, presence, friend, party invite, notification - NOT for combat / movement sync)
@@ -303,7 +306,7 @@ OUT of scope for vertical slice:
 2. **NEVER let LLM mutate authoritative game state.** Server validates all intent.
 3. **NEVER put API keys (Anthropic, OpenAI, Convai, ElevenLabs) in Unity client.** All LLM calls go through Go gateway.
 4. **NEVER use Host Mode for production.** Server Mode dedicated only.
-5. **NEVER add Nakama, OpenAuth, or new auth / social stack.** Reuse Supabase + DOS.Me patterns.
+5. **NEVER add or replace backend / auth / social stack without an ADR and JOY approval.** Supabase + DOS.Me patterns remain the baseline. Nakama OSS may be spiked if the ADR keeps Fusion authoritative gameplay, Supabase identity compatibility, and clear exit criteria.
 6. **NEVER change Unity Asset Serialization away from Force Text.** Breaks LFS + diff.
 7. **NEVER claim "done" without reviewer pass** (JOY is non-coder, cannot review code himself).
 8. **ALWAYS edit BOTH `.claude/CLAUDE.md` and `AGENTS.md` together when updating project context.** They are sister files - Claude Code auto-loads CLAUDE.md, Codex CLI / Cursor / Copilot auto-load AGENTS.md. Edit one without the other = drift; the un-updated file lies to whichever agent reads it. Both files MUST be identical except for the sister-file comment header at line 1.
@@ -316,5 +319,6 @@ OUT of scope for vertical slice:
 - Hunter NFT integration approach: Option 1 (preset hero) vs Hybrid 1+3 (modular pieces)
 - Phase 2 LLM model split (when to use Haiku vs Sonnet)
 - Voice NPC vendor (OpenAI Realtime vs ElevenLabs vs self-host)
+- Backend platform selection: Supabase-first thin backend vs Nakama OSS game backend + Supabase identity bridge. Hiro / Satori require license and pricing review before adoption.
 - Dedicated server hosting (Hetzner specs, region)
 - Photon Fusion 2 license tier when scaling beyond Cloud free 20 CCU

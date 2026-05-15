@@ -1,9 +1,9 @@
 # Prototype Design: Networked Player Controller
 
-*Status: Draft*
+*Status: In progress*
 *Created: 2026-05-14*
 *Author: Codex*
-*Last Verified: 2026-05-14 against Phase B Fusion smoke test and `05-networking-architecture.md`*
+*Last Verified: 2026-05-15 against local Photon Pirate Adventure 2.0.12 sample review and Simple KCC 2.0.15 package metadata*
 
 > **Quick reference** - Layer: `Core` - Priority: `MVP` - Key deps: `Photon Fusion 2`, `Unity Input System`, `ZoneTest_Hub`, `SecondSpawnConfig`
 
@@ -19,13 +19,14 @@ This is not the combat system. This is the movement and authority contract that 
 
 ## Design Decision
 
-Build a **project-owned minimal networked controller first**. Evaluate Opsive Ultimate Character Controller only after this baseline is working.
+Build a **project-owned minimal networked controller first**, then convert the placeholder player to Photon Fusion Simple KCC before evaluating Opsive Ultimate Character Controller. Opsive should prove value against a working Fusion-native controller path rather than become the baseline by default.
 
 Rationale:
 
 - The game is open-source multiplayer, so authority rules are more important than controller feature depth.
 - The first prototype needs known behavior that agents can reason about.
-- Opsive may still be useful, but it should prove value against a working baseline rather than become the baseline by default.
+- Pirate Adventure shows a useful Fusion-native top-down path with Simple KCC, FSM states, runner physics queries, and compact network input.
+- Opsive may still be useful, but it should prove value against the project baseline and Simple KCC spike rather than become the baseline by default.
 
 ---
 
@@ -102,10 +103,10 @@ Camera-relative movement can be added after the first pass if the camera angle m
 | ---- | ---- | ---- |
 | `NetworkRunnerSetup` | Starts Fusion dev session and owns runner lifecycle. | Existing Phase B |
 | `NetworkInputProvider` | Collects movement input per Fusion tick. | Existing Phase B, may extend |
-| `NetworkPlayer` | Applies authoritative movement and owns networked player state. | Existing Phase B, may extend |
+| `NetworkPlayer` | Applies Fusion input to Simple KCC and owns session player state. | Existing Phase B, extended |
 | `PlayerSpawner` | Spawns one player object per joined player. | Existing Phase B |
 | `PlayerCameraFollow` | Keeps camera pointed at local player. | New if no suitable existing component |
-| `Player_NetworkCube.prefab` | Placeholder networked player prefab. | Existing Phase B, may evolve |
+| `Player_NetworkCube.prefab` | Placeholder networked player prefab with Simple KCC. | Existing Phase B, evolved |
 
 ---
 
@@ -147,11 +148,19 @@ These are prototype values, not final game balance.
 - [ ] Confirm player stops predictably.
 - [ ] Record remaining feel issues in this doc.
 
-### Phase 4: Opsive Evaluation Branch
+### Phase 4: Simple KCC Spike
 
-- [ ] Import Opsive UCC in a separate branch/commit only after baseline passes.
+- [x] Import the official Fusion Simple KCC addon in a separate branch/commit only after baseline passes.
+- [x] Convert movement from raw networked position updates to KCC-backed movement.
+- [ ] Validate with Unity 6.5 beta and current Fusion 2.1.1 release candidate.
+- [ ] Compare movement feel and authority clarity against the baseline.
+- [ ] Decide whether Simple KCC becomes the MVP controller.
+
+### Phase 5: Opsive Evaluation Branch
+
+- [ ] Import Opsive UCC in a separate branch/commit only after the Simple KCC spike.
 - [ ] Check Unity 6.5 beta compatibility and console state.
-- [ ] Compare Opsive movement/combat/camera value against the baseline.
+- [ ] Compare Opsive movement/combat/camera value against the baseline and Simple KCC spike.
 - [ ] Decide whether Opsive becomes core, optional, or deferred.
 
 ---
@@ -186,6 +195,8 @@ These are prototype values, not final game balance.
 | ---- | ---- |
 | Combat Prototype Design | After player movement and camera are stable. |
 | Camera Design | If camera behavior becomes deeper than one follow component. |
+| Pirate Adventure Reference Review | Completed after local sample inspection. |
+| Simple KCC Spike Report | After official Simple KCC addon import and smoke test. |
 | Opsive Evaluation Report | After isolated Opsive import and smoke test. |
 | Offline AI Agent Movement Contract | Before AI agent can control the same player actor. |
 
@@ -195,8 +206,8 @@ These are prototype values, not final game balance.
 
 | This Document References | Target Doc | Specific Element Referenced | Nature |
 | ---- | ---- | ---- | ---- |
-| Prototype shape | `06-overview-design.md` | Minimal controller first, Opsive evaluation second | Scope dependency |
+| Prototype shape | `06-overview-design.md` | Minimal controller first, Simple KCC spike second, Opsive evaluation third | Scope dependency |
+| Reference sample | `09-pirate-adventure-reference-review.md` | Pirate Adventure controller and FSM patterns | Pattern dependency |
 | Networking rules | `05-networking-architecture.md` | Network input and server authority | Rule dependency |
 | Pillar priority | `01-pillars.md` | Server-authoritative gameplay | Rule dependency |
 | Unity conventions | `../setup/unity-conventions.md` | Prefab, scene, and asmdef organization | Ownership handoff |
-

@@ -16,6 +16,7 @@
 - [Overview Design](design/06-overview-design.md)
 - [Networked Player Controller Prototype](design/07-player-controller-prototype.md)
 - [Time-as-Currency](design/08-time-as-currency.md)
+- [Pirate Adventure Reference Review](design/09-pirate-adventure-reference-review.md)
 
 ## Architecture Decision Records
 
@@ -33,5 +34,5 @@
 
 - [Agent Handoff](setup/agent-handoff.md)
 - [Fusion Install](setup/fusion-install.md)
+- [Paid Asset Setup](setup/paid-assets.md)
 - [Unity Conventions](setup/unity-conventions.md)
-

@@ -45,7 +45,18 @@ Fusion ships several Plugins/ subfolders + a `Photon/` runtime folder. These con
 3. Save (Ctrl+S).
 4. Also paste the same App ID into `Assets/_SecondSpawn/Settings/SecondSpawnConfig.asset` -> `PhotonAppId` field (once that .asset exists - see "Create SecondSpawnConfig asset" below).
 
-## Step 5: Create the SecondSpawnConfig asset
+## Step 5: Install Fusion Simple KCC
+
+Fusion Simple KCC is the first controller addon for the player movement spike.
+
+1. Download `fusion-simple-kcc-2.0.15.unitypackage` from Photon.
+2. Import it into the Unity project.
+3. Expected installed path: `Assets/Photon/FusionAddons/SimpleKCC/`.
+4. Confirm `simple_kcc_build_info.txt` reports version `2.0.15`.
+
+This addon is OK to commit with the Photon SDK. It is not a gameplay template sample.
+
+## Step 6: Create the SecondSpawnConfig asset
 
 The ScriptableObject definition was scaffolded in commit `f04aa3b` but the `.asset` instance requires Unity Editor focus to compile the new `SecondSpawn.Settings` assembly. If it still does not exist:
 
@@ -60,14 +71,14 @@ The ScriptableObject definition was scaffolded in commit `f04aa3b` but the `.ass
    - **PhotonAppId**: from Step 1
    - **DosChainRpcUrl**: leave blank for now
 
-## Step 6: Verify it builds
+## Step 7: Verify it builds
 
 1. Menu: **File > Build Settings**.
 2. Target: PC Standalone (Windows or Linux).
 3. Click **Build**, save to `D:\Projects\Second-Spawn\Unity\Build\` (gitignored).
 4. If the build succeeds with no compile errors, Fusion 2 is installed correctly.
 
-## Step 7: Tell the AI agent
+## Step 8: Tell the AI agent
 
 Open a Claude Code session in this repo:
 

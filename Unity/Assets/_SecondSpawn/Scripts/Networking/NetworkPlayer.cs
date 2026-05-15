@@ -1,4 +1,5 @@
 using Fusion;
+using Fusion.Addons.SimpleKCC;
 using UnityEngine;
 
 namespace SecondSpawn.Networking
@@ -17,10 +18,9 @@ namespace SecondSpawn.Networking
     /// <c>[Networked]</c> properties (session layer).</para>
     /// </summary>
     [DisallowMultipleComponent]
+    [RequireComponent(typeof(SimpleKCC))]
     public sealed class NetworkPlayer : NetworkBehaviour
     {
-        [Networked] public Vector3 NetworkedPosition { get; set; }
-        [Networked] public Quaternion NetworkedRotation { get; set; }
         [Networked] public int CultivationTier { get; set; }
         [Networked] public float Hp { get; set; }
         [Networked] public float Stamina { get; set; }
@@ -28,15 +28,22 @@ namespace SecondSpawn.Networking
         /// <summary>True when the offline AI agent is driving this character (Pillar 1).</summary>
         [Networked] public NetworkBool IsAgentControlled { get; set; }
 
-        [SerializeField, Tooltip("Movement speed in units/second. Will be replaced by Opsive UCC stats in slice phase 2.")]
+        [SerializeField, Tooltip("Movement speed in units/second. Simple KCC owns authoritative movement for this spike.")]
         private float _moveSpeed = 5f;
+
+        private SimpleKCC _kcc;
+
+        private void Awake()
+        {
+            _kcc = GetComponent<SimpleKCC>();
+        }
 
         public override void Spawned()
         {
+            _kcc ??= GetComponent<SimpleKCC>();
+
             if (HasStateAuthority)
             {
-                NetworkedPosition = transform.position;
-                NetworkedRotation = transform.rotation;
                 CultivationTier = 1; // Awakening - starting tier per docs/design/04-cultivation-system.md
                 Hp = 100f;
                 Stamina = 100f;
@@ -46,22 +53,29 @@ namespace SecondSpawn.Networking
 
         public override void FixedUpdateNetwork()
         {
-            // Server-authoritative input application. Client never mutates
-            // [Networked] state directly; client only sends INetworkInput
-            // suggestions which the server validates here.
+            if (_kcc == null)
+            {
+                return;
+            }
+
+            var moveVelocity = Vector3.zero;
+
+            // Server-authoritative input application. The client sends
+            // INetworkInput suggestions; Simple KCC owns predicted and
+            // replicated movement state for the character body.
             if (GetInput(out NetworkInputData input))
             {
                 var move = new Vector3(input.HorizontalAxis, 0f, input.VerticalAxis);
-                if (move.sqrMagnitude > 0f)
+                move = Vector3.ClampMagnitude(move, 1f);
+
+                if (move.sqrMagnitude > 0.0001f)
                 {
-                    NetworkedPosition += move.normalized * _moveSpeed * Runner.DeltaTime;
+                    _kcc.SetLookRotation(Quaternion.LookRotation(move), preservePitch: false, preserveYaw: false);
+                    moveVelocity = move * _moveSpeed;
                 }
             }
 
-            // Apply networked transform to GameObject so all clients see the
-            // server-authoritative position.
-            transform.position = NetworkedPosition;
-            transform.rotation = NetworkedRotation;
+            _kcc.Move(moveVelocity, jumpImpulse: 0f);
         }
     }
 }

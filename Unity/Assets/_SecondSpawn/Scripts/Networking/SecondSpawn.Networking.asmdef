@@ -5,6 +5,7 @@
         "Fusion.Runtime",
         "Fusion.Common",
         "Fusion.Realtime",
+        "Fusion.Addons.SimpleKCC",
         "Unity.InputSystem"
     ],
     "includePlatforms": [],

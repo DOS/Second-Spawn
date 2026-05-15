@@ -65,15 +65,16 @@ The slice does not need large content volume. It needs a tight loop that proves 
 
 ## Player Controller Direction
 
-The current direction is **minimal networked controller first, Opsive evaluation second**.
+The current direction is **minimal networked controller first, Fusion Simple KCC spike second, Opsive evaluation third**.
 
 Opsive Ultimate Character Controller is already purchased and may still be useful for combat, animation, ability handling, or camera tooling. It is not currently treated as mandatory for the first prototype because:
 
 - Fusion authority and input flow must be proven before adding a heavy third-party controller.
 - Top-down ARPG movement may be simpler than the full Opsive UCC feature set.
 - Unity 6.5 beta compatibility must be validated before betting the prototype on it.
+- Photon's Pirate Adventure sample already demonstrates a smaller Fusion-native top-down controller path with Simple KCC.
 
-The first prototype should create a small, project-owned movement contract. Opsive can then be imported and judged against that contract.
+The first prototype should create a small, project-owned movement contract. Simple KCC can then be tested against that contract. Opsive can be imported later and judged against both.
 
 ---
 
@@ -118,9 +119,10 @@ These are still vertical slice systems. They are only excluded from the first pl
 | 1 | Minimal networked player controller | Player spawns and moves in Play Mode without console errors. |
 | 2 | Top-down camera | Camera follows the local player and keeps the placeholder readable. |
 | 3 | Prototype control feel pass | Movement feels crisp enough for ARPG iteration. |
-| 4 | Opsive evaluation branch | Import Opsive in isolation and compare value/cost against the baseline. |
-| 5 | Combat prototype | Add one basic attack only after movement is stable. |
-| 6 | Persistence/auth prototype | Supabase profile and login once local gameplay loop exists. |
+| 4 | Simple KCC spike | Import official Fusion Simple KCC addon and compare it against the baseline. |
+| 5 | Opsive evaluation branch | Import Opsive in isolation and compare value/cost against the baseline and Simple KCC spike. |
+| 6 | Combat prototype | Add one basic attack only after movement is stable. |
+| 7 | Persistence/auth prototype | Supabase profile and login once local gameplay loop exists. |
 
 ---
 
@@ -142,6 +144,7 @@ These are still vertical slice systems. They are only excluded from the first pl
 | ---- | ---- | ---- | ---- |
 | WASD, click-to-move, or both for first prototype? | JOY | Before movement polish | WASD first, click-to-move later. |
 | Use Cinemachine for camera now? | Codex | During camera task | Use it if already available; otherwise simple custom follow. |
+| Does Simple KCC become the MVP controller? | Codex + Claude reviewer | After Simple KCC spike | Likely candidate if it stays console-clean and server-authoritative. |
 | Does Opsive become core or optional? | Codex + Claude reviewer | After isolated Opsive branch | Optional until proven worth the integration cost. |
 | What is the first Hunter visual? | JOY | After movement baseline | Placeholder until MetaDOS skin import path is reviewed. |
 
