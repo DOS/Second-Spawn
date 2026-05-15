@@ -1,16 +1,16 @@
 const rpcIdHealth = "secondspawn_health";
 
-let InitModule: nkruntime.InitModule = function (
+function InitModule(
   ctx: nkruntime.Context,
   logger: nkruntime.Logger,
   nk: nkruntime.Nakama,
   initializer: nkruntime.Initializer
-) {
+): void {
   initializer.registerRpc(rpcIdHealth, rpcHealth);
   logger.info("Second Spawn Nakama runtime loaded.");
-};
+}
 
-const rpcHealth: nkruntime.RpcFunction = function (
+function rpcHealth(
   ctx: nkruntime.Context,
   logger: nkruntime.Logger,
   nk: nkruntime.Nakama,
@@ -21,6 +21,4 @@ const rpcHealth: nkruntime.RpcFunction = function (
     service: "second-spawn-nakama",
     userId: ctx.userId || null
   });
-};
-
-InitModule.bind(null);
+}
