@@ -58,7 +58,8 @@ Deferred:
 - Production secret rotation and non-default Nakama keys. The secret names are documented in `backend/nakama/.env.example`, but values are not committed.
 - Inventory, wallet, profile, quest, and SECOND token RPCs.
 - Production deployment hardening, including Prometheus Alertmanager or Grafana Telegram alerts.
-- Hiro, Satori, and Heroic Cloud.
+- Heroic Cloud migration after traction.
+- Hiro and Satori.
 
 ## Alternatives considered
 
@@ -93,6 +94,31 @@ Deferred:
 **Cons:** new operational surface, separate database, and future complexity if Supabase identity bridge is mishandled.
 
 **Acceptance reason:** best balance of game-backend fit, ownership, and solo-founder maintainability.
+
+## Managed backend comparison findings
+
+Pricing review date: 2026-05-15. Treat vendor prices as volatile and refresh before any production contract.
+
+The backend comparison intentionally separated **Nakama OSS** from **Nakama on Heroic Cloud**:
+
+- Nakama OSS is the current start point. Code, Docker Compose config, runtime modules, version pins, and local development flow stay in this repository. This is the best fit for AI coding agents because agents can inspect, edit, test, and reason about most of the game backend without relying on a vendor dashboard.
+- Nakama on Heroic Cloud is a later managed migration path, not the current implementation shape. Heroic Cloud manages runtime infrastructure, database operations, backups, load balancers, metrics, and scaling. SECOND SPAWN can still keep custom server module source in the repo, but the cloud runtime and database operations are not repo-owned Docker infrastructure.
+
+Cost and fit notes:
+
+- **Nakama OSS:** lowest direct platform cost and strongest repo ownership. Main cost is operations effort: hosting, backups, monitoring, upgrades, and scale testing.
+- **Nakama on Heroic Cloud:** observed minimum production tier is **$1,200/month** for Nakama. It has no DAU/MAU/CCU limit in the plan description, but capacity is still bounded by selected CPU/database resources. It does **not** include SECOND SPAWN's Unity/Fusion dedicated game servers.
+- **Satori:** separate managed LiveOps product, observed minimum **$600/month** plus event-based ingestion pricing. It is not part of the MVP baseline.
+- **PlayFab:** attractive free/startup path and broad Microsoft game-backend feature set, but production cost is usage-metered across events, profile reads/writes, statistics, Economy V2, lobby, matchmaking, Party, and Multiplayer Servers. For 100k MAU it can be cheap if calls are batched and sparse, or expensive if inventory/events/writes are frequent. Custom logic often moves into PlayFab/Azure execution paths, which is less transparent for AI agents than repo-owned Nakama modules.
+- **AccelByte AGS:** strongest turnkey studio platform among the managed options, including online services and optional AccelByte Multiplayer Servers. Public estimates for 100k MAU show roughly **$1,689/month** for Multiplayer or **$2,420/month** for Complete, but AccelByte bills on daily PCCU, not MAU. For a long-session MMO/ARPG, real PCCU can make cost materially higher. This is a later studio-scale option, not a solo-founder MVP default.
+
+Decision implication:
+
+- Start with **Nakama OSS** to preserve open-source credibility, repo-level control, and AI-agent operability.
+- Do **not** start with Heroic Cloud just because it is managed. Use it after traction when operations risk costs more than the monthly platform fee.
+- Do **not** add Satori until SECOND SPAWN has real LiveOps needs.
+- Revisit PlayFab only if Microsoft/Xbox platform benefits become strategically important enough to accept lock-in and usage-meter risk.
+- Revisit AccelByte only if the project has studio-scale budget, launch pressure, and a need for turnkey backend operations.
 
 ## Consequences
 
