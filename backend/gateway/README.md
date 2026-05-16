@@ -3,7 +3,8 @@
 Prototype Go HTTP service that fronts LLM-style calls from the Unity game
 server while the shared `api.dos.ai` integration is not wired yet.
 The Unity client and the dedicated game server never hold LLM API keys -
-all calls are routed through this gateway, which enforces:
+all calls are routed through this gateway. It is designed to enforce the
+following boundaries; the prototype has not wired every item yet:
 
 - Supabase JWT authentication (per-player identity)
 - Per-player rate limits + daily token budget (Redis)
@@ -31,6 +32,13 @@ cp .env.example .env       # then fill in the real secrets
 make run
 curl localhost:8090/readyz
 ```
+
+Optional agent-decision env:
+
+- `ANTHROPIC_API_KEY` enables model-backed JSON decisions.
+- `AGENT_DECISION_MODEL` defaults to `claude-haiku-4-5`.
+- Without a provider key, `/v1/agent/decide` keeps using the deterministic
+  fallback path.
 
 ## Test
 
@@ -92,11 +100,17 @@ The scaffold compiles and has prototype handlers for:
 - `POST /v1/npc/chat`
 - `POST /v1/voice/session`
 
-Real provider calls, persistent storage, full route-level Supabase JWT
-enforcement, and rate limiting are still open work. Nakama custom authentication
-is handled inside `backend/nakama/`, not through this gateway.
+`POST /v1/agent/decide` can call an Anthropic-backed JSON intent decider when
+`ANTHROPIC_API_KEY` is configured. Local development, provider errors, and
+invalid model output fall back to deterministic prototype decisions so the
+vertical slice remains playable.
+
+Persistent storage, full route-level Supabase JWT enforcement, and rate limiting
+are still open work. Nakama custom authentication is handled inside
+`backend/nakama/`, not through this gateway.
 
 See:
 - `internal/llm/provider.go` for the provider interface
+- `internal/llm/anthropic.go` for the Anthropic Messages API provider
 - `internal/intent/intent.go` for the intent contract
 - `internal/auth/auth.go` for the JWT verifier interface

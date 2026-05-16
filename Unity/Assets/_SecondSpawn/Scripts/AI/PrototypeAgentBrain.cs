@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using SecondSpawn.Networking;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -15,6 +16,18 @@ namespace SecondSpawn.AI
     [DisallowMultipleComponent]
     public sealed class PrototypeAgentBrain : MonoBehaviour
     {
+        private enum BrainPhase
+        {
+            Idle,
+            Bootstrap,
+            Sense,
+            Decide,
+            Validate,
+            Act,
+            Reflect,
+            Cooldown
+        }
+
 #if UNITY_EDITOR
         private const string SharedAnimatorControllerPath =
             "Assets/ExplosiveLLC/RPG Character Mecanim Animation Pack/Animation Controller/RPG-Character-Animation-Controller.controller";
@@ -31,6 +44,8 @@ namespace SecondSpawn.AI
         [SerializeField] private float _talkIntervalSeconds = 7.5f;
         [SerializeField] private bool _seedSoulOnStart = true;
         [SerializeField] private bool _alignFeetToGround = true;
+        [SerializeField] private bool _logPhaseTransitions = true;
+        [SerializeField] private int _gatewayFailureErrorThreshold = 3;
 
         private SecondSpawnGatewayClient _gateway;
         private AgentContextDto _context;
@@ -45,6 +60,9 @@ namespace SecondSpawn.AI
         private bool _hasMoveTarget;
         private float _nextTalkAt;
         private int _pendingFootAlignFrames;
+        private int _loopSequence;
+        private int _consecutiveGatewayFailures;
+        private readonly List<string> _phaseTrace = new List<string>();
 
         private void Awake()
         {
@@ -92,9 +110,11 @@ namespace SecondSpawn.AI
             if (_gateway == null)
             {
                 Debug.LogWarning("[PrototypeAgentBrain] No SecondSpawnGatewayClient found in scene.");
+                LogPhase(BrainPhase.Idle, "missing gateway");
                 return;
             }
 
+            LogPhase(BrainPhase.Bootstrap, "starting brain loop");
             _brainLoop = StartCoroutine(BrainLoop());
         }
 
@@ -108,6 +128,7 @@ namespace SecondSpawn.AI
 
             _hasMoveTarget = false;
             ApplyLocomotion(0f);
+            LogPhase(BrainPhase.Idle, "brain stopped");
         }
 
         private IEnumerator BrainLoop()
@@ -117,16 +138,28 @@ namespace SecondSpawn.AI
 
             while (enabled)
             {
+                _loopSequence++;
+                LogPhase(BrainPhase.Sense, BuildSenseLogDetail());
                 var request = BuildDecisionRequest();
+                LogPhase(BrainPhase.Decide, BuildDecisionRequestLogDetail(request));
+
                 AgentDecisionDto decision = null;
-                yield return _gateway.Decide(request, value => decision = value, Debug.LogWarning);
+                string gatewayError = null;
+                yield return _gateway.Decide(request, value => decision = value, error => gatewayError = error);
+                TrackGatewayResult(gatewayError);
+
+                LogPhase(BrainPhase.Validate, BuildDecisionLogDetail(decision, gatewayError));
 
                 if (decision != null)
                 {
+                    LogPhase(BrainPhase.Act, BuildDecisionLogDetail(decision, null));
                     ApplyDecision(decision);
                 }
 
-                yield return new WaitForSeconds(Mathf.Max(0.25f, _decisionIntervalSeconds));
+                LogPhase(BrainPhase.Reflect, "no reflection write in local prototype loop");
+                var cooldownSeconds = Mathf.Max(0.25f, _decisionIntervalSeconds);
+                LogPhase(BrainPhase.Cooldown, $"waiting {cooldownSeconds:0.00}s");
+                yield return new WaitForSeconds(cooldownSeconds);
             }
         }
 
@@ -148,6 +181,10 @@ namespace SecondSpawn.AI
                 summary = "Prototype NPC brain patrols the hub, talks through bounded intent, and never mutates game state directly.",
                 importance = 7
             }, ctx => _context = ctx, Debug.LogWarning);
+
+            LogPhase(BrainPhase.Bootstrap, _context == null
+                ? "context unavailable after bootstrap"
+                : "context loaded");
         }
 
         private UpdateSoulRequestDto BuildSoulSeed()
@@ -220,6 +257,76 @@ namespace SecondSpawn.AI
             };
         }
 
+        private string BuildSenseLogDetail()
+        {
+            var position = transform.position;
+            var bodyTime = _context?.body?.time?.remaining_seconds ?? 3600;
+            return $"position=({position.x:0.00},{position.z:0.00}), body_time={bodyTime}";
+        }
+
+        private static string BuildDecisionRequestLogDetail(AgentDecisionRequestDto request)
+        {
+            var allowed = request.allowed == null ? "none" : string.Join(",", request.allowed);
+            var snapshot = request.world_snapshot;
+            if (snapshot == null)
+            {
+                return $"allowed={allowed}, snapshot=none";
+            }
+
+            return $"allowed={allowed}, zone={snapshot.zone_id}, safe_radius={snapshot.safe_radius:0.00}";
+        }
+
+        private static string BuildDecisionLogDetail(AgentDecisionDto decision, string gatewayError)
+        {
+            if (decision == null)
+            {
+                return string.IsNullOrWhiteSpace(gatewayError)
+                    ? "decision=none"
+                    : $"decision=none, error={gatewayError}";
+            }
+
+            if (decision.action == "move" && decision.move != null)
+            {
+                return $"action=move, target=({decision.move.x:0.00},{decision.move.z:0.00}), confidence={decision.confidence:0.00}{BuildDecisionSourceLogDetail(decision)}";
+            }
+
+            if (decision.action == "say")
+            {
+                var textLength = string.IsNullOrWhiteSpace(decision.say) ? 0 : decision.say.Length;
+                return $"action=say, text_length={textLength}, confidence={decision.confidence:0.00}{BuildDecisionSourceLogDetail(decision)}";
+            }
+
+            return $"action={decision.action}, confidence={decision.confidence:0.00}{BuildDecisionSourceLogDetail(decision)}";
+        }
+
+        private static string BuildDecisionSourceLogDetail(AgentDecisionDto decision)
+        {
+            if (decision == null || string.IsNullOrWhiteSpace(decision.source))
+            {
+                return "";
+            }
+
+            return string.IsNullOrWhiteSpace(decision.source_reason)
+                ? $", source={decision.source}"
+                : $", source={decision.source}, source_reason={decision.source_reason}";
+        }
+
+        private void TrackGatewayResult(string gatewayError)
+        {
+            if (string.IsNullOrWhiteSpace(gatewayError))
+            {
+                _consecutiveGatewayFailures = 0;
+                return;
+            }
+
+            _consecutiveGatewayFailures++;
+            Debug.LogWarning($"[PrototypeAgentBrain] Gateway decision failed for agent={_agentId}, consecutive_failures={_consecutiveGatewayFailures}: {gatewayError}");
+            if (_consecutiveGatewayFailures >= Mathf.Max(1, _gatewayFailureErrorThreshold))
+            {
+                Debug.LogError($"[PrototypeAgentBrain] Gateway decision failure threshold reached for agent={_agentId}, threshold={_gatewayFailureErrorThreshold}: {gatewayError}");
+            }
+        }
+
         private void ApplyDecision(AgentDecisionDto decision)
         {
             if (decision.action == "say")
@@ -244,6 +351,32 @@ namespace SecondSpawn.AI
 
             _hasMoveTarget = false;
             ApplyLocomotion(0f);
+        }
+
+        private void LogPhase(BrainPhase phase, string detail)
+        {
+            if (!_logPhaseTransitions)
+            {
+                return;
+            }
+
+            if (phase == BrainPhase.Sense)
+            {
+                _phaseTrace.Clear();
+            }
+
+            var entry = string.IsNullOrWhiteSpace(detail)
+                ? phase.ToString()
+                : $"{phase}({detail})";
+            _phaseTrace.Add(entry);
+
+            if (phase != BrainPhase.Bootstrap && phase != BrainPhase.Idle && phase != BrainPhase.Cooldown)
+            {
+                return;
+            }
+
+            var trace = string.Join(" -> ", _phaseTrace);
+            Debug.Log($"[PrototypeAgentBrain] agent={_agentId}, seq={_loopSequence}, trace={trace}");
         }
 
         private void TickMovement()

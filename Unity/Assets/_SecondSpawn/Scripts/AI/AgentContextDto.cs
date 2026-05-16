@@ -161,6 +161,8 @@ namespace SecondSpawn.AI
         public string say;
         public string reason;
         public float confidence;
+        public string source;
+        public string source_reason;
     }
 
     [Serializable]
