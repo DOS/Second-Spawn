@@ -372,8 +372,18 @@ namespace SecondSpawn.AI
             var stats = body.stats;
             if (stats != null)
             {
-                _moveSpeed = Mathf.Clamp(_baseMoveSpeed * Mathf.Clamp(stats.agility / 8f, 0.75f, 1.4f), 0.5f, 6f);
+                _moveSpeed = Mathf.Max(0.1f, _baseMoveSpeed * CalculateAgilitySpeedMultiplier(stats.agility));
             }
+        }
+
+        private static float CalculateAgilitySpeedMultiplier(int agility)
+        {
+            if (agility <= 0)
+            {
+                return 1f;
+            }
+
+            return Mathf.Clamp(agility / 8f, 0.75f, 1.4f);
         }
 
         private void LogPhase(BrainPhase phase, string detail)
