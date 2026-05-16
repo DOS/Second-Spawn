@@ -82,12 +82,13 @@ assert.equal(
 
 const harness = createRuntimeHarness(module);
 assert.equal(harness.registeredHooks.length, 1);
-assert.equal(harness.registeredRpcs.size, 5);
+assert.equal(harness.registeredRpcs.size, 6);
 assert.ok(harness.registeredRpcs.has("secondspawn_health"));
 assert.ok(harness.registeredRpcs.has("secondspawn_profile_get"));
 assert.ok(harness.registeredRpcs.has("secondspawn_memory_add"));
 assert.ok(harness.registeredRpcs.has("secondspawn_soul_update"));
 assert.ok(harness.registeredRpcs.has("secondspawn_agent_decide"));
+assert.ok(harness.registeredRpcs.has("secondspawn_agent_activity_add"));
 
 const healthPayload = harness.registeredRpcs.get("secondspawn_health")({ userId: "user-1", env: {} }, harness.logger, harness.nk, "");
 assert.equal(JSON.parse(healthPayload).service, "second-spawn-nakama");
@@ -103,6 +104,10 @@ assert.equal(profile.body.soul.name, "user-1");
 assert.equal(profile.body.memory.length, 1);
 assert.equal(profile.body.equipment.primary_weapon, "none");
 assert.equal(profile.body.equipment.equipment_visual_id, 0);
+assert.equal(profile.body.agent_runtime.decision_count, 0);
+assert.equal(profile.body.agent_runtime.fallback_decision_count, 0);
+assert.equal(profile.body.agent_activity.length, 1);
+assert.equal(profile.body.agent_activity[0].kind, "profile_bootstrap");
 
 const updatedMemory = JSON.parse(harness.registeredRpcs.get("secondspawn_memory_add")(
   { userId: "user-1", env: {} },
@@ -148,6 +153,15 @@ const decision = JSON.parse(harness.registeredRpcs.get("secondspawn_agent_decide
 ));
 assert.equal(decision.action, "move");
 assert.equal(decision.move.x, 3.5);
+const afterMoveDecision = JSON.parse(harness.registeredRpcs.get("secondspawn_profile_get")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  ""
+));
+assert.equal(afterMoveDecision.body.agent_runtime.decision_count, 1);
+assert.equal(afterMoveDecision.body.agent_runtime.move_intent_count, 1);
+assert.equal(afterMoveDecision.body.agent_activity[0].kind, "agent_decision");
 
 const lowTimeDecision = JSON.parse(harness.registeredRpcs.get("secondspawn_agent_decide")(
   { userId: "user-1", env: {} },
@@ -159,6 +173,34 @@ const lowTimeDecision = JSON.parse(harness.registeredRpcs.get("secondspawn_agent
   })
 ));
 assert.equal(lowTimeDecision.action, "stop");
+const afterStopDecision = JSON.parse(harness.registeredRpcs.get("secondspawn_profile_get")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  ""
+));
+assert.equal(afterStopDecision.body.agent_runtime.decision_count, 2);
+assert.equal(afterStopDecision.body.agent_runtime.fallback_decision_count, 2);
+assert.equal(afterStopDecision.body.agent_runtime.stop_intent_count, 1);
+
+const activityContext = JSON.parse(harness.registeredRpcs.get("secondspawn_agent_activity_add")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  JSON.stringify({
+    kind: "offline_session",
+    summary: "Agent patrolled the hub while the player was away.",
+    metrics: {
+      offline_seconds: 45,
+      fallback_decisions: 2,
+      say_intents: 1
+    }
+  })
+));
+assert.equal(activityContext.body.agent_runtime.offline_seconds, 45);
+assert.equal(activityContext.body.agent_runtime.fallback_decision_count, 4);
+assert.equal(activityContext.body.agent_runtime.say_intent_count, 1);
+assert.equal(activityContext.body.agent_activity[0].kind, "offline_session");
 
 const calls = [];
 const response = harness.registeredHooks[0](

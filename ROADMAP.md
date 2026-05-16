@@ -39,9 +39,10 @@ especially `docs/design/02-vertical-slice-spec.md` and
 
 ## Current Review Gate
 
-- [ ] Review PR #5: model-backed agent decisions and brain phase logging.
-- [ ] Address reviewer feedback.
-- [ ] Merge PR #5 into `dev` after review and smoke verification.
+- [x] Merge PR #5: model-backed agent decisions and brain phase logging.
+- [ ] Review the profile bootstrap and agent activity branch.
+- [ ] Merge the profile bootstrap and agent activity branch into `dev` after
+  backend tests, Unity compile, and reviewer verification.
 
 ## Vertical Slice - Current Milestone
 
@@ -58,6 +59,8 @@ MVP, and a visible offline-agent prototype.
   visual using the existing visual prefab catalog.
 - [ ] Add a proper hub NPC prefab using the prototype NPC brain contract.
 - [ ] Add Nakama channel-based basic chat for the vertical slice.
+- [ ] Surface agent runtime stats and recent activity in an in-editor or
+  prototype debug UI.
 - [ ] Add route-level gateway authentication before non-local AI or voice
   playtests.
 - [ ] Add per-player LLM rate limit and token-budget enforcement.
@@ -72,6 +75,7 @@ MVP, and a visible offline-agent prototype.
 - [ ] Add one Hunter NFT skin equip placeholder with DOS Chain escrow design
   still server-authoritative.
 - [ ] Run Multiplayer Play Mode smoke for 2-4 local clients.
+- [ ] Resolve Unity Fusion CodeGen Play Mode smoke blocker tracked in issue #7.
 - [ ] Prepare Linux headless dedicated server build path.
 
 ## Alpha

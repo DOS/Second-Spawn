@@ -76,8 +76,11 @@ The current prototype module registers:
 
 - `secondspawn_health` - unauthenticated smoke check through `runtime.http_key`
 - `secondspawn_profile_get` - get or create the authenticated player's profile,
-  current body, soul, policy, BodyTime, cultivation, and memory context
+  current body, soul, policy, BodyTime, cultivation, memory context, runtime
+  stats, and bounded agent activity log
 - `secondspawn_memory_add` - add or deduplicate compact memory records
 - `secondspawn_soul_update` - update soul, characteristics, and agent policy
+- `secondspawn_agent_activity_add` - append a bounded agent activity event and
+  update runtime counters for offline sessions or Unity-side bootstrap
 - `secondspawn_agent_decide` - deterministic safe fallback decision for local
-  agent control when the LLM gateway is unavailable
+  agent control when the LLM gateway is unavailable, with runtime counters

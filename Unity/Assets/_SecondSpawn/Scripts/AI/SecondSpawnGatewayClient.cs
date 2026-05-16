@@ -34,6 +34,12 @@ namespace SecondSpawn.AI
         [SerializeField, Tooltip("Use Nakama device auth when Supabase is not configured yet. Local prototype only.")]
         private bool _allowNakamaDeviceFallback = true;
 
+        [SerializeField, Tooltip("Create or refresh the Nakama character profile immediately after authentication.")]
+        private bool _bootstrapProfileAfterAuth = true;
+
+        [SerializeField, Min(1), Tooltip("Seconds before gateway or Nakama HTTP requests fail fast in Play Mode.")]
+        private int _requestTimeoutSeconds = 10;
+
         private bool _authAttempted;
         private bool _authInProgress;
         private string _supabaseAccessToken;
@@ -126,6 +132,7 @@ namespace SecondSpawn.AI
 
             _authInProgress = false;
             Debug.Log($"[SecondSpawnGatewayClient] Authenticated Nakama user {PlayerId}.");
+            yield return BootstrapNakamaProfileAfterAuth("custom_auth");
             onSuccess?.Invoke();
         }
 
@@ -142,6 +149,11 @@ namespace SecondSpawn.AI
         public IEnumerator AddNakamaMemory(MemoryRecordDto memory, Action<AgentContextDto> onSuccess = null, Action<string> onError = null)
         {
             yield return SendNakamaRpc("secondspawn_memory_add", memory, onSuccess, onError);
+        }
+
+        public IEnumerator AddNakamaAgentActivity(AgentActivityRecordDto activity, Action<AgentContextDto> onSuccess = null, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_agent_activity_add", activity, onSuccess, onError);
         }
 
         public IEnumerator UpdateNakamaSoul(UpdateSoulRequestDto request, Action<AgentContextDto> onSuccess = null, Action<string> onError = null)
@@ -312,7 +324,37 @@ namespace SecondSpawn.AI
 
             _authInProgress = false;
             Debug.Log($"[SecondSpawnGatewayClient] Authenticated Nakama device fallback user {PlayerId}.");
+            yield return BootstrapNakamaProfileAfterAuth("device_auth");
             onSuccess?.Invoke();
+        }
+
+        private IEnumerator BootstrapNakamaProfileAfterAuth(string authSource)
+        {
+            if (!_bootstrapProfileAfterAuth || !HasNakamaSession)
+            {
+                yield break;
+            }
+
+            AgentContextDto context = null;
+            yield return GetNakamaContext(result => context = result, error =>
+            {
+                Debug.LogWarning($"[SecondSpawnGatewayClient] Nakama profile bootstrap failed: {error}");
+            });
+
+            if (context == null)
+            {
+                yield break;
+            }
+
+            yield return AddNakamaAgentActivity(new AgentActivityRecordDto
+            {
+                kind = "profile_bootstrap",
+                summary = $"Unity client authenticated through {authSource} and confirmed the Nakama character profile.",
+                source = "unity"
+            }, null, error =>
+            {
+                Debug.LogWarning($"[SecondSpawnGatewayClient] Nakama profile activity write failed: {error}");
+            });
         }
 
         private IEnumerator AuthenticateNakamaDevice(string deviceId, string username, Action<NakamaSessionDto> onSuccess, Action<string> onError)
@@ -332,6 +374,7 @@ namespace SecondSpawn.AI
 
         private IEnumerator Send<TResponse>(UnityWebRequest request, Action<TResponse> onSuccess, Action<string> onError)
         {
+            request.timeout = Mathf.Max(1, _requestTimeoutSeconds);
             yield return request.SendWebRequest();
 
             if (request.result != UnityWebRequest.Result.Success)

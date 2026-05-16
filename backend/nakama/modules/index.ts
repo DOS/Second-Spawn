@@ -12,6 +12,8 @@ var rpcIdProfileGet = "secondspawn_profile_get";
 var rpcIdMemoryAdd = "secondspawn_memory_add";
 var rpcIdSoulUpdate = "secondspawn_soul_update";
 var rpcIdAgentDecide = "secondspawn_agent_decide";
+var rpcIdAgentActivityAdd = "secondspawn_agent_activity_add";
+var agentActivityLogLimit = 32;
 
 let InitModule: nkruntime.InitModule = function (
   ctx: nkruntime.Context,
@@ -24,6 +26,7 @@ let InitModule: nkruntime.InitModule = function (
   initializer.registerRpc(rpcIdMemoryAdd, rpcMemoryAdd);
   initializer.registerRpc(rpcIdSoulUpdate, rpcSoulUpdate);
   initializer.registerRpc(rpcIdAgentDecide, rpcAgentDecide);
+  initializer.registerRpc(rpcIdAgentActivityAdd, rpcAgentActivityAdd);
   initializer.registerBeforeAuthenticateCustom(beforeAuthenticateCustom);
   logger.info("Second Spawn Nakama runtime loaded.");
 };
@@ -48,6 +51,9 @@ function rpcProfileGet(
   payload: string
 ): string {
   var context = getOrCreateAgentContext(ctx, nk);
+  if (ensureAgentRuntime(context)) {
+    writeAgentContext(nk, context);
+  }
   return JSON.stringify(context);
 }
 
@@ -102,42 +108,79 @@ function rpcAgentDecide(
   var world = request.world_snapshot || {};
   var allowed = request.allowed || ["move", "interact", "say", "stop"];
   var bodyTime = Number(world.body_time_seconds || context.body.time.remaining_seconds || 0);
+  var decision: any = null;
 
   if (bodyTime > 0 && bodyTime <= context.body.agent_policy.stop_when_body_time_below) {
-    return JSON.stringify({
+    decision = {
       action: "stop",
       reason: "body_time_below_policy_threshold",
-      confidence: 0.9
-    });
+      confidence: 0.9,
+      source: "fallback",
+      source_reason: "nakama_body_time_policy"
+    };
+    recordAgentDecision(context, decision);
+    writeAgentContext(nk, context);
+    return JSON.stringify(decision);
   }
 
   if (arrayContains(allowed, "move")) {
     var position = world.position || { x: 0, z: 0 };
-    return JSON.stringify({
+    decision = {
       action: "move",
       move: {
         x: Number(position.x || 0) + 1.5,
         z: Number(position.z || 0) + 0.75
       },
       reason: "prototype_safe_patrol",
-      confidence: 0.55
-    });
+      confidence: 0.55,
+      source: "fallback",
+      source_reason: "nakama_prototype_patrol"
+    };
+    recordAgentDecision(context, decision);
+    writeAgentContext(nk, context);
+    return JSON.stringify(decision);
   }
 
   if (arrayContains(allowed, "say")) {
-    return JSON.stringify({
+    decision = {
       action: "say",
       say: "I am keeping this body safe until the player returns.",
       reason: "prototype_social_fallback",
-      confidence: 0.6
-    });
+      confidence: 0.6,
+      source: "fallback",
+      source_reason: "nakama_social_fallback"
+    };
+    recordAgentDecision(context, decision);
+    writeAgentContext(nk, context);
+    return JSON.stringify(decision);
   }
 
-  return JSON.stringify({
+  decision = {
     action: "stop",
     reason: "no_allowed_action",
-    confidence: 0.5
-  });
+    confidence: 0.5,
+    source: "fallback",
+    source_reason: "nakama_no_allowed_action"
+  };
+  recordAgentDecision(context, decision);
+  writeAgentContext(nk, context);
+  return JSON.stringify(decision);
+}
+
+function rpcAgentActivityAdd(
+  ctx: nkruntime.Context,
+  logger: nkruntime.Logger,
+  nk: nkruntime.Nakama,
+  payload: string
+): string {
+  var context = getOrCreateAgentContext(ctx, nk);
+  var request = parseJson(payload || "{}", "agent activity payload");
+  var activity = normalizeAgentActivity(context, request);
+
+  addAgentActivity(context, activity);
+  applyActivityMetrics(context.body.agent_runtime, request.metrics || {});
+  writeAgentContext(nk, context);
+  return JSON.stringify(context);
 }
 
 function beforeAuthenticateCustom(
@@ -277,9 +320,182 @@ function defaultAgentContext(playerId: string): any {
         summary: "The character is a Second Spawn prototype body controlled by the player or their offline agent.",
         importance: 6
       }],
+      agent_runtime: defaultAgentRuntime(timestamp),
+      agent_activity: [{
+        id: "activity-bootstrap",
+        kind: "profile_bootstrap",
+        summary: "Initial Nakama profile and prototype body stats were created.",
+        occurred_at: timestamp,
+        source: "nakama"
+      }],
       created_at: timestamp
     }
   };
+}
+
+function ensureAgentRuntime(context: any): boolean {
+  var changed = false;
+  if (!context.body) {
+    context.body = {};
+    changed = true;
+  }
+
+  if (!context.body.agent_runtime) {
+    context.body.agent_runtime = defaultAgentRuntime(new Date().toISOString());
+    changed = true;
+  }
+
+  if (!context.body.agent_activity) {
+    context.body.agent_activity = [];
+    changed = true;
+  }
+
+  if (context.body.agent_activity.length === 0) {
+    var timestamp = new Date().toISOString();
+    context.body.agent_activity.push({
+      id: "activity-bootstrap",
+      kind: "profile_bootstrap",
+      summary: "Nakama profile was normalized with agent runtime tracking.",
+      occurred_at: timestamp,
+      source: "nakama"
+    });
+    context.body.agent_runtime.activity_count = clampNumber(context.body.agent_runtime.activity_count || 0, 0, 1000000000) + 1;
+    context.body.agent_runtime.last_activity_at = timestamp;
+    changed = true;
+  }
+
+  context.body.agent_runtime.decision_count = clampNumber(context.body.agent_runtime.decision_count || 0, 0, 1000000000);
+  context.body.agent_runtime.fallback_decision_count = clampNumber(context.body.agent_runtime.fallback_decision_count || 0, 0, 1000000000);
+  context.body.agent_runtime.move_intent_count = clampNumber(context.body.agent_runtime.move_intent_count || 0, 0, 1000000000);
+  context.body.agent_runtime.say_intent_count = clampNumber(context.body.agent_runtime.say_intent_count || 0, 0, 1000000000);
+  context.body.agent_runtime.stop_intent_count = clampNumber(context.body.agent_runtime.stop_intent_count || 0, 0, 1000000000);
+  context.body.agent_runtime.interact_intent_count = clampNumber(context.body.agent_runtime.interact_intent_count || 0, 0, 1000000000);
+  context.body.agent_runtime.offline_seconds = clampNumber(context.body.agent_runtime.offline_seconds || 0, 0, 1000000000);
+  context.body.agent_runtime.activity_count = clampNumber(context.body.agent_runtime.activity_count || context.body.agent_activity.length, 0, 1000000000);
+  return changed;
+}
+
+function defaultAgentRuntime(timestamp: string): any {
+  return {
+    profile_bootstrapped_at: timestamp,
+    last_profile_bootstrap_at: timestamp,
+    last_activity_at: timestamp,
+    activity_count: 1,
+    decision_count: 0,
+    fallback_decision_count: 0,
+    move_intent_count: 0,
+    say_intent_count: 0,
+    stop_intent_count: 0,
+    interact_intent_count: 0,
+    offline_seconds: 0
+  };
+}
+
+function recordAgentDecision(context: any, decision: any): void {
+  ensureAgentRuntime(context);
+  var runtime = context.body.agent_runtime;
+  runtime.decision_count += 1;
+  if (decision.source === "fallback") {
+    runtime.fallback_decision_count += 1;
+  }
+
+  incrementDecisionAction(runtime, decision.action);
+  addAgentActivity(context, {
+    kind: "agent_decision",
+    summary: "Agent chose " + trimString(decision.action || "unknown") + ": " + trimString(decision.reason || "no reason provided"),
+    source: "nakama",
+    metrics: {
+      decision_count: 1
+    }
+  });
+}
+
+function incrementDecisionAction(runtime: any, action: string): void {
+  switch (trimString(action)) {
+    case "move":
+      runtime.move_intent_count += 1;
+      break;
+    case "say":
+      runtime.say_intent_count += 1;
+      break;
+    case "interact":
+      runtime.interact_intent_count += 1;
+      break;
+    case "stop":
+      runtime.stop_intent_count += 1;
+      break;
+  }
+}
+
+function normalizeAgentActivity(context: any, request: any): any {
+  var kind = normalizeAgentActivityKind(request.kind);
+  var summary = trimString(request.summary);
+  if (!summary) {
+    throw new Error("agent activity summary is required");
+  }
+
+  return {
+    id: trimString(request.id) || newActivityId(context),
+    kind: kind,
+    summary: summary,
+    occurred_at: trimString(request.occurred_at) || new Date().toISOString(),
+    source: trimString(request.source) || "client",
+    metrics: request.metrics || {}
+  };
+}
+
+function normalizeAgentActivityKind(kind: any): string {
+  var value = trimString(kind);
+  if (
+    value === "profile_bootstrap" ||
+    value === "offline_session" ||
+    value === "agent_decision" ||
+    value === "memory_sync" ||
+    value === "manual_note"
+  ) {
+    return value;
+  }
+  return "manual_note";
+}
+
+function addAgentActivity(context: any, activity: any): void {
+  ensureAgentRuntime(context);
+  if (!activity.id) {
+    activity.id = newActivityId(context);
+  }
+  if (!activity.occurred_at) {
+    activity.occurred_at = new Date().toISOString();
+  }
+  if (!activity.source) {
+    activity.source = "nakama";
+  }
+
+  var activities = context.body.agent_activity || [];
+  activities.unshift(activity);
+  if (activities.length > agentActivityLogLimit) {
+    activities = activities.slice(0, agentActivityLogLimit);
+  }
+  context.body.agent_activity = activities;
+  context.body.agent_runtime.activity_count += 1;
+  context.body.agent_runtime.last_activity_at = activity.occurred_at;
+}
+
+function applyActivityMetrics(runtime: any, metrics: any): void {
+  runtime.offline_seconds += positiveMetric(metrics.offline_seconds);
+  runtime.decision_count += positiveMetric(metrics.decisions_made || metrics.decision_count);
+  runtime.fallback_decision_count += positiveMetric(metrics.fallback_decisions || metrics.fallback_decision_count);
+  runtime.move_intent_count += positiveMetric(metrics.move_intents || metrics.move_intent_count);
+  runtime.say_intent_count += positiveMetric(metrics.say_intents || metrics.say_intent_count);
+  runtime.stop_intent_count += positiveMetric(metrics.stop_intents || metrics.stop_intent_count);
+  runtime.interact_intent_count += positiveMetric(metrics.interact_intents || metrics.interact_intent_count);
+}
+
+function positiveMetric(value: any): number {
+  var numberValue = Number(value || 0);
+  if (isNaN(numberValue) || numberValue < 0) {
+    return 0;
+  }
+  return Math.floor(numberValue);
 }
 
 function upsertMemory(context: any, memory: any): void {
@@ -420,6 +636,13 @@ function newMemoryId(context: any): string {
   var randomPart = Math.floor(Math.random() * 0x100000000).toString(36);
   var sequence = String((context.body.memory || []).length + 1);
   return "mem-" + playerId + "-" + nowId() + "-" + randomPart + "-" + sequence;
+}
+
+function newActivityId(context: any): string {
+  var playerId = sanitizeNakamaIdentifier(context.player.player_id || "player", "player");
+  var randomPart = Math.floor(Math.random() * 0x100000000).toString(36);
+  var sequence = String((context.body.agent_activity || []).length + 1);
+  return "act-" + playerId + "-" + nowId() + "-" + randomPart + "-" + sequence;
 }
 
 function requireUserId(ctx: nkruntime.Context): string {

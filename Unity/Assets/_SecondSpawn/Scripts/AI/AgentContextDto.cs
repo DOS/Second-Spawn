@@ -29,6 +29,8 @@ namespace SecondSpawn.AI
         public AgentPolicyDto agent_policy;
         public SoulProfileDto soul;
         public MemoryRecordDto[] memory;
+        public AgentRuntimeDto agent_runtime;
+        public AgentActivityRecordDto[] agent_activity;
     }
 
     [Serializable]
@@ -98,6 +100,45 @@ namespace SecondSpawn.AI
         public string kind = "system";
         public string summary;
         public int importance = 5;
+    }
+
+    [Serializable]
+    public sealed class AgentRuntimeDto
+    {
+        public string profile_bootstrapped_at;
+        public string last_profile_bootstrap_at;
+        public string last_activity_at;
+        public long activity_count;
+        public long decision_count;
+        public long fallback_decision_count;
+        public long move_intent_count;
+        public long say_intent_count;
+        public long stop_intent_count;
+        public long interact_intent_count;
+        public long offline_seconds;
+    }
+
+    [Serializable]
+    public sealed class AgentActivityRecordDto
+    {
+        public string id;
+        public string kind = "manual_note";
+        public string summary;
+        public string occurred_at;
+        public string source = "client";
+        public AgentActivityMetricsDto metrics;
+    }
+
+    [Serializable]
+    public sealed class AgentActivityMetricsDto
+    {
+        public long offline_seconds;
+        public long decisions_made;
+        public long fallback_decisions;
+        public long move_intents;
+        public long say_intents;
+        public long stop_intents;
+        public long interact_intents;
     }
 
     [Serializable]
