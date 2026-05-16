@@ -23,6 +23,8 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 - Nakama `secondspawn_bodytime_event` RPC for prototype BodyTime earn, spend,
   and danger-zone drain events with source caps, retry idempotency, earn
   cooldown, activity logging, and zero-time body death.
+- Nakama `secondspawn_reincarnate` RPC for a prototype zero-time death to fresh
+  body flow using a 5-day SECOND cost against a 7-day starting test balance.
 
 ### Changed
 
@@ -39,6 +41,8 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   returning prototype fallback intent.
 - Unity gateway client now has a Nakama BodyTime event wrapper and exposes body
   lifecycle state in the shared profile DTO.
+- Unity gateway client now exposes SECOND balance, reincarnation count, and a
+  Nakama reincarnation wrapper for prototype UI and playtest flows.
 
 ### Verification
 

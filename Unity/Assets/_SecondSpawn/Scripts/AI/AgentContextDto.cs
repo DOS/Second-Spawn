@@ -14,6 +14,8 @@ namespace SecondSpawn.AI
     {
         public string player_id;
         public string display_name;
+        public long second_balance_seconds;
+        public long reincarnation_count;
     }
 
     [Serializable]
@@ -84,6 +86,13 @@ namespace SecondSpawn.AI
         public string source;
         public long amount_seconds;
         public string note;
+    }
+
+    [Serializable]
+    public sealed class ReincarnationRequestDto
+    {
+        public string id;
+        public string reason;
     }
 
     [Serializable]
