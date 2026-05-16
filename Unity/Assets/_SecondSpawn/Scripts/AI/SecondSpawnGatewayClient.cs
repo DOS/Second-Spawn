@@ -206,7 +206,7 @@ namespace SecondSpawn.AI
 
         public IEnumerator Decide(AgentDecisionRequestDto request, Action<AgentDecisionDto> onSuccess, Action<string> onError = null)
         {
-            yield return SendJson("POST", "/v1/agent/decide", request, onSuccess, onError);
+            yield return SendJson("POST", "/v1/agent/decide", GatewayAgentDecisionRequestDto.From(request), onSuccess, onError);
         }
 
         public IEnumerator Chat(NpcChatRequestDto request, Action<NpcChatResponseDto> onSuccess, Action<string> onError = null)
@@ -445,6 +445,77 @@ namespace SecondSpawn.AI
         private static string TrimTrailingSlash(string value)
         {
             return string.IsNullOrWhiteSpace(value) ? "" : value.Trim().TrimEnd('/');
+        }
+
+        [Serializable]
+        private sealed class GatewayAgentDecisionRequestDto
+        {
+            public GatewayAgentContextDto context;
+            public WorldSnapshotDto world_snapshot;
+            public string[] allowed;
+
+            public static GatewayAgentDecisionRequestDto From(AgentDecisionRequestDto request)
+            {
+                return new GatewayAgentDecisionRequestDto
+                {
+                    context = GatewayAgentContextDto.From(request?.context),
+                    world_snapshot = request?.world_snapshot,
+                    allowed = request?.allowed
+                };
+            }
+        }
+
+        [Serializable]
+        private sealed class GatewayAgentContextDto
+        {
+            public PlayerProfileDto player;
+            public GatewayBodyProfileDto body;
+
+            public static GatewayAgentContextDto From(AgentContextDto context)
+            {
+                return new GatewayAgentContextDto
+                {
+                    player = context?.player,
+                    body = GatewayBodyProfileDto.From(context?.body)
+                };
+            }
+        }
+
+        [Serializable]
+        private sealed class GatewayBodyProfileDto
+        {
+            public string body_id;
+            public string archetype_id;
+            public string visual_prefab_key;
+            public EquipmentLoadoutDto equipment;
+            public CharacterTraitsDto characteristics;
+            public BodyTimeDto time;
+            public CultivationDto cultivation;
+            public AgentPolicyDto agent_policy;
+            public SoulProfileDto soul;
+            public MemoryRecordDto[] memory;
+
+            public static GatewayBodyProfileDto From(BodyProfileDto body)
+            {
+                if (body == null)
+                {
+                    return null;
+                }
+
+                return new GatewayBodyProfileDto
+                {
+                    body_id = body.body_id,
+                    archetype_id = body.archetype_id,
+                    visual_prefab_key = body.visual_prefab_key,
+                    equipment = body.equipment,
+                    characteristics = body.characteristics,
+                    time = body.time,
+                    cultivation = body.cultivation,
+                    agent_policy = body.agent_policy,
+                    soul = body.soul,
+                    memory = body.memory
+                };
+            }
         }
 
         private static string ExtractJwtStringClaim(string jwt, string claimName)
