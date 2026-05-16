@@ -3,7 +3,8 @@
 Prototype Go HTTP service that fronts LLM-style calls from the Unity game
 server while the shared `api.dos.ai` integration is not wired yet.
 The Unity client and the dedicated game server never hold LLM API keys -
-all calls are routed through this gateway, which enforces:
+all calls are routed through this gateway. It is designed to enforce the
+following boundaries; the prototype has not wired every item yet:
 
 - Supabase JWT authentication (per-player identity)
 - Per-player rate limits + daily token budget (Redis)

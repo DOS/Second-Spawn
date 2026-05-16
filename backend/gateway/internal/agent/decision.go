@@ -20,6 +20,11 @@ const (
 	ActionSay      ActionType = "say"
 )
 
+const (
+	DecisionSourceModel    = "model"
+	DecisionSourceFallback = "fallback"
+)
+
 // DecisionRequest is the bounded input sent to the LLM layer.
 type DecisionRequest struct {
 	Context       character.AgentContext `json:"context"`
@@ -60,13 +65,15 @@ type WorldObject struct {
 // Decision is the structured output from the LLM layer.
 // It is not authoritative gameplay state.
 type Decision struct {
-	Action     ActionType        `json:"action"`
-	TargetID   string            `json:"target_id,omitempty"`
-	Move       *Vector2          `json:"move,omitempty"`
-	Say        string            `json:"say,omitempty"`
-	Reason     string            `json:"reason,omitempty"`
-	Confidence float32           `json:"confidence"`
-	Data       map[string]string `json:"data,omitempty"`
+	Action       ActionType        `json:"action"`
+	TargetID     string            `json:"target_id,omitempty"`
+	Move         *Vector2          `json:"move,omitempty"`
+	Say          string            `json:"say,omitempty"`
+	Reason       string            `json:"reason,omitempty"`
+	Confidence   float32           `json:"confidence"`
+	Source       string            `json:"source,omitempty"`
+	SourceReason string            `json:"source_reason,omitempty"`
+	Data         map[string]string `json:"data,omitempty"`
 }
 
 var (

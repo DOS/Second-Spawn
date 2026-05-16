@@ -6,10 +6,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"strings"
 
 	"github.com/DOS/Second-Spawn/backend/gateway/internal/character"
 	"github.com/DOS/Second-Spawn/backend/gateway/internal/llm"
+)
+
+const (
+	defaultModelDecisionMaxTokens = 400
+
+	// modelDecisionMemoryItemCap bounds per-NPC memory items included in each model prompt.
+	modelDecisionMemoryItemCap = 10
 )
 
 type Decider interface {
@@ -19,31 +27,43 @@ type Decider interface {
 type PrototypeDecider struct{}
 
 func (PrototypeDecider) Decide(_ context.Context, req DecisionRequest) (Decision, error) {
-	return DecidePrototype(req), nil
+	return withSource(DecidePrototype(req), DecisionSourceFallback, "prototype_decider"), nil
 }
 
 type ModelBackedDecider struct {
 	provider  llm.Provider
 	model     llm.Model
 	maxTokens int
+	logger    *slog.Logger
 }
 
 func NewModelBackedDecider(provider llm.Provider, model llm.Model) *ModelBackedDecider {
+	return NewModelBackedDeciderWithLogger(provider, model, slog.Default())
+}
+
+func NewModelBackedDeciderWithLogger(provider llm.Provider, model llm.Model, logger *slog.Logger) *ModelBackedDecider {
 	if strings.TrimSpace(string(model)) == "" {
 		model = llm.ModelHaikuFast
+	}
+	if logger == nil {
+		logger = slog.Default()
 	}
 
 	return &ModelBackedDecider{
 		provider:  provider,
 		model:     model,
-		maxTokens: 400,
+		maxTokens: defaultModelDecisionMaxTokens,
+		logger:    logger,
 	}
 }
 
 func (d *ModelBackedDecider) Decide(ctx context.Context, req DecisionRequest) (Decision, error) {
 	fallback := DecidePrototype(req)
 	if d == nil || d.provider == nil {
-		return fallback, nil
+		if d != nil {
+			d.warnFallback(ctx, req, "provider_unavailable", nil)
+		}
+		return withSource(fallback, DecisionSourceFallback, "provider_unavailable"), nil
 	}
 
 	resp, err := d.provider.Chat(ctx, llm.ChatRequest{
@@ -55,18 +75,21 @@ func (d *ModelBackedDecider) Decide(ctx context.Context, req DecisionRequest) (D
 		MaxTokens: d.maxTokens,
 	})
 	if err != nil {
-		return fallback, nil
+		d.warnFallback(ctx, req, "provider_error", err)
+		return withSource(fallback, DecisionSourceFallback, "provider_error"), nil
 	}
 
 	decision, err := DecodeDecisionJSON(resp.Content)
 	if err != nil {
-		return fallback, nil
+		d.warnFallback(ctx, req, "decode_error", err)
+		return withSource(fallback, DecisionSourceFallback, "decode_error"), nil
 	}
 	if err := ValidateDecision(req, decision); err != nil {
-		return fallback, nil
+		d.warnFallback(ctx, req, "validate_error", err)
+		return withSource(fallback, DecisionSourceFallback, "validate_error"), nil
 	}
 
-	return decision, nil
+	return withSource(decision, DecisionSourceModel, "validated_model_intent"), nil
 }
 
 func DecodeDecisionJSON(content string) (Decision, error) {
@@ -114,11 +137,34 @@ func buildModelDecisionUserPrompt(req DecisionRequest) string {
 
 	var b bytes.Buffer
 	b.WriteString("Agent context:\n")
-	b.WriteString(character.BuildAgentContextPrompt(req.Context, 10))
+	b.WriteString(character.BuildAgentContextPrompt(req.Context, modelDecisionMemoryItemCap))
 	b.WriteString("\n\nAllowed actions JSON:\n")
 	b.Write(allowedJSON)
 	b.WriteString("\n\nWorld snapshot JSON:\n")
 	b.Write(worldJSON)
 	b.WriteString("\n\nReturn only the decision JSON object.")
 	return b.String()
+}
+
+func (d *ModelBackedDecider) warnFallback(ctx context.Context, req DecisionRequest, reason string, err error) {
+	if d == nil || d.logger == nil {
+		return
+	}
+
+	attrs := []any{
+		"reason", reason,
+		"player_id", req.Context.Player.PlayerID,
+		"model", string(d.model),
+	}
+	if err != nil {
+		attrs = append(attrs, "error", err.Error())
+	}
+
+	d.logger.WarnContext(ctx, "agent decision falling back to deterministic intent", attrs...)
+}
+
+func withSource(decision Decision, source string, reason string) Decision {
+	decision.Source = source
+	decision.SourceReason = reason
+	return decision
 }

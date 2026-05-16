@@ -144,6 +144,7 @@ func (s *Server) handleAgentDecide(w http.ResponseWriter, r *http.Request) {
 		req.Context = ctx
 	}
 	req.Allowed = ensureStopAllowed(req.Allowed)
+	// TODO(#6): enforce per-player decision rate limits and daily token budgets here.
 	decision, err := s.decider.Decide(r.Context(), req)
 	if err != nil {
 		writeJSON(w, http.StatusBadGateway, map[string]any{"error": err.Error()})

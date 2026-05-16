@@ -15,6 +15,8 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   or the model returns invalid intent.
 - Tests for model decision parsing, fallback behavior, Anthropic request shape,
   and endpoint decider injection.
+- Fallback observability for model-backed decisions, including decision source
+  metadata and structured warning logs.
 
 ### Changed
 
@@ -23,6 +25,8 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   path.
 - Agent design docs now mark brain phase tracing and model-backed JSON intent as
   implemented prototype foundation.
+- Unity prototype brain now warns on gateway decision failures and escalates
+  repeated failures to errors.
 
 ### Verification
 
@@ -34,7 +38,7 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 
 - PR #5 is still in review and has not merged into `dev`.
 - Gateway route-level JWT enforcement is not complete.
-- LLM rate limiting and token budget enforcement are not wired yet.
+- LLM rate limiting and token budget enforcement are tracked in issue #6.
 - Real voice still waits for an ephemeral-token provider flow.
 
 ## Pre-Alpha Foundation Snapshot - 2026-05-16

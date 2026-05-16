@@ -45,6 +45,7 @@ namespace SecondSpawn.AI
         [SerializeField] private bool _seedSoulOnStart = true;
         [SerializeField] private bool _alignFeetToGround = true;
         [SerializeField] private bool _logPhaseTransitions = true;
+        [SerializeField] private int _gatewayFailureErrorThreshold = 3;
 
         private SecondSpawnGatewayClient _gateway;
         private AgentContextDto _context;
@@ -60,6 +61,7 @@ namespace SecondSpawn.AI
         private float _nextTalkAt;
         private int _pendingFootAlignFrames;
         private int _loopSequence;
+        private int _consecutiveGatewayFailures;
         private readonly List<string> _phaseTrace = new List<string>();
 
         private void Awake()
@@ -144,6 +146,7 @@ namespace SecondSpawn.AI
                 AgentDecisionDto decision = null;
                 string gatewayError = null;
                 yield return _gateway.Decide(request, value => decision = value, error => gatewayError = error);
+                TrackGatewayResult(gatewayError);
 
                 LogPhase(BrainPhase.Validate, BuildDecisionLogDetail(decision, gatewayError));
 
@@ -284,16 +287,44 @@ namespace SecondSpawn.AI
 
             if (decision.action == "move" && decision.move != null)
             {
-                return $"action=move, target=({decision.move.x:0.00},{decision.move.z:0.00}), confidence={decision.confidence:0.00}";
+                return $"action=move, target=({decision.move.x:0.00},{decision.move.z:0.00}), confidence={decision.confidence:0.00}{BuildDecisionSourceLogDetail(decision)}";
             }
 
             if (decision.action == "say")
             {
                 var textLength = string.IsNullOrWhiteSpace(decision.say) ? 0 : decision.say.Length;
-                return $"action=say, text_length={textLength}, confidence={decision.confidence:0.00}";
+                return $"action=say, text_length={textLength}, confidence={decision.confidence:0.00}{BuildDecisionSourceLogDetail(decision)}";
             }
 
-            return $"action={decision.action}, confidence={decision.confidence:0.00}";
+            return $"action={decision.action}, confidence={decision.confidence:0.00}{BuildDecisionSourceLogDetail(decision)}";
+        }
+
+        private static string BuildDecisionSourceLogDetail(AgentDecisionDto decision)
+        {
+            if (decision == null || string.IsNullOrWhiteSpace(decision.source))
+            {
+                return "";
+            }
+
+            return string.IsNullOrWhiteSpace(decision.source_reason)
+                ? $", source={decision.source}"
+                : $", source={decision.source}, source_reason={decision.source_reason}";
+        }
+
+        private void TrackGatewayResult(string gatewayError)
+        {
+            if (string.IsNullOrWhiteSpace(gatewayError))
+            {
+                _consecutiveGatewayFailures = 0;
+                return;
+            }
+
+            _consecutiveGatewayFailures++;
+            Debug.LogWarning($"[PrototypeAgentBrain] Gateway decision failed for agent={_agentId}, consecutive_failures={_consecutiveGatewayFailures}: {gatewayError}");
+            if (_consecutiveGatewayFailures >= Mathf.Max(1, _gatewayFailureErrorThreshold))
+            {
+                Debug.LogError($"[PrototypeAgentBrain] Gateway decision failure threshold reached for agent={_agentId}, threshold={_gatewayFailureErrorThreshold}: {gatewayError}");
+            }
         }
 
         private void ApplyDecision(AgentDecisionDto decision)
