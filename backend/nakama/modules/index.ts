@@ -6,6 +6,7 @@
 
 var collectionAgent = "secondspawn_agent";
 var keyAgentContext = "context";
+var collectionActor = "secondspawn_actor";
 
 var rpcIdHealth = "secondspawn_health";
 var rpcIdProfileGet = "secondspawn_profile_get";
@@ -13,6 +14,8 @@ var rpcIdMemoryAdd = "secondspawn_memory_add";
 var rpcIdSoulUpdate = "secondspawn_soul_update";
 var rpcIdAgentDecide = "secondspawn_agent_decide";
 var rpcIdAgentActivityAdd = "secondspawn_agent_activity_add";
+var rpcIdActorProfileGet = "secondspawn_actor_profile_get";
+var rpcIdActorMemoryAdd = "secondspawn_actor_memory_add";
 var agentActivityLogLimit = 32;
 var agentRuntimeMetricMax = 1000000000;
 
@@ -28,6 +31,8 @@ let InitModule: nkruntime.InitModule = function (
   initializer.registerRpc(rpcIdSoulUpdate, rpcSoulUpdate);
   initializer.registerRpc(rpcIdAgentDecide, rpcAgentDecide);
   initializer.registerRpc(rpcIdAgentActivityAdd, rpcAgentActivityAdd);
+  initializer.registerRpc(rpcIdActorProfileGet, rpcActorProfileGet);
+  initializer.registerRpc(rpcIdActorMemoryAdd, rpcActorMemoryAdd);
   initializer.registerBeforeAuthenticateCustom(beforeAuthenticateCustom);
   logger.info("Second Spawn Nakama runtime loaded.");
 };
@@ -190,6 +195,36 @@ function rpcAgentActivityAdd(
   return JSON.stringify(context);
 }
 
+function rpcActorProfileGet(
+  ctx: nkruntime.Context,
+  logger: nkruntime.Logger,
+  nk: nkruntime.Nakama,
+  payload: string
+): string {
+  var request = parseJson(payload || "{}", "actor profile payload");
+  var state = getOrCreateActorProfileState(ctx, nk, request);
+  return JSON.stringify(state.profile);
+}
+
+function rpcActorMemoryAdd(
+  ctx: nkruntime.Context,
+  logger: nkruntime.Logger,
+  nk: nkruntime.Nakama,
+  payload: string
+): string {
+  var request = parseJson(payload || "{}", "actor memory payload");
+  var state = getOrCreateActorProfileState(ctx, nk, request);
+  var memory = normalizeMemoryPayload(request);
+
+  if (!memory.id) {
+    memory.id = newActorMemoryId(state.profile, nk);
+  }
+  state.profile.memory = upsertMemoryRecord(state.profile.memory || [], memory);
+  state.profile.updated_at = new Date().toISOString();
+  writeActorProfile(nk, state.profile, state.version);
+  return JSON.stringify(state.profile);
+}
+
 function beforeAuthenticateCustom(
   ctx: nkruntime.Context,
   logger: nkruntime.Logger,
@@ -321,6 +356,140 @@ function writeAgentContext(nk: nkruntime.Nakama, context: any, version: string):
     write.version = version;
   }
   nk.storageWrite([write]);
+}
+
+function getOrCreateActorProfileState(ctx: nkruntime.Context, nk: nkruntime.Nakama, request: any): any {
+  var ownerId = requireUserId(ctx);
+  var actorId = normalizeActorId(request.actor_id || request.body_id || request.npc_id);
+  var existing = readActorProfile(nk, ownerId, actorId);
+  if (existing) {
+    return {
+      profile: ensureActorProfile(existing.value, ownerId, actorId),
+      version: existing.version
+    };
+  }
+
+  var profile = defaultActorProfile(ownerId, actorId, request);
+  writeActorProfile(nk, profile, "");
+  var created = readActorProfile(nk, ownerId, actorId);
+  if (created) {
+    return {
+      profile: ensureActorProfile(created.value, ownerId, actorId),
+      version: created.version
+    };
+  }
+
+  return {
+    profile: profile,
+    version: null
+  };
+}
+
+function readActorProfile(nk: nkruntime.Nakama, ownerId: string, actorId: string): any {
+  var objects = nk.storageRead([{
+    collection: collectionActor,
+    key: actorStorageKey(actorId),
+    userId: ownerId
+  }]);
+
+  if (!objects || objects.length === 0) {
+    return null;
+  }
+
+  return {
+    value: objects[0].value,
+    version: objects[0].version || null
+  };
+}
+
+function writeActorProfile(nk: nkruntime.Nakama, profile: any, version: string): void {
+  var write: any = {
+    collection: collectionActor,
+    key: actorStorageKey(profile.actor_id),
+    userId: profile.owner_player_id,
+    value: profile,
+    permissionRead: 1,
+    permissionWrite: 0
+  };
+  if (typeof version === "string") {
+    write.version = version;
+  }
+  nk.storageWrite([write]);
+}
+
+function defaultActorProfile(ownerId: string, actorId: string, request: any): any {
+  var timestamp = new Date().toISOString();
+  var displayName = trimString(request.display_name) || actorDisplayName(actorId);
+  var actorType = normalizeActorType(request.actor_type || request.kind);
+
+  return ensureActorProfile({
+    actor_id: actorId,
+    actor_type: actorType,
+    owner_player_id: ownerId,
+    display_name: displayName,
+    body: {
+      body_id: "body-" + actorId,
+      archetype_id: trimString(request.archetype_id) || "prototype-npc",
+      visual_prefab_key: trimString(request.visual_prefab_key) || "prototype-npc",
+      equipment: normalizeEquipment({}),
+      stats: defaultCharacterStats(),
+      characteristics: normalizeTraits(request.characteristics || {}),
+      time: {
+        remaining_seconds: 86400,
+        max_seconds: 86400,
+        danger_drain_rate: 1
+      },
+      cultivation: {
+        tier: "Awakening",
+        progress_xp: 0
+      },
+      lifecycle: "alive",
+      agent_policy: normalizePolicy(request.agent_policy || {}),
+      soul: normalizeSoul(request.soul || { name: displayName }, displayName)
+    },
+    memory: [{
+      id: "seed-actor-origin",
+      kind: "system",
+      summary: "This actor is an NPC-like body profile with separate memory, stats, traits, soul, and policy.",
+      importance: 6
+    }],
+    agent_runtime: defaultAgentRuntime(timestamp),
+    agent_activity: [{
+      id: "activity-bootstrap",
+      kind: "profile_bootstrap",
+      summary: "Initial actor profile was created.",
+      occurred_at: timestamp,
+      source: "nakama"
+    }],
+    created_at: timestamp,
+    updated_at: timestamp
+  }, ownerId, actorId);
+}
+
+function ensureActorProfile(profile: any, ownerId: string, actorId: string): any {
+  var timestamp = new Date().toISOString();
+  profile.actor_id = normalizeActorId(profile.actor_id || actorId);
+  profile.actor_type = normalizeActorType(profile.actor_type);
+  profile.owner_player_id = trimString(profile.owner_player_id) || ownerId;
+  profile.display_name = trimString(profile.display_name) || actorDisplayName(profile.actor_id);
+  profile.body = profile.body || {};
+  profile.body.body_id = trimString(profile.body.body_id) || "body-" + profile.actor_id;
+  profile.body.archetype_id = trimString(profile.body.archetype_id) || "prototype-npc";
+  profile.body.visual_prefab_key = trimString(profile.body.visual_prefab_key) || "prototype-npc";
+  profile.body.equipment = normalizeEquipment(profile.body.equipment || {});
+  profile.body.stats = normalizeStats(profile.body.stats || {});
+  profile.body.characteristics = normalizeTraits(profile.body.characteristics || {});
+  profile.body.time = normalizeBodyTime(profile.body.time || {});
+  profile.body.cultivation = profile.body.cultivation || { tier: "Awakening", progress_xp: 0 };
+  profile.body.lifecycle = trimString(profile.body.lifecycle) || "alive";
+  profile.body.agent_policy = normalizePolicy(profile.body.agent_policy || {});
+  profile.body.soul = normalizeSoul(profile.body.soul || { name: profile.display_name }, profile.display_name);
+  profile.memory = sortAndBoundMemories(profile.memory || []);
+  profile.agent_runtime = profile.agent_runtime || defaultAgentRuntime(timestamp);
+  profile.agent_activity = profile.agent_activity || [];
+  profile.created_at = trimString(profile.created_at) || timestamp;
+  profile.updated_at = trimString(profile.updated_at) || timestamp;
+  return profile;
 }
 
 function defaultAgentContext(playerId: string): any {
@@ -668,20 +837,22 @@ function normalizeTimestamp(value: any): string {
 }
 
 function upsertMemory(context: any, memory: any): void {
-  var memories = context.body.memory || [];
+  context.body.memory = upsertMemoryRecord(context.body.memory || [], memory);
+}
+
+function upsertMemoryRecord(memories: any[], memory: any): any[] {
   for (var i = 0; i < memories.length; i++) {
     var existing = memories[i];
     if (existing.kind === memory.kind && lowercase(trimString(existing.summary)) === lowercase(memory.summary)) {
       if (memory.importance > existing.importance) {
         existing.importance = memory.importance;
       }
-      context.body.memory = sortAndBoundMemories(memories);
-      return;
+      return sortAndBoundMemories(memories);
     }
   }
 
   memories.push(memory);
-  context.body.memory = sortAndBoundMemories(memories);
+  return sortAndBoundMemories(memories);
 }
 
 function sortAndBoundMemories(memories: any[]): any[] {
@@ -727,6 +898,45 @@ function normalizeTraits(traits: any): any {
     discipline: clampNumber(traits.discipline || 5, 1, 10),
     aggression: clampNumber(traits.aggression || 3, 1, 10),
     sociability: clampNumber(traits.sociability || 5, 1, 10)
+  };
+}
+
+function defaultCharacterStats(): any {
+  return {
+    level: 1,
+    vitality: 10,
+    force: 8,
+    agility: 8,
+    focus: 8,
+    resilience: 8,
+    max_health: 100,
+    max_energy: 50,
+    attack_power: 10,
+    defense_power: 5
+  };
+}
+
+function normalizeStats(stats: any): any {
+  var defaults = defaultCharacterStats();
+  return {
+    level: clampNumber(stats.level || defaults.level, 1, 100),
+    vitality: clampNumber(stats.vitality || defaults.vitality, 1, 9999),
+    force: clampNumber(stats.force || defaults.force, 1, 9999),
+    agility: clampNumber(stats.agility || defaults.agility, 1, 9999),
+    focus: clampNumber(stats.focus || defaults.focus, 1, 9999),
+    resilience: clampNumber(stats.resilience || defaults.resilience, 1, 9999),
+    max_health: clampNumber(stats.max_health || defaults.max_health, 1, 999999),
+    max_energy: clampNumber(stats.max_energy || defaults.max_energy, 0, 999999),
+    attack_power: clampNumber(stats.attack_power || defaults.attack_power, 0, 999999),
+    defense_power: clampNumber(stats.defense_power || defaults.defense_power, 0, 999999)
+  };
+}
+
+function normalizeBodyTime(time: any): any {
+  return {
+    remaining_seconds: clampNumber(time.remaining_seconds || 86400, 0, 31536000),
+    max_seconds: clampNumber(time.max_seconds || 86400, 1, 31536000),
+    danger_drain_rate: clampNumber(time.danger_drain_rate || 1, 0, 1000)
   };
 }
 
@@ -784,6 +994,45 @@ function normalizeMemoryKind(kind: any): string {
   return "system";
 }
 
+function normalizeMemoryPayload(payload: any): any {
+  var memory = payload.memory || payload;
+  var summary = trimString(memory.summary);
+  if (!summary) {
+    throw new Error("memory summary is required");
+  }
+  return {
+    id: trimString(memory.id),
+    kind: normalizeMemoryKind(memory.kind),
+    summary: summary,
+    importance: clampNumber(memory.importance || 5, 1, 10)
+  };
+}
+
+function normalizeActorType(actorType: any): string {
+  var value = trimString(actorType);
+  if (value === "player_body" || value === "npc" || value === "offline_agent" || value === "openclaw_agent") {
+    return value;
+  }
+  return "npc";
+}
+
+function normalizeActorId(actorId: any): string {
+  var normalized = sanitizeNakamaIdentifier(trimString(actorId), "");
+  if (!normalized) {
+    throw new Error("actor_id is required");
+  }
+  return normalized;
+}
+
+function actorStorageKey(actorId: string): string {
+  return "profile:" + normalizeActorId(actorId);
+}
+
+function actorDisplayName(actorId: string): string {
+  var normalized = normalizeActorId(actorId).replace(/-/g, " ");
+  return normalized || "Unnamed Actor";
+}
+
 function parseJson(payload: string, label: string): any {
   try {
     return JSON.parse(payload);
@@ -810,6 +1059,12 @@ function newActivityId(context: any, nk: nkruntime.Nakama): string {
   var playerId = sanitizeNakamaIdentifier(context.player.player_id || "player", "player");
   var sequence = String((context.body.agent_activity || []).length + 1);
   return "act-" + playerId + "-" + nk.uuidv4() + "-" + sequence;
+}
+
+function newActorMemoryId(profile: any, nk: nkruntime.Nakama): string {
+  var actorId = sanitizeNakamaIdentifier(profile.actor_id || "actor", "actor");
+  var sequence = String((profile.memory || []).length + 1);
+  return "mem-" + actorId + "-" + nk.uuidv4() + "-" + sequence;
 }
 
 function requireUserId(ctx: nkruntime.Context): string {
