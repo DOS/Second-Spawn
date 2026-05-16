@@ -126,7 +126,7 @@ namespace SecondSpawn.AI
 
         private static bool TryApplyProfileEquipment(int equipmentVisualId)
         {
-            var players = Object.FindObjectsByType<NetworkPlayer>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            var players = Object.FindObjectsByType<NetworkPlayer>(FindObjectsInactive.Exclude);
             foreach (var player in players)
             {
                 if (!IsLocalAuthoritativePlayer(player))

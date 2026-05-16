@@ -66,6 +66,12 @@ namespace SecondSpawn.AI
 
         public void StartAgent()
         {
+            if (!CanDrivePrototypeAgent())
+            {
+                Debug.LogWarning("[PrototypeLLMAgentDriver] Ignored prototype agent start on a non-authoritative player. Offline agents must run on the server/state authority.");
+                return;
+            }
+
             if (_gateway == null)
             {
                 Debug.LogWarning("[PrototypeLLMAgentDriver] No SecondSpawnGatewayClient found in scene.");
@@ -111,6 +117,11 @@ namespace SecondSpawn.AI
 
                 yield return new WaitForSeconds(Mathf.Max(0.25f, _decisionIntervalSeconds));
             }
+        }
+
+        private bool CanDrivePrototypeAgent()
+        {
+            return _networkPlayer != null && _networkPlayer.HasStateAuthority;
         }
 
         private AgentDecisionRequestDto BuildDecisionRequest()

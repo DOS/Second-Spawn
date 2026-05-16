@@ -86,4 +86,3 @@ namespace SecondSpawn.AI
         }
     }
 }
-
