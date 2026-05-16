@@ -18,19 +18,21 @@ type PlayerProfile struct {
 
 // BodyProfile is the current synthetic body. It is replaced on reincarnation.
 type BodyProfile struct {
-	BodyID          string          `json:"body_id"`
-	ArchetypeID     string          `json:"archetype_id"`
-	VisualPrefabKey string          `json:"visual_prefab_key"`
+	BodyID          string           `json:"body_id"`
+	ArchetypeID     string           `json:"archetype_id"`
+	VisualPrefabKey string           `json:"visual_prefab_key"`
 	Equipment       EquipmentLoadout `json:"equipment"`
-	Stats           CharacterStats  `json:"stats"`
-	Characteristics CharacterTraits `json:"characteristics"`
-	Time            BodyTimeState   `json:"time"`
-	Cultivation     Cultivation     `json:"cultivation"`
-	Lifecycle       BodyLifecycle   `json:"lifecycle"`
-	AgentPolicy     AgentPolicy     `json:"agent_policy"`
-	Soul            SoulProfile     `json:"soul"`
-	Memory          []MemoryRecord  `json:"memory"`
-	CreatedAt       time.Time       `json:"created_at"`
+	Stats           CharacterStats   `json:"stats"`
+	Characteristics CharacterTraits  `json:"characteristics"`
+	Time            BodyTimeState    `json:"time"`
+	Cultivation     Cultivation      `json:"cultivation"`
+	Lifecycle       BodyLifecycle    `json:"lifecycle"`
+	AgentPolicy     AgentPolicy      `json:"agent_policy"`
+	Soul            SoulProfile      `json:"soul"`
+	Memory          []MemoryRecord   `json:"memory"`
+	AgentRuntime    AgentRuntime     `json:"agent_runtime"`
+	AgentActivity   []AgentActivity  `json:"agent_activity"`
+	CreatedAt       time.Time        `json:"created_at"`
 }
 
 type EquipmentLoadout struct {
@@ -127,6 +129,43 @@ type MemoryRecord struct {
 	Importance int        `json:"importance"`
 	CreatedAt  time.Time  `json:"created_at"`
 	UpdatedAt  time.Time  `json:"updated_at"`
+}
+
+// AgentRuntime tracks operational counters for the offline-agent prototype.
+// These values are observability only and do not grant authoritative rewards.
+type AgentRuntime struct {
+	ProfileBootstrappedAt  string `json:"profile_bootstrapped_at"`
+	LastProfileBootstrapAt string `json:"last_profile_bootstrap_at"`
+	LastActivityAt         string `json:"last_activity_at"`
+	ActivityCount          int64  `json:"activity_count"`
+	DecisionCount          int64  `json:"decision_count"`
+	FallbackDecisionCount  int64  `json:"fallback_decision_count"`
+	MoveIntentCount        int64  `json:"move_intent_count"`
+	SayIntentCount         int64  `json:"say_intent_count"`
+	StopIntentCount        int64  `json:"stop_intent_count"`
+	InteractIntentCount    int64  `json:"interact_intent_count"`
+	OfflineSeconds         int64  `json:"offline_seconds"`
+}
+
+// AgentActivity is a compact recent activity entry from Nakama.
+type AgentActivity struct {
+	ID         string               `json:"id"`
+	Kind       string               `json:"kind"`
+	Summary    string               `json:"summary"`
+	OccurredAt string               `json:"occurred_at"`
+	Source     string               `json:"source"`
+	Metrics    AgentActivityMetrics `json:"metrics"`
+}
+
+// AgentActivityMetrics carries optional counters reported with an activity.
+type AgentActivityMetrics struct {
+	OfflineSeconds    int64 `json:"offline_seconds"`
+	DecisionsMade     int64 `json:"decisions_made"`
+	FallbackDecisions int64 `json:"fallback_decisions"`
+	MoveIntents       int64 `json:"move_intents"`
+	SayIntents        int64 `json:"say_intents"`
+	StopIntents       int64 `json:"stop_intents"`
+	InteractIntents   int64 `json:"interact_intents"`
 }
 
 // AgentContext is the prompt-safe snapshot passed to an LLM provider.

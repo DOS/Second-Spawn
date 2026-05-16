@@ -114,6 +114,93 @@ func TestAgentDecidePrototype(t *testing.T) {
 	srv := New(&config.Config{Env: "test"})
 
 	req := httptest.NewRequest(http.MethodPost, "/v1/agent/decide", bytes.NewReader([]byte(`{
+		"context": {
+			"player": {
+				"player_id": "user-1",
+				"display_name": "user-1"
+			},
+			"body": {
+				"body_id": "body-user-1",
+				"archetype_id": "prototype-hunter",
+				"visual_prefab_key": "prototype-random",
+				"equipment": {
+					"primary_weapon": "none",
+					"equipment_visual_id": 0
+				},
+				"stats": {
+					"level": 1,
+					"vitality": 10,
+					"force": 8,
+					"agility": 8,
+					"focus": 8,
+					"resilience": 8,
+					"max_health": 100,
+					"max_energy": 50,
+					"attack_power": 10,
+					"defense_power": 5
+				},
+				"characteristics": {
+					"curiosity": 6,
+					"courage": 5,
+					"empathy": 5,
+					"discipline": 5,
+					"aggression": 3,
+					"sociability": 5
+				},
+				"time": {
+					"remaining_seconds": 3600,
+					"max_seconds": 86400,
+					"danger_drain_rate": 1
+				},
+				"cultivation": {
+					"tier": "Awakening",
+					"progress_xp": 0
+				},
+				"lifecycle": "alive",
+				"agent_policy": {
+					"enabled": true,
+					"mode": "observe_and_keep_safe",
+					"max_session_seconds": 1800,
+					"allow_body_time_spend": false,
+					"allow_risky_combat": false,
+					"preferred_activities": ["explore"],
+					"forbidden_activities": ["start_pvp"],
+					"stop_when_body_time_below": 900
+				},
+				"soul": {
+					"name": "user-1",
+					"core_drive": "survive",
+					"temperament": "careful",
+					"combat_style": "avoid risky fights",
+					"social_style": "brief",
+					"moral_boundaries": ["do not betray allies"],
+					"long_term_goals": ["reach Enhancement"],
+					"player_notes": "prototype",
+					"reincarnation_lore": "synthetic continuity"
+				},
+				"memory": [],
+				"agent_runtime": {
+					"profile_bootstrapped_at": "2026-05-16T00:00:00Z",
+					"last_profile_bootstrap_at": "2026-05-16T00:00:00Z",
+					"last_activity_at": "2026-05-16T00:00:00Z",
+					"activity_count": 1,
+					"decision_count": 2,
+					"fallback_decision_count": 1,
+					"move_intent_count": 1,
+					"say_intent_count": 0,
+					"stop_intent_count": 1,
+					"interact_intent_count": 0,
+					"offline_seconds": 45
+				},
+				"agent_activity": [{
+					"id": "activity-bootstrap",
+					"kind": "profile_bootstrap",
+					"summary": "Initial profile was created.",
+					"occurred_at": "2026-05-16T00:00:00Z",
+					"source": "nakama"
+				}]
+			}
+		},
 		"world_snapshot": {
 			"zone_id": "hub",
 			"position": {"x": 0, "z": 0},

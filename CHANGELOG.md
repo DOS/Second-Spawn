@@ -17,6 +17,9 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   and endpoint decider injection.
 - Fallback observability for model-backed decisions, including decision source
   metadata and structured warning logs.
+- Nakama agent runtime counters for profile bootstrap, fallback decisions,
+  action intent counts, activity count, and offline-agent seconds.
+- Bounded Nakama `agent_activity` log with `secondspawn_agent_activity_add`.
 
 ### Changed
 
@@ -27,6 +30,10 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   implemented prototype foundation.
 - Unity prototype brain now warns on gateway decision failures and escalates
   repeated failures to errors.
+- Unity Nakama auth now bootstraps the player profile immediately and records a
+  profile activity event after successful authentication.
+- Nakama deterministic decision RPC now records runtime decision counters before
+  returning prototype fallback intent.
 
 ### Verification
 
@@ -36,7 +43,8 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 
 ### Known Issues
 
-- PR #5 is still in review and has not merged into `dev`.
+- PR #5 has merged into `dev`; the next review gate is the profile bootstrap
+  and agent activity branch.
 - Gateway route-level JWT enforcement is not complete.
 - LLM rate limiting and token budget enforcement are tracked in issue #6.
 - Real voice still waits for an ephemeral-token provider flow.
@@ -94,4 +102,4 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 
 - No release tags exist yet.
 - Main foundation merge: `154ac15`.
-- Current review branch commit: `deea2d4`.
+- Current merged model-decision branch commit: `998637a`.

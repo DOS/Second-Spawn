@@ -12,6 +12,9 @@ var rpcIdProfileGet = "secondspawn_profile_get";
 var rpcIdMemoryAdd = "secondspawn_memory_add";
 var rpcIdSoulUpdate = "secondspawn_soul_update";
 var rpcIdAgentDecide = "secondspawn_agent_decide";
+var rpcIdAgentActivityAdd = "secondspawn_agent_activity_add";
+var agentActivityLogLimit = 32;
+var agentRuntimeMetricMax = 1000000000;
 
 let InitModule: nkruntime.InitModule = function (
   ctx: nkruntime.Context,
@@ -24,6 +27,7 @@ let InitModule: nkruntime.InitModule = function (
   initializer.registerRpc(rpcIdMemoryAdd, rpcMemoryAdd);
   initializer.registerRpc(rpcIdSoulUpdate, rpcSoulUpdate);
   initializer.registerRpc(rpcIdAgentDecide, rpcAgentDecide);
+  initializer.registerRpc(rpcIdAgentActivityAdd, rpcAgentActivityAdd);
   initializer.registerBeforeAuthenticateCustom(beforeAuthenticateCustom);
   logger.info("Second Spawn Nakama runtime loaded.");
 };
@@ -47,7 +51,11 @@ function rpcProfileGet(
   nk: nkruntime.Nakama,
   payload: string
 ): string {
-  var context = getOrCreateAgentContext(ctx, nk);
+  var state = getOrCreateAgentContextState(ctx, nk);
+  var context = state.context;
+  if (ensureAgentRuntime(context)) {
+    writeAgentContext(nk, context, state.version);
+  }
   return JSON.stringify(context);
 }
 
@@ -57,7 +65,8 @@ function rpcMemoryAdd(
   nk: nkruntime.Nakama,
   payload: string
 ): string {
-  var context = getOrCreateAgentContext(ctx, nk);
+  var state = getOrCreateAgentContextState(ctx, nk);
+  var context = state.context;
   var memory = parseJson(payload || "{}", "memory payload");
   memory.kind = normalizeMemoryKind(memory.kind);
   memory.summary = trimString(memory.summary);
@@ -66,11 +75,11 @@ function rpcMemoryAdd(
   }
   memory.importance = clampNumber(memory.importance || 5, 1, 10);
   if (!memory.id) {
-    memory.id = newMemoryId(context);
+    memory.id = newMemoryId(context, nk);
   }
 
   upsertMemory(context, memory);
-  writeAgentContext(nk, context);
+  writeAgentContext(nk, context, state.version);
   return JSON.stringify(context);
 }
 
@@ -80,14 +89,15 @@ function rpcSoulUpdate(
   nk: nkruntime.Nakama,
   payload: string
 ): string {
-  var context = getOrCreateAgentContext(ctx, nk);
+  var state = getOrCreateAgentContextState(ctx, nk);
+  var context = state.context;
   var request = parseJson(payload || "{}", "soul payload");
 
   context.body.soul = normalizeSoul(request.soul || {}, context.player.display_name);
   context.body.characteristics = normalizeTraits(request.characteristics || {});
   context.body.agent_policy = normalizePolicy(request.agent_policy || {});
 
-  writeAgentContext(nk, context);
+  writeAgentContext(nk, context, state.version);
   return JSON.stringify(context);
 }
 
@@ -97,47 +107,87 @@ function rpcAgentDecide(
   nk: nkruntime.Nakama,
   payload: string
 ): string {
-  var context = getOrCreateAgentContext(ctx, nk);
+  var state = getOrCreateAgentContextState(ctx, nk);
+  var context = state.context;
   var request = parseJson(payload || "{}", "agent decision payload");
   var world = request.world_snapshot || {};
   var allowed = request.allowed || ["move", "interact", "say", "stop"];
-  var bodyTime = Number(world.body_time_seconds || context.body.time.remaining_seconds || 0);
+  var interactTargetId = selectInteractTargetId(world);
+  var bodyTime = Number(world.body_time_seconds !== undefined && world.body_time_seconds !== null
+    ? world.body_time_seconds
+    : context.body.time.remaining_seconds || 0);
+  var decision: any;
 
-  if (bodyTime > 0 && bodyTime <= context.body.agent_policy.stop_when_body_time_below) {
-    return JSON.stringify({
+  if (bodyTime <= context.body.agent_policy.stop_when_body_time_below) {
+    decision = {
       action: "stop",
       reason: "body_time_below_policy_threshold",
-      confidence: 0.9
-    });
-  }
-
-  if (arrayContains(allowed, "move")) {
+      confidence: 0.9,
+      source: "fallback",
+      source_reason: "nakama_body_time_policy"
+    };
+  } else if (arrayContains(allowed, "move")) {
     var position = world.position || { x: 0, z: 0 };
-    return JSON.stringify({
+    decision = {
       action: "move",
       move: {
         x: Number(position.x || 0) + 1.5,
         z: Number(position.z || 0) + 0.75
       },
       reason: "prototype_safe_patrol",
-      confidence: 0.55
-    });
-  }
-
-  if (arrayContains(allowed, "say")) {
-    return JSON.stringify({
+      confidence: 0.55,
+      source: "fallback",
+      source_reason: "nakama_prototype_patrol"
+    };
+  } else if (arrayContains(allowed, "interact") && interactTargetId) {
+    decision = {
+      action: "interact",
+      target_id: interactTargetId,
+      reason: "prototype_interact_fallback",
+      confidence: 0.55,
+      source: "fallback",
+      source_reason: "nakama_interact_fallback"
+    };
+  } else if (arrayContains(allowed, "say")) {
+    decision = {
       action: "say",
       say: "I am keeping this body safe until the player returns.",
       reason: "prototype_social_fallback",
-      confidence: 0.6
-    });
+      confidence: 0.6,
+      source: "fallback",
+      source_reason: "nakama_social_fallback"
+    };
+  } else {
+    decision = {
+      action: "stop",
+      reason: "no_allowed_action",
+      confidence: 0.5,
+      source: "fallback",
+      source_reason: "nakama_no_allowed_action"
+    };
   }
 
-  return JSON.stringify({
-    action: "stop",
-    reason: "no_allowed_action",
-    confidence: 0.5
-  });
+  recordAgentDecision(context, decision, nk);
+  writeAgentContext(nk, context, state.version);
+  return JSON.stringify(decision);
+}
+
+function rpcAgentActivityAdd(
+  ctx: nkruntime.Context,
+  logger: nkruntime.Logger,
+  nk: nkruntime.Nakama,
+  payload: string
+): string {
+  var state = getOrCreateAgentContextState(ctx, nk);
+  var context = state.context;
+  var request = parseJson(payload || "{}", "agent activity payload");
+  var activity = normalizeAgentActivity(context, request, nk);
+
+  if (addAgentActivity(context, activity, nk)) {
+    applyActivityMetrics(context.body.agent_runtime, request.metrics || {});
+    writeAgentContext(nk, context, state.version);
+  }
+  return JSON.stringify(context);
 }
 
 function beforeAuthenticateCustom(
@@ -195,15 +245,50 @@ function beforeAuthenticateCustom(
 }
 
 function getOrCreateAgentContext(ctx: nkruntime.Context, nk: nkruntime.Nakama): any {
+  return getOrCreateAgentContextState(ctx, nk).context;
+}
+
+function getOrCreateAgentContextState(ctx: nkruntime.Context, nk: nkruntime.Nakama): any {
   var userId = requireUserId(ctx);
   var existing = readAgentContext(nk, userId);
   if (existing) {
-    return existing;
+    return normalizeExistingAgentContextState(nk, userId, existing);
   }
 
   var context = defaultAgentContext(userId);
-  writeAgentContext(nk, context);
-  return context;
+  writeAgentContext(nk, context, "");
+  var created = readAgentContext(nk, userId);
+  if (created) {
+    return {
+      context: created.value,
+      version: created.version
+    };
+  }
+
+  return {
+    context: context,
+    version: null
+  };
+}
+
+function normalizeExistingAgentContextState(nk: nkruntime.Nakama, userId: string, existing: any): any {
+  var before = JSON.stringify(existing.value || {});
+  var context = ensureAgentContext(existing.value || {}, userId);
+  if (JSON.stringify(context) !== before) {
+    writeAgentContext(nk, context, existing.version);
+    var rewritten = readAgentContext(nk, userId);
+    if (rewritten) {
+      return {
+        context: ensureAgentContext(rewritten.value, userId),
+        version: rewritten.version
+      };
+    }
+  }
+
+  return {
+    context: context,
+    version: existing.version
+  };
 }
 
 function readAgentContext(nk: nkruntime.Nakama, userId: string): any {
@@ -217,18 +302,25 @@ function readAgentContext(nk: nkruntime.Nakama, userId: string): any {
     return null;
   }
 
-  return objects[0].value;
+  return {
+    value: objects[0].value,
+    version: objects[0].version || null
+  };
 }
 
-function writeAgentContext(nk: nkruntime.Nakama, context: any): void {
-  nk.storageWrite([{
+function writeAgentContext(nk: nkruntime.Nakama, context: any, version: string): void {
+  var write: any = {
     collection: collectionAgent,
     key: keyAgentContext,
     userId: context.player.player_id,
     value: context,
     permissionRead: 1,
     permissionWrite: 0
-  }]);
+  };
+  if (typeof version === "string") {
+    write.version = version;
+  }
+  nk.storageWrite([write]);
 }
 
 function defaultAgentContext(playerId: string): any {
@@ -246,18 +338,7 @@ function defaultAgentContext(playerId: string): any {
       archetype_id: "prototype-hunter",
       visual_prefab_key: "prototype-random",
       equipment: normalizeEquipment({}),
-      stats: {
-        level: 1,
-        vitality: 10,
-        force: 8,
-        agility: 8,
-        focus: 8,
-        resilience: 8,
-        max_health: 100,
-        max_energy: 50,
-        attack_power: 10,
-        defense_power: 5
-      },
+      stats: defaultCharacterStats(),
       characteristics: normalizeTraits({}),
       time: {
         remaining_seconds: 86400,
@@ -277,9 +358,313 @@ function defaultAgentContext(playerId: string): any {
         summary: "The character is a Second Spawn prototype body controlled by the player or their offline agent.",
         importance: 6
       }],
+      agent_runtime: defaultAgentRuntime(timestamp),
+      agent_activity: [{
+        id: "activity-bootstrap",
+        kind: "profile_bootstrap",
+        summary: "Initial Nakama profile and prototype body stats were created.",
+        occurred_at: timestamp,
+        source: "nakama"
+      }],
       created_at: timestamp
     }
   };
+}
+
+function ensureAgentContext(context: any, playerId: string): any {
+  var timestamp = new Date().toISOString();
+  context.player = context.player || {};
+  context.player.player_id = trimString(context.player.player_id) || playerId;
+  context.player.display_name = trimString(context.player.display_name) || context.player.player_id;
+  context.player.created_at = trimString(context.player.created_at) || timestamp;
+  context.body = context.body || {};
+  context.body.body_id = trimString(context.body.body_id) || "body-" + context.player.player_id;
+  context.body.archetype_id = trimString(context.body.archetype_id) || "prototype-hunter";
+  context.body.visual_prefab_key = trimString(context.body.visual_prefab_key) || "prototype-random";
+  context.body.equipment = normalizeEquipment(context.body.equipment || {});
+  context.body.stats = normalizeStats(context.body.stats || {});
+  context.body.characteristics = normalizeTraits(context.body.characteristics || {});
+  context.body.time = normalizeBodyTime(context.body.time || {});
+  context.body.cultivation = normalizeCultivation(context.body.cultivation || {});
+  context.body.lifecycle = trimString(context.body.lifecycle) || "alive";
+  context.body.agent_policy = normalizePolicy(context.body.agent_policy || {});
+  context.body.soul = normalizeSoul(context.body.soul || {}, context.player.display_name);
+  context.body.memory = sortAndBoundMemories(context.body.memory || []);
+  context.body.created_at = trimString(context.body.created_at) || timestamp;
+  ensureAgentRuntime(context);
+  return context;
+}
+
+function ensureAgentRuntime(context: any): boolean {
+  var changed = false;
+  if (!context.body) {
+    context.body = {};
+    changed = true;
+  }
+
+  if (!context.body.agent_runtime) {
+    context.body.agent_runtime = defaultAgentRuntime(new Date().toISOString());
+    changed = true;
+  }
+
+  if (!context.body.agent_activity) {
+    context.body.agent_activity = [];
+    changed = true;
+  }
+
+  if (context.body.agent_activity.length === 0) {
+    var timestamp = new Date().toISOString();
+    context.body.agent_activity.push({
+      id: "activity-bootstrap",
+      kind: "profile_bootstrap",
+      summary: "Nakama profile was normalized with agent runtime tracking.",
+      occurred_at: timestamp,
+      source: "nakama"
+    });
+    context.body.agent_runtime.activity_count = 1;
+    context.body.agent_runtime.last_activity_at = timestamp;
+    changed = true;
+  }
+
+  context.body.agent_runtime.decision_count = clampNumber(context.body.agent_runtime.decision_count || 0, 0, agentRuntimeMetricMax);
+  context.body.agent_runtime.fallback_decision_count = clampNumber(context.body.agent_runtime.fallback_decision_count || 0, 0, agentRuntimeMetricMax);
+  context.body.agent_runtime.move_intent_count = clampNumber(context.body.agent_runtime.move_intent_count || 0, 0, agentRuntimeMetricMax);
+  context.body.agent_runtime.say_intent_count = clampNumber(context.body.agent_runtime.say_intent_count || 0, 0, agentRuntimeMetricMax);
+  context.body.agent_runtime.stop_intent_count = clampNumber(context.body.agent_runtime.stop_intent_count || 0, 0, agentRuntimeMetricMax);
+  context.body.agent_runtime.interact_intent_count = clampNumber(context.body.agent_runtime.interact_intent_count || 0, 0, agentRuntimeMetricMax);
+  context.body.agent_runtime.offline_seconds = clampNumber(context.body.agent_runtime.offline_seconds || 0, 0, agentRuntimeMetricMax);
+  context.body.agent_runtime.activity_count = clampNumber(context.body.agent_runtime.activity_count || context.body.agent_activity.length, 0, agentRuntimeMetricMax);
+  return changed;
+}
+
+function defaultAgentRuntime(timestamp: string): any {
+  return {
+    profile_bootstrapped_at: timestamp,
+    last_profile_bootstrap_at: timestamp,
+    last_activity_at: timestamp,
+    activity_count: 1,
+    decision_count: 0,
+    fallback_decision_count: 0,
+    move_intent_count: 0,
+    say_intent_count: 0,
+    stop_intent_count: 0,
+    interact_intent_count: 0,
+    offline_seconds: 0
+  };
+}
+
+function defaultCharacterStats(): any {
+  return {
+    level: 1,
+    vitality: 10,
+    force: 8,
+    agility: 8,
+    focus: 8,
+    resilience: 8,
+    max_health: 100,
+    max_energy: 50,
+    attack_power: 10,
+    defense_power: 5
+  };
+}
+
+function normalizeStats(stats: any): any {
+  var defaults = defaultCharacterStats();
+  return {
+    level: clampNumber(numberOrDefault(stats.level, defaults.level), 1, 100),
+    vitality: clampNumber(numberOrDefault(stats.vitality, defaults.vitality), 1, 9999),
+    force: clampNumber(numberOrDefault(stats.force, defaults.force), 1, 9999),
+    agility: clampNumber(numberOrDefault(stats.agility, defaults.agility), 1, 9999),
+    focus: clampNumber(numberOrDefault(stats.focus, defaults.focus), 1, 9999),
+    resilience: clampNumber(numberOrDefault(stats.resilience, defaults.resilience), 1, 9999),
+    max_health: clampNumber(numberOrDefault(stats.max_health, defaults.max_health), 1, 999999),
+    max_energy: clampNumber(numberOrDefault(stats.max_energy, defaults.max_energy), 0, 999999),
+    attack_power: clampNumber(numberOrDefault(stats.attack_power, defaults.attack_power), 0, 999999),
+    defense_power: clampNumber(numberOrDefault(stats.defense_power, defaults.defense_power), 0, 999999)
+  };
+}
+
+function normalizeBodyTime(time: any): any {
+  return {
+    remaining_seconds: clampNumber(numberOrDefault(time.remaining_seconds, 86400), 0, 31536000),
+    max_seconds: clampNumber(numberOrDefault(time.max_seconds, 86400), 1, 31536000),
+    danger_drain_rate: clampNumber(numberOrDefault(time.danger_drain_rate, 1), 0, 1000)
+  };
+}
+
+function normalizeCultivation(cultivation: any): any {
+  return {
+    tier: trimString(cultivation.tier) || "Awakening",
+    progress_xp: clampNumber(numberOrDefault(cultivation.progress_xp, 0), 0, agentRuntimeMetricMax)
+  };
+}
+
+function recordAgentDecision(context: any, decision: any, nk: nkruntime.Nakama): void {
+  ensureAgentRuntime(context);
+  var runtime = context.body.agent_runtime;
+  runtime.decision_count += 1;
+  if (decision.source === "fallback") {
+    runtime.fallback_decision_count += 1;
+  }
+
+  incrementDecisionAction(runtime, decision.action);
+  var summary = "Agent chose " + trimString(decision.action || "unknown") + ": " + trimString(decision.reason || "no reason provided");
+  if (shouldRecordDecisionActivity(context, summary)) {
+    addAgentActivity(context, {
+      kind: "agent_decision",
+      summary: summary,
+      source: "nakama",
+      metrics: {
+        decisions_made: 1
+      }
+    }, nk);
+  }
+}
+
+function shouldRecordDecisionActivity(context: any, summary: string): boolean {
+  var activities = context.body.agent_activity || [];
+  if (activities.length === 0) {
+    return true;
+  }
+
+  var latest = activities[0];
+  return latest.kind !== "agent_decision" || trimString(latest.summary) !== summary;
+}
+
+function selectInteractTargetId(world: any): string {
+  var targetId = trimString(world.focus_target_id || world.target_id || world.interact_target_id);
+  if (targetId) {
+    return targetId;
+  }
+
+  var nearbyObjects = world.nearby_objects || [];
+  for (var index = 0; index < nearbyObjects.length; index += 1) {
+    var nearbyId = trimString(nearbyObjects[index] && nearbyObjects[index].id);
+    if (nearbyId) {
+      return nearbyId;
+    }
+  }
+
+  return "";
+}
+
+function incrementDecisionAction(runtime: any, action: string): void {
+  switch (trimString(action)) {
+    case "move":
+      runtime.move_intent_count += 1;
+      break;
+    case "say":
+      runtime.say_intent_count += 1;
+      break;
+    case "interact":
+      runtime.interact_intent_count += 1;
+      break;
+    case "stop":
+      runtime.stop_intent_count += 1;
+      break;
+  }
+}
+
+function normalizeAgentActivity(context: any, request: any, nk: nkruntime.Nakama): any {
+  var kind = normalizeAgentActivityKind(request.kind);
+  var summary = trimString(request.summary);
+  if (!summary) {
+    throw new Error("agent activity summary is required");
+  }
+
+  return {
+    id: trimString(request.id) || newActivityId(context, nk),
+    kind: kind,
+    summary: summary,
+    occurred_at: normalizeTimestamp(request.occurred_at),
+    source: trimString(request.source) || "client",
+    metrics: request.metrics || {}
+  };
+}
+
+function normalizeAgentActivityKind(kind: any): string {
+  var value = trimString(kind);
+  if (
+    value === "profile_bootstrap" ||
+    value === "offline_session" ||
+    value === "agent_decision" ||
+    value === "memory_sync" ||
+    value === "manual_note"
+  ) {
+    return value;
+  }
+  return "manual_note";
+}
+
+function addAgentActivity(context: any, activity: any, nk: nkruntime.Nakama): boolean {
+  ensureAgentRuntime(context);
+  var activities = context.body.agent_activity || [];
+  if (!activity.id) {
+    activity.id = newActivityId(context, nk);
+  } else if (hasAgentActivityId(activities, activity.id)) {
+    return false;
+  }
+  if (!activity.occurred_at) {
+    activity.occurred_at = new Date().toISOString();
+  }
+  if (!activity.source) {
+    activity.source = "nakama";
+  }
+
+  activities.unshift(activity);
+  if (activities.length > agentActivityLogLimit) {
+    activities = activities.slice(0, agentActivityLogLimit);
+  }
+  context.body.agent_activity = activities;
+  context.body.agent_runtime.activity_count += 1;
+  context.body.agent_runtime.last_activity_at = activity.occurred_at;
+  return true;
+}
+
+function hasAgentActivityId(activities: any[], activityId: string): boolean {
+  var normalizedId = trimString(activityId);
+  for (var index = 0; index < activities.length; index += 1) {
+    if (trimString(activities[index] && activities[index].id) === normalizedId) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function applyActivityMetrics(runtime: any, metrics: any): void {
+  runtime.offline_seconds = addRuntimeMetric(runtime.offline_seconds, metrics.offline_seconds);
+  runtime.decision_count = addRuntimeMetric(runtime.decision_count, metrics.decisions_made || metrics.decision_count);
+  runtime.fallback_decision_count = addRuntimeMetric(runtime.fallback_decision_count, metrics.fallback_decisions || metrics.fallback_decision_count);
+  runtime.move_intent_count = addRuntimeMetric(runtime.move_intent_count, metrics.move_intents || metrics.move_intent_count);
+  runtime.say_intent_count = addRuntimeMetric(runtime.say_intent_count, metrics.say_intents || metrics.say_intent_count);
+  runtime.stop_intent_count = addRuntimeMetric(runtime.stop_intent_count, metrics.stop_intents || metrics.stop_intent_count);
+  runtime.interact_intent_count = addRuntimeMetric(runtime.interact_intent_count, metrics.interact_intents || metrics.interact_intent_count);
+}
+
+function addRuntimeMetric(current: any, increment: any): number {
+  return clampNumber(Number(current || 0) + positiveMetric(increment), 0, agentRuntimeMetricMax);
+}
+
+function positiveMetric(value: any): number {
+  var numberValue = Number(value || 0);
+  if (isNaN(numberValue) || !isFinite(numberValue) || numberValue < 0) {
+    return 0;
+  }
+  return Math.floor(numberValue);
+}
+
+function normalizeTimestamp(value: any): string {
+  var timestamp = trimString(value);
+  if (!timestamp) {
+    return new Date().toISOString();
+  }
+
+  var parsed = new Date(timestamp).getTime();
+  if (isNaN(parsed) || !isFinite(parsed)) {
+    return new Date().toISOString();
+  }
+
+  return new Date(parsed).toISOString();
 }
 
 function upsertMemory(context: any, memory: any): void {
@@ -415,11 +800,16 @@ function parseJsonOrNull(payload: string): any {
   }
 }
 
-function newMemoryId(context: any): string {
+function newMemoryId(context: any, nk: nkruntime.Nakama): string {
   var playerId = sanitizeNakamaIdentifier(context.player.player_id || "player", "player");
-  var randomPart = Math.floor(Math.random() * 0x100000000).toString(36);
   var sequence = String((context.body.memory || []).length + 1);
-  return "mem-" + playerId + "-" + nowId() + "-" + randomPart + "-" + sequence;
+  return "mem-" + playerId + "-" + nk.uuidv4() + "-" + sequence;
+}
+
+function newActivityId(context: any, nk: nkruntime.Nakama): string {
+  var playerId = sanitizeNakamaIdentifier(context.player.player_id || "player", "player");
+  var sequence = String((context.body.agent_activity || []).length + 1);
+  return "act-" + playerId + "-" + nk.uuidv4() + "-" + sequence;
 }
 
 function requireUserId(ctx: nkruntime.Context): string {
@@ -496,6 +886,13 @@ function clampNumber(value: any, min: number, max: number): number {
   return numberValue;
 }
 
+function numberOrDefault(value: any, fallback: number): any {
+  if (value === null || value === undefined || value === "") {
+    return fallback;
+  }
+  return value;
+}
+
 function trimString(value: any): string {
   if (value === null || value === undefined) {
     return "";
@@ -509,8 +906,4 @@ function lowercase(value: any): string {
 
 function trimTrailingSlash(value: string): string {
   return value.replace(/\/+$/g, "");
-}
-
-function nowId(): string {
-  return String(new Date().getTime());
 }

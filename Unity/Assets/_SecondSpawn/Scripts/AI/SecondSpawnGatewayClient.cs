@@ -34,6 +34,12 @@ namespace SecondSpawn.AI
         [SerializeField, Tooltip("Use Nakama device auth when Supabase is not configured yet. Local prototype only.")]
         private bool _allowNakamaDeviceFallback = true;
 
+        [SerializeField, Tooltip("Create or refresh the Nakama character profile immediately after authentication.")]
+        private bool _bootstrapProfileAfterAuth = true;
+
+        [SerializeField, Min(1), Tooltip("Seconds before gateway or Nakama HTTP requests fail fast in Play Mode.")]
+        private int _requestTimeoutSeconds = 10;
+
         private bool _authAttempted;
         private bool _authInProgress;
         private string _supabaseAccessToken;
@@ -126,6 +132,7 @@ namespace SecondSpawn.AI
 
             _authInProgress = false;
             Debug.Log($"[SecondSpawnGatewayClient] Authenticated Nakama user {PlayerId}.");
+            yield return BootstrapNakamaProfileAfterAuth("custom_auth");
             onSuccess?.Invoke();
         }
 
@@ -142,6 +149,11 @@ namespace SecondSpawn.AI
         public IEnumerator AddNakamaMemory(MemoryRecordDto memory, Action<AgentContextDto> onSuccess = null, Action<string> onError = null)
         {
             yield return SendNakamaRpc("secondspawn_memory_add", memory, onSuccess, onError);
+        }
+
+        public IEnumerator AddNakamaAgentActivity(AgentActivityRecordDto activity, Action<AgentContextDto> onSuccess = null, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_agent_activity_add", activity, onSuccess, onError);
         }
 
         public IEnumerator UpdateNakamaSoul(UpdateSoulRequestDto request, Action<AgentContextDto> onSuccess = null, Action<string> onError = null)
@@ -194,7 +206,29 @@ namespace SecondSpawn.AI
 
         public IEnumerator Decide(AgentDecisionRequestDto request, Action<AgentDecisionDto> onSuccess, Action<string> onError = null)
         {
-            yield return SendJson("POST", "/v1/agent/decide", request, onSuccess, onError);
+            AgentDecisionDto decision = null;
+            string gatewayError = null;
+            yield return SendJson<AgentDecisionDto>(
+                "POST",
+                "/v1/agent/decide",
+                GatewayAgentDecisionRequestDto.From(request),
+                response => decision = response,
+                error => gatewayError = error);
+
+            if (decision == null)
+            {
+                if (!string.IsNullOrWhiteSpace(gatewayError))
+                {
+                    onError?.Invoke(gatewayError);
+                }
+                yield break;
+            }
+
+            onSuccess?.Invoke(decision);
+            if (HasNakamaSession)
+            {
+                StartCoroutine(RecordGatewayDecisionActivity(decision));
+            }
         }
 
         public IEnumerator Chat(NpcChatRequestDto request, Action<NpcChatResponseDto> onSuccess, Action<string> onError = null)
@@ -312,7 +346,26 @@ namespace SecondSpawn.AI
 
             _authInProgress = false;
             Debug.Log($"[SecondSpawnGatewayClient] Authenticated Nakama device fallback user {PlayerId}.");
+            yield return BootstrapNakamaProfileAfterAuth("device_auth");
             onSuccess?.Invoke();
+        }
+
+        private IEnumerator BootstrapNakamaProfileAfterAuth(string authSource)
+        {
+            if (!_bootstrapProfileAfterAuth || !HasNakamaSession)
+            {
+                yield break;
+            }
+
+            yield return AddNakamaAgentActivity(new AgentActivityRecordDto
+            {
+                kind = "profile_bootstrap",
+                summary = $"Unity client authenticated through {authSource} and confirmed the Nakama character profile.",
+                source = "unity"
+            }, null, error =>
+            {
+                Debug.LogWarning($"[SecondSpawnGatewayClient] Nakama profile activity write failed: {error}");
+            });
         }
 
         private IEnumerator AuthenticateNakamaDevice(string deviceId, string username, Action<NakamaSessionDto> onSuccess, Action<string> onError)
@@ -332,6 +385,7 @@ namespace SecondSpawn.AI
 
         private IEnumerator Send<TResponse>(UnityWebRequest request, Action<TResponse> onSuccess, Action<string> onError)
         {
+            request.timeout = Mathf.Max(1, _requestTimeoutSeconds);
             yield return request.SendWebRequest();
 
             if (request.result != UnityWebRequest.Result.Success)
@@ -402,6 +456,122 @@ namespace SecondSpawn.AI
         private static string TrimTrailingSlash(string value)
         {
             return string.IsNullOrWhiteSpace(value) ? "" : value.Trim().TrimEnd('/');
+        }
+
+        private static AgentActivityRecordDto BuildGatewayDecisionActivity(AgentDecisionDto decision)
+        {
+            var action = NormalizeDecisionAction(decision?.action);
+            var reason = string.IsNullOrWhiteSpace(decision?.reason) ? "no reason provided" : decision.reason.Trim();
+            return new AgentActivityRecordDto
+            {
+                kind = "agent_decision",
+                summary = $"Gateway chose {action}: {reason}",
+                source = "unity_gateway",
+                metrics = BuildGatewayDecisionMetrics(decision)
+            };
+        }
+
+        private IEnumerator RecordGatewayDecisionActivity(AgentDecisionDto decision)
+        {
+            yield return AddNakamaAgentActivity(BuildGatewayDecisionActivity(decision), null, error =>
+            {
+                Debug.LogWarning($"[SecondSpawnGatewayClient] Gateway decision activity write failed: {error}");
+            });
+        }
+
+        private static AgentActivityMetricsDto BuildGatewayDecisionMetrics(AgentDecisionDto decision)
+        {
+            var action = NormalizeDecisionAction(decision?.action);
+            return new AgentActivityMetricsDto
+            {
+                decisions_made = 1,
+                fallback_decisions = IsFallbackDecision(decision) ? 1 : 0,
+                move_intents = action == "move" ? 1 : 0,
+                say_intents = action == "say" ? 1 : 0,
+                stop_intents = action == "stop" ? 1 : 0,
+                interact_intents = action == "interact" ? 1 : 0
+            };
+        }
+
+        private static bool IsFallbackDecision(AgentDecisionDto decision)
+        {
+            return string.Equals(decision?.source?.Trim(), "fallback", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string NormalizeDecisionAction(string action)
+        {
+            return string.IsNullOrWhiteSpace(action) ? "unknown" : action.Trim().ToLowerInvariant();
+        }
+
+        [Serializable]
+        private sealed class GatewayAgentDecisionRequestDto
+        {
+            public GatewayAgentContextDto context;
+            public WorldSnapshotDto world_snapshot;
+            public string[] allowed;
+
+            public static GatewayAgentDecisionRequestDto From(AgentDecisionRequestDto request)
+            {
+                return new GatewayAgentDecisionRequestDto
+                {
+                    context = GatewayAgentContextDto.From(request?.context),
+                    world_snapshot = request?.world_snapshot,
+                    allowed = request?.allowed
+                };
+            }
+        }
+
+        [Serializable]
+        private sealed class GatewayAgentContextDto
+        {
+            public PlayerProfileDto player;
+            public GatewayBodyProfileDto body;
+
+            public static GatewayAgentContextDto From(AgentContextDto context)
+            {
+                return new GatewayAgentContextDto
+                {
+                    player = context?.player,
+                    body = GatewayBodyProfileDto.From(context?.body)
+                };
+            }
+        }
+
+        [Serializable]
+        private sealed class GatewayBodyProfileDto
+        {
+            public string body_id;
+            public string archetype_id;
+            public string visual_prefab_key;
+            public EquipmentLoadoutDto equipment;
+            public CharacterTraitsDto characteristics;
+            public BodyTimeDto time;
+            public CultivationDto cultivation;
+            public AgentPolicyDto agent_policy;
+            public SoulProfileDto soul;
+            public MemoryRecordDto[] memory;
+
+            public static GatewayBodyProfileDto From(BodyProfileDto body)
+            {
+                if (body == null)
+                {
+                    return null;
+                }
+
+                return new GatewayBodyProfileDto
+                {
+                    body_id = body.body_id,
+                    archetype_id = body.archetype_id,
+                    visual_prefab_key = body.visual_prefab_key,
+                    equipment = body.equipment,
+                    characteristics = body.characteristics,
+                    time = body.time,
+                    cultivation = body.cultivation,
+                    agent_policy = body.agent_policy,
+                    soul = body.soul,
+                    memory = body.memory
+                };
+            }
         }
 
         private static string ExtractJwtStringClaim(string jwt, string claimName)

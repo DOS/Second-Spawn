@@ -48,6 +48,8 @@ This preserves:
 | `CharacterStats` | Mostly no | Game server | Combat and movement-affecting numbers for current body |
 | `Cultivation` | Partially | Game server | Consciousness progression that can carry over |
 | `MemoryRecord` | Yes, with decay | Backend | Small curated memory facts for LLM context |
+| `AgentRuntime` | Yes, across bodies until reset policy exists | Backend | Counters for profile bootstrap, activity, decisions, fallback decisions, and offline time |
+| `AgentActivity` | Yes, bounded recent history | Backend | Compact audit trail for offline-agent sessions and Unity/Nakama bootstrap events |
 
 ---
 
@@ -223,6 +225,44 @@ Vertical slice rule: the LLM receives only the top N memories by importance and 
 
 ---
 
+## Agent Runtime and Activity
+
+`AgentRuntime` is the compact operational counter block for the offline-agent
+prototype. It is not authoritative gameplay state and must not be used to grant
+items, XP, currency, BodyTime, or cultivation progress without a separate
+server-side rule.
+
+Tracked counters:
+
+| Field | Meaning |
+| ---- | ---- |
+| `profile_bootstrapped_at` | First time the Nakama profile/body context was created |
+| `last_profile_bootstrap_at` | Last time the profile bootstrap path refreshed the context |
+| `last_activity_at` | Timestamp of the latest agent activity event |
+| `activity_count` | Number of activity events accepted by Nakama |
+| `decision_count` | Number of server-side prototype decisions returned |
+| `fallback_decision_count` | Number of deterministic fallback decisions or reported fallback decisions |
+| `move_intent_count` | Count of move intents returned or reported |
+| `say_intent_count` | Count of say intents returned or reported |
+| `stop_intent_count` | Count of stop intents returned or reported |
+| `interact_intent_count` | Count of interact intents returned or reported |
+| `offline_seconds` | Reported offline-agent session seconds |
+
+`AgentActivity` is a bounded recent history list. Nakama stores the latest 32
+activity records on the profile context. Current accepted kinds are:
+
+- `profile_bootstrap`
+- `offline_session`
+- `agent_decision`
+- `memory_sync`
+- `manual_note`
+
+Unity writes a `profile_bootstrap` activity after Nakama auth confirms that the
+player profile exists. Nakama also records `agent_decision` activity when the
+runtime decision RPC returns a deterministic prototype intent.
+
+---
+
 ## Agent Context Prompt
 
 Backend code now defines a prompt-safe context builder in:
@@ -288,12 +328,13 @@ Implemented surfaces:
 
 - `backend/nakama/modules/index.ts` is the current game-backend source for
   player profile, current body, soul, agent policy, BodyTime, cultivation, and
-  compact memories. It exposes `secondspawn_profile_get`,
-  `secondspawn_memory_add`, `secondspawn_soul_update`, and
-  `secondspawn_agent_decide` runtime RPCs.
+  compact memories. It also stores `agent_runtime` counters and a bounded
+  `agent_activity` log. It exposes `secondspawn_profile_get`,
+  `secondspawn_memory_add`, `secondspawn_soul_update`,
+  `secondspawn_agent_activity_add`, and `secondspawn_agent_decide` runtime RPCs.
 - Nakama runtime module tests cover Supabase custom-auth rewriting, profile
-  bootstrap, memory dedupe, soul update clamping, and deterministic fallback
-  agent decisions.
+  bootstrap, memory dedupe, soul update clamping, deterministic fallback agent
+  decisions, runtime counters, and activity logging.
 - Local Unity Play Mode can use Nakama device auth as a development fallback
   when Supabase anonymous auth is not configured yet. Production account binding
   must use Supabase custom auth or a later approved identity ADR.
