@@ -378,11 +378,6 @@ namespace SecondSpawn.AI
 
         private static float CalculateAgilitySpeedMultiplier(int agility)
         {
-            if (agility <= 0)
-            {
-                return 1f;
-            }
-
             return Mathf.Clamp(agility / 8f, 0.75f, 1.4f);
         }
 

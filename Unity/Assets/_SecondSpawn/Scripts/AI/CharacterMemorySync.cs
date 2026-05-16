@@ -211,6 +211,16 @@ namespace SecondSpawn.AI
                 return true;
             }
 
+            if (player.Runner.IsServer)
+            {
+                return true;
+            }
+
+            if (!player.Runner.IsSharedModeMasterClient)
+            {
+                return false;
+            }
+
             return player.Object.InputAuthority == PlayerRef.None ||
                    player.Object.InputAuthority == player.Runner.LocalPlayer;
         }

@@ -248,11 +248,6 @@ namespace SecondSpawn.Networking
 
         private float GetAgilitySpeedMultiplier()
         {
-            if (Agility <= 0)
-            {
-                return 1f;
-            }
-
             return Mathf.Clamp(Agility / 8f, 0.75f, 1.4f);
         }
     }
