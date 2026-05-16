@@ -21,7 +21,19 @@ func TestBuildAgentContextPromptSortsAndBoundsMemories(t *testing.T) {
 				PrimaryWeapon:     "one_hand_sword",
 				EquipmentVisualID: 2,
 			},
-			Lifecycle:       BodyLifecycleAlive,
+			Stats: CharacterStats{
+				Level:        2,
+				Vitality:     12,
+				Force:        9,
+				Agility:      11,
+				Focus:        8,
+				Resilience:   10,
+				MaxHealth:    140,
+				MaxEnergy:    60,
+				AttackPower:  15,
+				DefensePower: 7,
+			},
+			Lifecycle: BodyLifecycleAlive,
 			Time: BodyTimeState{
 				RemainingSeconds: 3600,
 				MaxSeconds:       7200,
@@ -60,6 +72,9 @@ func TestBuildAgentContextPromptSortsAndBoundsMemories(t *testing.T) {
 	}
 	if !strings.Contains(prompt, "primary_weapon: one_hand_sword") {
 		t.Fatalf("expected equipment in prompt, got %s", prompt)
+	}
+	if !strings.Contains(prompt, "stats: level=2 vitality=12 force=9 agility=11 focus=8 resilience=10 max_health=140 max_energy=60 attack_power=15 defense_power=7") {
+		t.Fatalf("expected body stats in prompt, got %s", prompt)
 	}
 	if !strings.Contains(prompt, "memory_02_summary: Recent preference memory") {
 		t.Fatalf("expected second bounded memory, got %s", prompt)

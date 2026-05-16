@@ -185,6 +185,7 @@ namespace SecondSpawn.AI
             LogPhase(BrainPhase.Bootstrap, _context == null
                 ? "context unavailable after bootstrap"
                 : "context loaded");
+            ApplyContextToPrototypeBody();
         }
 
         private UpdateSoulRequestDto BuildSoulSeed()
@@ -351,6 +352,26 @@ namespace SecondSpawn.AI
 
             _hasMoveTarget = false;
             ApplyLocomotion(0f);
+        }
+
+        private void ApplyContextToPrototypeBody()
+        {
+            var body = _context?.body;
+            if (body == null)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(body.soul?.name))
+            {
+                _displayName = body.soul.name.Trim();
+            }
+
+            var stats = body.stats;
+            if (stats != null)
+            {
+                _moveSpeed = Mathf.Clamp(_moveSpeed * Mathf.Clamp(stats.agility / 8f, 0.75f, 1.4f), 0.5f, 6f);
+            }
         }
 
         private void LogPhase(BrainPhase phase, string detail)
