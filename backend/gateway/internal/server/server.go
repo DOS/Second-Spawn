@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -22,6 +23,8 @@ type Server struct {
 	cfg     *config.Config
 	store   character.Store
 	decider agent.Decider
+	limiter *agentDecisionLimiter
+	now     func() time.Time
 }
 
 func New(cfg *config.Config) *Server {
@@ -46,7 +49,14 @@ func NewWithDependencies(cfg *config.Config, store character.Store, decider agen
 	if decider == nil {
 		decider = agent.PrototypeDecider{}
 	}
-	return &Server{cfg: cfg, store: store, decider: decider}
+	srv := &Server{
+		cfg:     cfg,
+		store:   store,
+		decider: decider,
+		now:     func() time.Time { return time.Now().UTC() },
+	}
+	srv.limiter = newAgentDecisionLimiter(cfg, srv.now)
+	return srv
 }
 
 // Routes registers all HTTP handlers. Keep this file small - real handler
@@ -144,7 +154,13 @@ func (s *Server) handleAgentDecide(w http.ResponseWriter, r *http.Request) {
 		req.Context = ctx
 	}
 	req.Allowed = ensureStopAllowed(req.Allowed)
-	// TODO(#6): enforce per-player decision rate limits and daily token budgets here.
+	if allowed, result := s.limiter.Allow(req.Context.Player.PlayerID, estimateAgentDecisionTokens(req)); !allowed {
+		if result.RetryAfterSeconds > 0 {
+			w.Header().Set("Retry-After", strconv.FormatInt(result.RetryAfterSeconds, 10))
+		}
+		writeJSON(w, http.StatusTooManyRequests, result)
+		return
+	}
 	decision, err := s.decider.Decide(r.Context(), req)
 	if err != nil {
 		writeJSON(w, http.StatusBadGateway, map[string]any{"error": err.Error()})
@@ -156,6 +172,22 @@ func (s *Server) handleAgentDecide(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, decision)
+}
+
+const agentDecisionOutputTokenReserve = 400
+
+func estimateAgentDecisionTokens(req agent.DecisionRequest) int {
+	payload, err := json.Marshal(req)
+	if err != nil {
+		return agentDecisionOutputTokenReserve
+	}
+	// Rough English/JSON estimate: four bytes per token plus the configured
+	// maximum completion reserve used by the model-backed decision path.
+	estimate := len(payload)/4 + agentDecisionOutputTokenReserve
+	if estimate < agentDecisionOutputTokenReserve {
+		return agentDecisionOutputTokenReserve
+	}
+	return estimate
 }
 
 type npcChatRequest struct {
