@@ -13,11 +13,12 @@ namespace SecondSpawn.AI
     public sealed class ActorProfileBinder : MonoBehaviour
     {
         [SerializeField] private bool _loadOnStart = true;
-        [SerializeField] private string _actorId = "npc-guide";
+        [SerializeField] private string _actorId = "";
         [SerializeField] private string _actorType = "npc";
         [SerializeField] private string _displayName = "Guide";
         [SerializeField] private string _archetypeId = "prototype-npc";
         [SerializeField] private string _visualPrefabKey = "prototype-npc";
+        [SerializeField] private bool _applyDisplayNameToGameObject;
         [SerializeField] private bool _seedMemoryOnStart = true;
         [SerializeField] private string _seedMemoryKind = "system";
         [SerializeField, TextArea] private string _seedMemorySummary =
@@ -26,9 +27,10 @@ namespace SecondSpawn.AI
 
         private SecondSpawnGatewayClient _gateway;
         private Coroutine _loadRoutine;
+        private bool _isLoading;
 
         public ActorProfileDto CurrentProfile { get; private set; }
-        public bool IsLoading => _loadRoutine != null;
+        public bool IsLoading => _isLoading;
         public bool IsReady => CurrentProfile != null;
         public string ActorId => ResolveActorId();
 
@@ -54,10 +56,18 @@ namespace SecondSpawn.AI
                 StopCoroutine(_loadRoutine);
             }
 
-            _loadRoutine = StartCoroutine(LoadActorProfile());
+            _loadRoutine = StartCoroutine(LoadActorProfileRoutine());
         }
 
-        public IEnumerator LoadActorProfile()
+        private IEnumerator LoadActorProfileRoutine()
+        {
+            _isLoading = true;
+            yield return LoadActorProfile();
+            _isLoading = false;
+            _loadRoutine = null;
+        }
+
+        private IEnumerator LoadActorProfile()
         {
             if (_gateway == null)
             {
@@ -67,7 +77,6 @@ namespace SecondSpawn.AI
             if (_gateway == null)
             {
                 Debug.LogWarning($"[ActorProfileBinder] No gateway client found for actor {ActorId}.");
-                _loadRoutine = null;
                 yield break;
             }
 
@@ -77,7 +86,6 @@ namespace SecondSpawn.AI
             if (profile == null)
             {
                 Debug.LogWarning($"[ActorProfileBinder] Actor profile load failed for {ActorId}: {profileError}");
-                _loadRoutine = null;
                 yield break;
             }
 
@@ -108,7 +116,6 @@ namespace SecondSpawn.AI
             }
 
             ProfileLoaded?.Invoke(CurrentProfile);
-            _loadRoutine = null;
         }
 
         private ActorProfileRequestDto BuildProfileRequest()
@@ -138,7 +145,10 @@ namespace SecondSpawn.AI
             if (!string.IsNullOrWhiteSpace(profile.display_name))
             {
                 _displayName = profile.display_name.Trim();
-                gameObject.name = _displayName;
+                if (_applyDisplayNameToGameObject)
+                {
+                    gameObject.name = _displayName;
+                }
             }
         }
 
