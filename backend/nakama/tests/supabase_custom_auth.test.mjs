@@ -28,6 +28,7 @@ function createRuntimeHarness(module) {
   let storageVersion = 0;
   let uuidCounter = 0;
   let conflictOnNextVersionedWrite = false;
+  let conflictOnNextCreateOnlyWrite = false;
   const logger = {
     debug: () => {},
     error: (message) => {
@@ -48,8 +49,24 @@ function createRuntimeHarness(module) {
           existing.version = `external-version-${storageVersion}`;
           conflictOnNextVersionedWrite = false;
         }
-        if (request.version && (!existing || existing.version !== request.version)) {
-          throw new Error("storage version conflict");
+        if (Object.prototype.hasOwnProperty.call(request, "version")) {
+          if (request.version === "") {
+            if (conflictOnNextCreateOnlyWrite) {
+              storageVersion += 1;
+              storage.set(key, {
+                ...request,
+                value: { external: true },
+                version: `external-version-${storageVersion}`,
+              });
+              conflictOnNextCreateOnlyWrite = false;
+              throw new Error("storage create conflict");
+            }
+            if (existing) {
+              throw new Error("storage create conflict");
+            }
+          } else if (!existing || existing.version !== request.version) {
+            throw new Error("storage version conflict");
+          }
         }
         storageVersion += 1;
         storage.set(key, {
@@ -82,6 +99,9 @@ function createRuntimeHarness(module) {
     nk,
     conflictNextWrite: () => {
       conflictOnNextVersionedWrite = true;
+    },
+    conflictNextCreateOnlyWrite: () => {
+      conflictOnNextCreateOnlyWrite = true;
     },
   };
 }
@@ -116,6 +136,18 @@ assert.ok(harness.registeredRpcs.has("secondspawn_memory_add"));
 assert.ok(harness.registeredRpcs.has("secondspawn_soul_update"));
 assert.ok(harness.registeredRpcs.has("secondspawn_agent_decide"));
 assert.ok(harness.registeredRpcs.has("secondspawn_agent_activity_add"));
+
+const createConflictHarness = createRuntimeHarness(module);
+createConflictHarness.conflictNextCreateOnlyWrite();
+assert.throws(
+  () => createConflictHarness.registeredRpcs.get("secondspawn_profile_get")(
+    { userId: "create-race-user", env: {} },
+    createConflictHarness.logger,
+    createConflictHarness.nk,
+    ""
+  ),
+  /storage create conflict/
+);
 
 const healthPayload = harness.registeredRpcs.get("secondspawn_health")({ userId: "user-1", env: {} }, harness.logger, harness.nk, "");
 assert.equal(JSON.parse(healthPayload).service, "second-spawn-nakama");

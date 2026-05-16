@@ -300,7 +300,7 @@ function writeAgentContext(nk: nkruntime.Nakama, context: any, version: string):
     permissionRead: 1,
     permissionWrite: 0
   };
-  if (version) {
+  if (typeof version === "string") {
     write.version = version;
   }
   nk.storageWrite([write]);

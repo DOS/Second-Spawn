@@ -206,7 +206,32 @@ namespace SecondSpawn.AI
 
         public IEnumerator Decide(AgentDecisionRequestDto request, Action<AgentDecisionDto> onSuccess, Action<string> onError = null)
         {
-            yield return SendJson("POST", "/v1/agent/decide", GatewayAgentDecisionRequestDto.From(request), onSuccess, onError);
+            AgentDecisionDto decision = null;
+            string gatewayError = null;
+            yield return SendJson<AgentDecisionDto>(
+                "POST",
+                "/v1/agent/decide",
+                GatewayAgentDecisionRequestDto.From(request),
+                response => decision = response,
+                error => gatewayError = error);
+
+            if (decision == null)
+            {
+                if (!string.IsNullOrWhiteSpace(gatewayError))
+                {
+                    onError?.Invoke(gatewayError);
+                }
+                yield break;
+            }
+
+            onSuccess?.Invoke(decision);
+            if (HasNakamaSession)
+            {
+                yield return AddNakamaAgentActivity(BuildGatewayDecisionActivity(decision), null, error =>
+                {
+                    Debug.LogWarning($"[SecondSpawnGatewayClient] Gateway decision activity write failed: {error}");
+                });
+            }
         }
 
         public IEnumerator Chat(NpcChatRequestDto request, Action<NpcChatResponseDto> onSuccess, Action<string> onError = null)
@@ -434,6 +459,43 @@ namespace SecondSpawn.AI
         private static string TrimTrailingSlash(string value)
         {
             return string.IsNullOrWhiteSpace(value) ? "" : value.Trim().TrimEnd('/');
+        }
+
+        private static AgentActivityRecordDto BuildGatewayDecisionActivity(AgentDecisionDto decision)
+        {
+            var action = NormalizeDecisionAction(decision?.action);
+            var reason = string.IsNullOrWhiteSpace(decision?.reason) ? "no reason provided" : decision.reason.Trim();
+            return new AgentActivityRecordDto
+            {
+                kind = "agent_decision",
+                summary = $"Gateway chose {action}: {reason}",
+                source = "unity_gateway",
+                metrics = BuildGatewayDecisionMetrics(decision)
+            };
+        }
+
+        private static AgentActivityMetricsDto BuildGatewayDecisionMetrics(AgentDecisionDto decision)
+        {
+            var action = NormalizeDecisionAction(decision?.action);
+            return new AgentActivityMetricsDto
+            {
+                decisions_made = 1,
+                fallback_decisions = IsFallbackDecision(decision) ? 1 : 0,
+                move_intents = action == "move" ? 1 : 0,
+                say_intents = action == "say" ? 1 : 0,
+                stop_intents = action == "stop" ? 1 : 0,
+                interact_intents = action == "interact" ? 1 : 0
+            };
+        }
+
+        private static bool IsFallbackDecision(AgentDecisionDto decision)
+        {
+            return string.Equals(decision?.source?.Trim(), "fallback", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string NormalizeDecisionAction(string action)
+        {
+            return string.IsNullOrWhiteSpace(action) ? "unknown" : action.Trim().ToLowerInvariant();
         }
 
         [Serializable]
