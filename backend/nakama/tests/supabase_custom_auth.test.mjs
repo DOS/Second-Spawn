@@ -219,6 +219,27 @@ assert.equal(afterStopDecision.body.agent_runtime.decision_count, 2);
 assert.equal(afterStopDecision.body.agent_runtime.fallback_decision_count, 2);
 assert.equal(afterStopDecision.body.agent_runtime.stop_intent_count, 1);
 
+const zeroTimeDecision = JSON.parse(harness.registeredRpcs.get("secondspawn_agent_decide")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  JSON.stringify({
+    world_snapshot: { position: { x: 2, z: 3 }, body_time_seconds: 0 },
+    allowed: ["move", "say", "stop"]
+  })
+));
+assert.equal(zeroTimeDecision.action, "stop");
+assert.equal(zeroTimeDecision.reason, "body_time_below_policy_threshold");
+const afterZeroTimeDecision = JSON.parse(harness.registeredRpcs.get("secondspawn_profile_get")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  ""
+));
+assert.equal(afterZeroTimeDecision.body.agent_runtime.decision_count, 3);
+assert.equal(afterZeroTimeDecision.body.agent_runtime.fallback_decision_count, 3);
+assert.equal(afterZeroTimeDecision.body.agent_runtime.stop_intent_count, 2);
+
 const activityContext = JSON.parse(harness.registeredRpcs.get("secondspawn_agent_activity_add")(
   { userId: "user-1", env: {} },
   harness.logger,
@@ -234,7 +255,7 @@ const activityContext = JSON.parse(harness.registeredRpcs.get("secondspawn_agent
   })
 ));
 assert.equal(activityContext.body.agent_runtime.offline_seconds, 45);
-assert.equal(activityContext.body.agent_runtime.fallback_decision_count, 4);
+assert.equal(activityContext.body.agent_runtime.fallback_decision_count, 5);
 assert.equal(activityContext.body.agent_runtime.say_intent_count, 1);
 assert.equal(activityContext.body.agent_activity[0].kind, "offline_session");
 
@@ -258,7 +279,7 @@ assert.notEqual(normalizedActivityContext.body.agent_activity[0].occurred_at, "n
 assert.ok(!Number.isNaN(Date.parse(normalizedActivityContext.body.agent_activity[0].occurred_at)));
 assert.equal(normalizedActivityContext.body.agent_runtime.offline_seconds, 45);
 assert.equal(normalizedActivityContext.body.agent_runtime.decision_count, 1000000000);
-assert.equal(normalizedActivityContext.body.agent_runtime.fallback_decision_count, 4);
+assert.equal(normalizedActivityContext.body.agent_runtime.fallback_decision_count, 5);
 assert.equal(normalizedActivityContext.body.agent_runtime.say_intent_count, 3);
 
 const conflictHarness = createRuntimeHarness(module);

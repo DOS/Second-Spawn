@@ -112,10 +112,12 @@ function rpcAgentDecide(
   var request = parseJson(payload || "{}", "agent decision payload");
   var world = request.world_snapshot || {};
   var allowed = request.allowed || ["move", "interact", "say", "stop"];
-  var bodyTime = Number(world.body_time_seconds || context.body.time.remaining_seconds || 0);
+  var bodyTime = Number(world.body_time_seconds !== undefined && world.body_time_seconds !== null
+    ? world.body_time_seconds
+    : context.body.time.remaining_seconds || 0);
   var decision: any;
 
-  if (bodyTime > 0 && bodyTime <= context.body.agent_policy.stop_when_body_time_below) {
+  if (bodyTime <= context.body.agent_policy.stop_when_body_time_below) {
     decision = {
       action: "stop",
       reason: "body_time_below_policy_threshold",
