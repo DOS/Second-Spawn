@@ -129,7 +129,7 @@ assert.equal(
 
 const harness = createRuntimeHarness(module);
 assert.equal(harness.registeredHooks.length, 1);
-assert.equal(harness.registeredRpcs.size, 8);
+assert.equal(harness.registeredRpcs.size, 9);
 assert.ok(harness.registeredRpcs.has("secondspawn_health"));
 assert.ok(harness.registeredRpcs.has("secondspawn_profile_get"));
 assert.ok(harness.registeredRpcs.has("secondspawn_memory_add"));
@@ -138,6 +138,7 @@ assert.ok(harness.registeredRpcs.has("secondspawn_agent_decide"));
 assert.ok(harness.registeredRpcs.has("secondspawn_agent_activity_add"));
 assert.ok(harness.registeredRpcs.has("secondspawn_bodytime_event"));
 assert.ok(harness.registeredRpcs.has("secondspawn_reincarnate"));
+assert.ok(harness.registeredRpcs.has("secondspawn_cultivation_event"));
 
 const createConflictHarness = createRuntimeHarness(module);
 createConflictHarness.conflictNextCreateOnlyWrite();
@@ -174,6 +175,8 @@ assert.equal(profile.body.stats.max_health, 100);
 assert.equal(profile.body.stats.attack_power, 10);
 assert.equal(profile.body.time.remaining_seconds, 86400);
 assert.equal(profile.body.lifecycle, "alive");
+assert.equal(profile.body.cultivation.tier, "Awakening");
+assert.equal(profile.body.cultivation.progress_xp, 0);
 assert.equal(profile.body.agent_runtime.decision_count, 0);
 assert.equal(profile.body.agent_runtime.fallback_decision_count, 0);
 assert.equal(profile.body.agent_activity.length, 1);
@@ -237,6 +240,59 @@ assert.throws(
     })
   ),
   /earn source is on cooldown/
+);
+
+const cultivationProgress = JSON.parse(harness.registeredRpcs.get("secondspawn_cultivation_event")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  JSON.stringify({
+    id: "cultivation-1",
+    source: "prototype_nibirium_absorb",
+    amount_xp: 500
+  })
+));
+assert.equal(cultivationProgress.body.cultivation.tier, "Awakening");
+assert.equal(cultivationProgress.body.cultivation.progress_xp, 500);
+assert.equal(cultivationProgress.body.agent_activity[0].kind, "cultivation");
+
+const retriedCultivation = JSON.parse(harness.registeredRpcs.get("secondspawn_cultivation_event")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  JSON.stringify({
+    id: "cultivation-1",
+    source: "prototype_nibirium_absorb",
+    amount_xp: 500
+  })
+));
+assert.equal(retriedCultivation.body.cultivation.progress_xp, 500);
+assert.equal(retriedCultivation.body.agent_activity.filter((activity) => activity.id === "cultivation-1").length, 1);
+
+const cultivationPromotion = JSON.parse(harness.registeredRpcs.get("secondspawn_cultivation_event")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  JSON.stringify({
+    id: "cultivation-2",
+    source: "prototype_nibirium_absorb",
+    amount_xp: 500
+  })
+));
+assert.equal(cultivationPromotion.body.cultivation.tier, "Enhancement");
+assert.equal(cultivationPromotion.body.cultivation.progress_xp, 0);
+assert.equal(cultivationPromotion.body.agent_activity[0].metrics.cultivation_promoted, 1);
+assert.throws(
+  () => harness.registeredRpcs.get("secondspawn_cultivation_event")(
+    { userId: "user-1", env: {} },
+    harness.logger,
+    harness.nk,
+    JSON.stringify({
+      source: "unknown_source",
+      amount_xp: 100
+    })
+  ),
+  /cultivation source is not allowed/
 );
 
 const storedProfile = harness.storage.get(storageKey("user-1", "secondspawn_agent", "context"));
@@ -454,6 +510,18 @@ const drainedBodyTime = JSON.parse(bodyTimeDeathHarness.registeredRpcs.get("seco
 assert.equal(drainedBodyTime.body.time.remaining_seconds, 0);
 assert.equal(drainedBodyTime.body.lifecycle, "dead");
 assert.match(drainedBodyTime.body.agent_activity[0].summary, /died/);
+assert.throws(
+  () => bodyTimeDeathHarness.registeredRpcs.get("secondspawn_cultivation_event")(
+    { userId: "bodytime-death-user", env: {} },
+    bodyTimeDeathHarness.logger,
+    bodyTimeDeathHarness.nk,
+    JSON.stringify({
+      source: "prototype_nibirium_absorb",
+      amount_xp: 100
+    })
+  ),
+  /dead bodies cannot progress cultivation/
+);
 assert.throws(
   () => bodyTimeDeathHarness.registeredRpcs.get("secondspawn_bodytime_event")(
     { userId: "bodytime-death-user", env: {} },

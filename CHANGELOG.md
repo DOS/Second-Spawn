@@ -25,6 +25,8 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   cooldown, activity logging, and zero-time body death.
 - Nakama `secondspawn_reincarnate` RPC for a prototype zero-time death to fresh
   body flow using a 5-day SECOND cost against a 7-day starting test balance.
+- Nakama `secondspawn_cultivation_event` RPC for prototype Nibirium absorption
+  XP and Awakening to Enhancement promotion.
 
 ### Changed
 
@@ -43,6 +45,8 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   lifecycle state in the shared profile DTO.
 - Unity gateway client now exposes SECOND balance, reincarnation count, and a
   Nakama reincarnation wrapper for prototype UI and playtest flows.
+- Unity gateway client now exposes a Nakama cultivation event wrapper for the
+  first two cultivation tiers.
 
 ### Verification
 

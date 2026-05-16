@@ -15,6 +15,7 @@ var rpcIdAgentDecide = "secondspawn_agent_decide";
 var rpcIdAgentActivityAdd = "secondspawn_agent_activity_add";
 var rpcIdBodyTimeEvent = "secondspawn_bodytime_event";
 var rpcIdReincarnate = "secondspawn_reincarnate";
+var rpcIdCultivationEvent = "secondspawn_cultivation_event";
 var agentActivityLogLimit = 32;
 var agentRuntimeMetricMax = 1000000000;
 var bodyTimeMaxSeconds = 86400 * 30;
@@ -25,6 +26,8 @@ var bodyTimeEarnCooldownSeconds = 60;
 var secondPrototypeMaxBalanceSeconds = 86400 * 365;
 var secondPrototypeStartingBalanceSeconds = 86400 * 7;
 var secondPrototypeReincarnationCostSeconds = 86400 * 5;
+var cultivationPrototypeXpCap = 500;
+var cultivationAwakeningToEnhancementXp = 1000;
 
 let InitModule: nkruntime.InitModule = function (
   ctx: nkruntime.Context,
@@ -40,6 +43,7 @@ let InitModule: nkruntime.InitModule = function (
   initializer.registerRpc(rpcIdAgentActivityAdd, rpcAgentActivityAdd);
   initializer.registerRpc(rpcIdBodyTimeEvent, rpcBodyTimeEvent);
   initializer.registerRpc(rpcIdReincarnate, rpcReincarnate);
+  initializer.registerRpc(rpcIdCultivationEvent, rpcCultivationEvent);
   initializer.registerBeforeAuthenticateCustom(beforeAuthenticateCustom);
   logger.info("Second Spawn Nakama runtime loaded.");
 };
@@ -245,6 +249,29 @@ function rpcReincarnate(
   }
 
   reincarnateBody(context, request, nk);
+  writeAgentContext(nk, context, state.version);
+  return JSON.stringify(context);
+}
+
+function rpcCultivationEvent(
+  ctx: nkruntime.Context,
+  logger: nkruntime.Logger,
+  nk: nkruntime.Nakama,
+  payload: string
+): string {
+  var state = getOrCreateAgentContextState(ctx, nk);
+  var context = state.context;
+  var event = normalizeCultivationEvent(parseJson(payload || "{}", "cultivation payload"));
+
+  ensureBodyTime(context);
+  if (event.id && hasAgentActivityId(context.body.agent_activity || [], event.id)) {
+    return JSON.stringify(context);
+  }
+  if (context.body.lifecycle === "dead") {
+    throw new Error("dead bodies cannot progress cultivation before reincarnation");
+  }
+
+  applyCultivationEvent(context, event, nk);
   writeAgentContext(nk, context, state.version);
   return JSON.stringify(context);
 }
@@ -655,6 +682,93 @@ function reincarnateBody(context: any, request: any, nk: nkruntime.Nakama): void
   }, nk);
 }
 
+function normalizeCultivationEvent(request: any): any {
+  var source = trimString(request.source);
+  if (source !== "prototype_nibirium_absorb") {
+    throw new Error("cultivation source is not allowed");
+  }
+
+  var amount = Number(firstDefined(request.amount_xp, request.xp));
+  if (isNaN(amount) || !isFinite(amount) || amount <= 0) {
+    throw new Error("cultivation amount_xp must be a positive finite number");
+  }
+
+  return {
+    id: trimString(request.id),
+    source: source,
+    amount_xp: clampNumber(Math.floor(amount), 1, cultivationPrototypeXpCap),
+    note: trimString(request.note)
+  };
+}
+
+function applyCultivationEvent(context: any, event: any, nk: nkruntime.Nakama): void {
+  ensureCultivation(context);
+  var cultivation = context.body.cultivation;
+  var beforeTier = cultivation.tier;
+  var beforeXp = cultivation.progress_xp;
+  var promoted = false;
+
+  if (cultivation.tier === "Awakening") {
+    cultivation.progress_xp = clampNumber(cultivation.progress_xp + event.amount_xp, 0, cultivationAwakeningToEnhancementXp);
+    if (cultivation.progress_xp >= cultivationAwakeningToEnhancementXp) {
+      cultivation.tier = "Enhancement";
+      cultivation.progress_xp = 0;
+      promoted = true;
+    }
+  } else {
+    cultivation.tier = "Enhancement";
+    cultivation.progress_xp = clampNumber(cultivation.progress_xp + event.amount_xp, 0, cultivationAwakeningToEnhancementXp);
+  }
+
+  addAgentActivity(context, {
+    id: event.id || "",
+    kind: "cultivation",
+    summary: cultivationActivitySummary(event, beforeTier, beforeXp, cultivation, promoted),
+    source: "nakama",
+    cultivation_source: event.source,
+    cultivation_xp: event.amount_xp,
+    metrics: {
+      cultivation_xp: event.amount_xp,
+      cultivation_before_xp: beforeXp,
+      cultivation_after_xp: cultivation.progress_xp,
+      cultivation_promoted: promoted ? 1 : 0
+    }
+  }, nk);
+}
+
+function ensureCultivation(context: any): void {
+  if (!context.body) {
+    context.body = {};
+  }
+  if (!context.body.cultivation) {
+    context.body.cultivation = {};
+  }
+
+  var tier = trimString(context.body.cultivation.tier);
+  if (tier !== "Enhancement") {
+    tier = "Awakening";
+  }
+  context.body.cultivation.tier = tier;
+  context.body.cultivation.progress_xp = clampNumber(
+    Math.floor(finiteNumberOrDefault(context.body.cultivation.progress_xp, 0)),
+    0,
+    cultivationAwakeningToEnhancementXp
+  );
+}
+
+function cultivationActivitySummary(event: any, beforeTier: string, beforeXp: number, cultivation: any, promoted: boolean): string {
+  var summary = "Cultivation gained " + event.amount_xp + " XP from " + event.source + ".";
+  if (promoted) {
+    summary += " Tier advanced from " + beforeTier + " to Enhancement.";
+  } else {
+    summary += " Progress moved from " + beforeXp + " to " + cultivation.progress_xp + " XP in " + cultivation.tier + ".";
+  }
+  if (event.note) {
+    summary += " " + event.note;
+  }
+  return summary;
+}
+
 function hasRecentBodyTimeEvent(context: any, event: any, cooldownSeconds: number): boolean {
   var activities = context.body.agent_activity || [];
   var nowMs = new Date().getTime();
@@ -778,6 +892,7 @@ function normalizeAgentActivityKind(kind: any): string {
     value === "agent_decision" ||
     value === "body_time" ||
     value === "reincarnation" ||
+    value === "cultivation" ||
     value === "memory_sync" ||
     value === "manual_note"
   ) {

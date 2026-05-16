@@ -96,6 +96,15 @@ namespace SecondSpawn.AI
     }
 
     [Serializable]
+    public sealed class CultivationEventRequestDto
+    {
+        public string id;
+        public string source;
+        public long amount_xp;
+        public string note;
+    }
+
+    [Serializable]
     public sealed class CultivationDto
     {
         public string tier;
