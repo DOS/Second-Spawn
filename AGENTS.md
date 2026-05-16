@@ -19,6 +19,14 @@ This file is the primary context for any AI coding agent working on this reposit
 3. **Time-as-Currency** - Time is both the current body's survival resource and a spendable economy resource, adapted from MetaDOS and the `In Time` inspiration. Running out of body time triggers death/reincarnation; spending time creates hard tactical tradeoffs.
 4. **Consciousness transfer to NPC/synthetic bodies** - Sci-fi explanation (mind upload, synthetic bodies, Nibirium-enhanced cloning). NOT spiritual reincarnation.
 
+## Actor and Body Model (CORE)
+
+- A player is a durable consciousness / soul profile, not a blank avatar shell.
+- On spawn, the player inhabits a current NPC-like synthetic body. That body may already have its own profile, constraints, stats, traits, memory hooks, soul imprint, BodyTime, lifecycle state, and agent runtime state.
+- The game must support many NPC-like actors and many player-inhabited bodies using one broad actor-profile model. Ownership and authority decide whether an actor is a world NPC, a player current body, an offline player agent, or an OpenClaw-connected actor.
+- Each important actor body should eventually resolve to a bundle: `BodyProfile`, `CharacterStats`, `CharacterTraits`, `SoulProfile`, `MemoryRecord`, `AgentPolicy` or NPC policy, `AgentRuntime`, and `AgentActivity`.
+- Reincarnation destroys or retires the current body. The durable player consciousness transfers into a new body, with only explicitly designed layers carrying over.
+
 ## Cultivation System (sci-fi, not Chinese-style)
 
 6 tiers:
