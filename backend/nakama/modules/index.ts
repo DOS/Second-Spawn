@@ -18,7 +18,7 @@ var rpcIdActorProfileGet = "secondspawn_actor_profile_get";
 var rpcIdActorMemoryAdd = "secondspawn_actor_memory_add";
 var agentActivityLogLimit = 32;
 var agentRuntimeMetricMax = 1000000000;
-var actorIdMaxLength = 64;
+var actorIdMaxLength = 56;
 
 let InitModule: nkruntime.InitModule = function (
   ctx: nkruntime.Context,

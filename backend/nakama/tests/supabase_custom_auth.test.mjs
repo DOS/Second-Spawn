@@ -555,6 +555,28 @@ assert.throws(
   /storage version conflict/
 );
 
+const actorConflictHarness = createRuntimeHarness(module);
+actorConflictHarness.registeredRpcs.get("secondspawn_actor_profile_get")(
+  { userId: "actor-conflict-user", env: {} },
+  actorConflictHarness.logger,
+  actorConflictHarness.nk,
+  JSON.stringify({ actor_id: "npc-conflict" })
+);
+actorConflictHarness.conflictNextWrite();
+assert.throws(
+  () => actorConflictHarness.registeredRpcs.get("secondspawn_actor_memory_add")(
+    { userId: "actor-conflict-user", env: {} },
+    actorConflictHarness.logger,
+    actorConflictHarness.nk,
+    JSON.stringify({
+      actor_id: "npc-conflict",
+      kind: "relationship",
+      summary: "This actor memory write should detect a stale version."
+    })
+  ),
+  /storage version conflict/
+);
+
 const calls = [];
 const response = harness.registeredHooks[0](
   {
