@@ -7,6 +7,7 @@
 
 ## Design
 
+- [Game Design Document](design/12-game-design-document.md)
 - [Game Concept](design/00-game-concept.md)
 - [Game Pillars](design/01-pillars.md)
 - [Vertical Slice Spec](design/02-vertical-slice-spec.md)
