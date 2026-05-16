@@ -10,6 +10,21 @@ namespace SecondSpawn.AI
     }
 
     [Serializable]
+    public sealed class ActorProfileDto
+    {
+        public string actor_id;
+        public string actor_type;
+        public string owner_player_id;
+        public string display_name;
+        public BodyProfileDto body;
+        public MemoryRecordDto[] memory;
+        public AgentRuntimeDto agent_runtime;
+        public AgentActivityRecordDto[] agent_activity;
+        public string created_at;
+        public string updated_at;
+    }
+
+    [Serializable]
     public sealed class PlayerProfileDto
     {
         public string player_id;
@@ -163,6 +178,29 @@ namespace SecondSpawn.AI
         public SoulProfileDto soul;
         public CharacterTraitsDto characteristics;
         public AgentPolicyDto agent_policy;
+    }
+
+    [Serializable]
+    public sealed class ActorProfileRequestDto
+    {
+        public string actor_id;
+        public string actor_type = "npc";
+        public string display_name;
+        public string archetype_id;
+        public string visual_prefab_key;
+        public CharacterTraitsDto characteristics;
+        public SoulProfileDto soul;
+        public AgentPolicyDto agent_policy;
+    }
+
+    [Serializable]
+    public sealed class ActorMemoryAddRequestDto
+    {
+        public string actor_id;
+        public string id;
+        public string kind = "system";
+        public string summary;
+        public int importance = 5;
     }
 
     [Serializable]
