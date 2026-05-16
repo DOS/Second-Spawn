@@ -29,7 +29,11 @@ namespace SecondSpawn.AI
         public AgentPolicyDto agent_policy;
         public SoulProfileDto soul;
         public MemoryRecordDto[] memory;
+
+        [NonSerialized]
         public AgentRuntimeDto agent_runtime;
+
+        [NonSerialized]
         public AgentActivityRecordDto[] agent_activity;
     }
 
