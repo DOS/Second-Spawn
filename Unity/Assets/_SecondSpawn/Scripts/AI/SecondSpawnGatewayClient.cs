@@ -151,6 +151,21 @@ namespace SecondSpawn.AI
             yield return SendNakamaRpc("secondspawn_memory_add", memory, onSuccess, onError);
         }
 
+        public IEnumerator GetNakamaActorProfile(string actorId, Action<ActorProfileDto> onSuccess, Action<string> onError = null)
+        {
+            yield return GetNakamaActorProfile(new ActorProfileRequestDto { actor_id = actorId }, onSuccess, onError);
+        }
+
+        public IEnumerator GetNakamaActorProfile(ActorProfileRequestDto request, Action<ActorProfileDto> onSuccess, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_actor_profile_get", request, onSuccess, onError);
+        }
+
+        public IEnumerator AddNakamaActorMemory(ActorMemoryAddRequestDto memory, Action<ActorProfileDto> onSuccess = null, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_actor_memory_add", memory, onSuccess, onError);
+        }
+
         public IEnumerator AddNakamaAgentActivity(AgentActivityRecordDto activity, Action<AgentContextDto> onSuccess = null, Action<string> onError = null)
         {
             yield return SendNakamaRpc("secondspawn_agent_activity_add", activity, onSuccess, onError);

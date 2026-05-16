@@ -129,13 +129,15 @@ assert.equal(
 
 const harness = createRuntimeHarness(module);
 assert.equal(harness.registeredHooks.length, 1);
-assert.equal(harness.registeredRpcs.size, 6);
+assert.equal(harness.registeredRpcs.size, 8);
 assert.ok(harness.registeredRpcs.has("secondspawn_health"));
 assert.ok(harness.registeredRpcs.has("secondspawn_profile_get"));
 assert.ok(harness.registeredRpcs.has("secondspawn_memory_add"));
 assert.ok(harness.registeredRpcs.has("secondspawn_soul_update"));
 assert.ok(harness.registeredRpcs.has("secondspawn_agent_decide"));
 assert.ok(harness.registeredRpcs.has("secondspawn_agent_activity_add"));
+assert.ok(harness.registeredRpcs.has("secondspawn_actor_profile_get"));
+assert.ok(harness.registeredRpcs.has("secondspawn_actor_memory_add"));
 
 const createConflictHarness = createRuntimeHarness(module);
 createConflictHarness.conflictNextCreateOnlyWrite();
@@ -148,6 +150,17 @@ assert.throws(
   ),
   /storage create conflict/
 );
+
+const actorCreateConflictHarness = createRuntimeHarness(module);
+actorCreateConflictHarness.conflictNextCreateOnlyWrite();
+const actorCreateRaceProfile = JSON.parse(actorCreateConflictHarness.registeredRpcs.get("secondspawn_actor_profile_get")(
+  { userId: "actor-create-race-user", env: {} },
+  actorCreateConflictHarness.logger,
+  actorCreateConflictHarness.nk,
+  JSON.stringify({ actor_id: "npc-race" })
+));
+assert.equal(actorCreateRaceProfile.actor_id, "npc-race");
+assert.equal(actorCreateRaceProfile.body.body_id, "body-npc-race");
 
 const healthPayload = harness.registeredRpcs.get("secondspawn_health")({ userId: "user-1", env: {} }, harness.logger, harness.nk, "");
 assert.equal(JSON.parse(healthPayload).service, "second-spawn-nakama");
@@ -193,13 +206,95 @@ const normalizedStoredProfile = harness.storage.get(storageKey("user-1", "second
 assert.equal(normalizedStoredProfile.value.body.time.remaining_seconds, 86400);
 assert.equal(normalizedStoredProfile.value.body.agent_policy.mode, "observe_and_keep_safe");
 
+const npcProfile = JSON.parse(harness.registeredRpcs.get("secondspawn_actor_profile_get")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  JSON.stringify({
+    actor_id: "npc-guide",
+    actor_type: "npc",
+    display_name: "Mira Guide",
+    stats: { level: 0, max_health: 0, max_energy: 0, attack_power: 0 },
+    characteristics: { curiosity: 8, sociability: 9 },
+    time: { remaining_seconds: 0, max_seconds: 0, danger_drain_rate: 0 },
+    cultivation: { tier: "", progress_xp: 0 },
+    soul: { core_drive: "help new bodies survive the hub" }
+  })
+));
+assert.equal(npcProfile.actor_id, "npc-guide");
+assert.equal(npcProfile.actor_type, "npc");
+assert.equal(npcProfile.owner_player_id, "user-1");
+assert.equal(npcProfile.display_name, "Mira Guide");
+assert.equal(npcProfile.body.soul.name, "Mira Guide");
+assert.equal(npcProfile.body.soul.core_drive, "help new bodies survive the hub");
+assert.equal(npcProfile.body.stats.level, 1);
+assert.equal(npcProfile.body.stats.max_health, 1);
+assert.equal(npcProfile.body.stats.max_energy, 0);
+assert.equal(npcProfile.body.stats.attack_power, 0);
+assert.equal(npcProfile.body.characteristics.sociability, 9);
+assert.equal(npcProfile.body.time.remaining_seconds, 0);
+assert.equal(npcProfile.body.time.max_seconds, 1);
+assert.equal(npcProfile.body.time.danger_drain_rate, 0);
+assert.equal(npcProfile.body.cultivation.tier, "Awakening");
+assert.equal(npcProfile.body.cultivation.progress_xp, 0);
+assert.equal(npcProfile.memory.length, 1);
+
+assert.throws(
+  () => harness.registeredRpcs.get("secondspawn_actor_profile_get")(
+    { userId: "user-1", env: {} },
+    harness.logger,
+    harness.nk,
+    JSON.stringify({ actor_id: "npc-" + "x".repeat(80) })
+  ),
+  /actor_id is too long/
+);
+
+const npcMemory = JSON.parse(harness.registeredRpcs.get("secondspawn_actor_memory_add")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  JSON.stringify({
+    actor_id: "npc-guide",
+    kind: "relationship",
+    summary: "Mira remembers that JOY prefers direct prototype progress.",
+    importance: 8
+  })
+));
+assert.equal(npcMemory.memory[0].summary, "Mira remembers that JOY prefers direct prototype progress.");
+assert.match(npcMemory.memory[0].id, /^mem-npc-guide-00000000-0000-4000-8000-[0-9]{12}-2$/);
+
+const secondNpcProfile = JSON.parse(harness.registeredRpcs.get("secondspawn_actor_profile_get")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  JSON.stringify({ actor_id: "npc-blacksmith", display_name: "Forge Keeper" })
+));
+assert.equal(secondNpcProfile.actor_id, "npc-blacksmith");
+assert.equal(secondNpcProfile.memory.length, 1);
+assert.notEqual(secondNpcProfile.actor_id, npcMemory.actor_id);
+
+const storedNpcProfile = harness.storage.get(storageKey("user-1", "secondspawn_actor", "profile:npc-guide"));
+assert.equal(storedNpcProfile.value.actor_id, "npc-guide");
+
+delete storedNpcProfile.value.body.time;
+const normalizedNpcProfile = JSON.parse(harness.registeredRpcs.get("secondspawn_actor_profile_get")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  JSON.stringify({ actor_id: "npc-guide" })
+));
+assert.equal(normalizedNpcProfile.body.time.remaining_seconds, 86400);
+const rewrittenNpcProfile = harness.storage.get(storageKey("user-1", "secondspawn_actor", "profile:npc-guide"));
+assert.equal(rewrittenNpcProfile.value.body.time.remaining_seconds, 86400);
+assert.notEqual(rewrittenNpcProfile.version, storedNpcProfile.version);
+
 const updatedMemory = JSON.parse(harness.registeredRpcs.get("secondspawn_memory_add")(
   { userId: "user-1", env: {} },
   harness.logger,
   harness.nk,
   JSON.stringify({ kind: "preference", summary: "Prefers safe farming overnight.", importance: 9 })
 ));
-assert.match(updatedMemory.body.memory[0].id, /^mem-user-1-00000000-0000-4000-8000-000000000001-2$/);
+assert.match(updatedMemory.body.memory[0].id, /^mem-user-1-00000000-0000-4000-8000-[0-9]{12}-2$/);
 assert.equal(updatedMemory.body.memory[0].summary, "Prefers safe farming overnight.");
 assert.equal(updatedMemory.body.memory[0].importance, 9);
 
@@ -467,6 +562,28 @@ assert.throws(
     conflictHarness.logger,
     conflictHarness.nk,
     JSON.stringify({ kind: "preference", summary: "This write should detect a stale version." })
+  ),
+  /storage version conflict/
+);
+
+const actorConflictHarness = createRuntimeHarness(module);
+actorConflictHarness.registeredRpcs.get("secondspawn_actor_profile_get")(
+  { userId: "actor-conflict-user", env: {} },
+  actorConflictHarness.logger,
+  actorConflictHarness.nk,
+  JSON.stringify({ actor_id: "npc-conflict" })
+);
+actorConflictHarness.conflictNextWrite();
+assert.throws(
+  () => actorConflictHarness.registeredRpcs.get("secondspawn_actor_memory_add")(
+    { userId: "actor-conflict-user", env: {} },
+    actorConflictHarness.logger,
+    actorConflictHarness.nk,
+    JSON.stringify({
+      actor_id: "npc-conflict",
+      kind: "relationship",
+      summary: "This actor memory write should detect a stale version."
+    })
   ),
   /storage version conflict/
 );
