@@ -24,6 +24,19 @@ namespace SecondSpawn.Networking
         [Networked] public int CultivationTier { get; set; }
         [Networked] public float Hp { get; set; }
         [Networked] public float Stamina { get; set; }
+        [Networked] public int Level { get; set; }
+        [Networked] public int Vitality { get; set; }
+        [Networked] public int Force { get; set; }
+        [Networked] public int Agility { get; set; }
+        [Networked] public int Focus { get; set; }
+        [Networked] public int Resilience { get; set; }
+        [Networked] public int MaxHealth { get; set; }
+        [Networked] public int MaxEnergy { get; set; }
+        [Networked] public int AttackPower { get; set; }
+        [Networked] public int DefensePower { get; set; }
+        [Networked] public int BodyTimeRemainingSeconds { get; set; }
+        [Networked] public int BodyTimeMaxSeconds { get; set; }
+        [Networked] public int BodyTimeDangerDrainRate { get; set; }
         [Networked] public int VisualVariant { get; set; }
         [Networked] public int EquipmentVisualId { get; set; }
 
@@ -42,6 +55,7 @@ namespace SecondSpawn.Networking
         private SimpleKCC _kcc;
         private NetworkInputData _prototypeAgentInput;
         private bool _hasPrototypeAgentInput;
+        private VisualAnimationIntentDriver _visualIntentDriver;
 
         private void Awake()
         {
@@ -55,8 +69,7 @@ namespace SecondSpawn.Networking
             if (HasStateAuthority)
             {
                 CultivationTier = 1; // Awakening - starting tier per docs/design/04-cultivation-system.md
-                Hp = 100f;
-                Stamina = 100f;
+                ApplyDefaultStats();
                 if (EquipmentVisualId == EquipmentVisualCatalog.None)
                 {
                     EquipmentVisualId = EquipmentVisualCatalog.GetDefaultForVisualVariant(VisualVariant);
@@ -87,7 +100,7 @@ namespace SecondSpawn.Networking
                 if (move.sqrMagnitude > 0.0001f)
                 {
                     _kcc.SetLookRotation(Quaternion.LookRotation(move), preservePitch: false, preserveYaw: false);
-                    var speed = input.Run ? _moveSpeed : _walkSpeed;
+                    var speed = input.Run ? GetRunSpeed() : GetWalkSpeed();
                     moveVelocity = move * speed;
                 }
 
@@ -125,6 +138,12 @@ namespace SecondSpawn.Networking
             IsAgentControlled = false;
         }
 
+        public bool TryPlayVisualIntent(VisualAnimationIntent intent)
+        {
+            _visualIntentDriver ??= GetComponentInChildren<VisualAnimationIntentDriver>(includeInactive: true);
+            return _visualIntentDriver != null && _visualIntentDriver.TryPlay(intent);
+        }
+
         private bool TryGetAuthoritativeInput(out NetworkInputData input)
         {
             if (_hasPrototypeAgentInput && IsAgentControlled)
@@ -134,6 +153,104 @@ namespace SecondSpawn.Networking
             }
 
             return GetInput(out input);
+        }
+
+        public void ApplyProfileEquipment(int equipmentVisualId)
+        {
+            if (!HasStateAuthority)
+            {
+                Debug.LogWarning("[NetworkPlayer] Ignored profile equipment on a non-authoritative player.");
+                return;
+            }
+
+            EquipmentVisualId = Mathf.Max(EquipmentVisualCatalog.None, equipmentVisualId);
+        }
+
+        public void ApplyProfileStats(
+            int level,
+            int vitality,
+            int force,
+            int agility,
+            int focus,
+            int resilience,
+            int maxHealth,
+            int maxEnergy,
+            int attackPower,
+            int defensePower,
+            int bodyTimeRemainingSeconds,
+            int bodyTimeMaxSeconds,
+            int bodyTimeDangerDrainRate)
+        {
+            if (!HasStateAuthority)
+            {
+                Debug.LogWarning("[NetworkPlayer] Ignored profile stats on a non-authoritative player.");
+                return;
+            }
+
+            var previousMaxHealth = MaxHealth;
+            var previousMaxEnergy = MaxEnergy;
+            var healthRatio = previousMaxHealth > 0 ? Hp / previousMaxHealth : 1f;
+            var energyRatio = previousMaxEnergy > 0 ? Stamina / previousMaxEnergy : 1f;
+
+            Level = Mathf.Max(1, level);
+            Vitality = Mathf.Clamp(vitality, 1, 999);
+            Force = Mathf.Clamp(force, 1, 999);
+            Agility = Mathf.Clamp(agility, 1, 999);
+            Focus = Mathf.Clamp(focus, 1, 999);
+            Resilience = Mathf.Clamp(resilience, 1, 999);
+            MaxHealth = Mathf.Max(1, maxHealth);
+            MaxEnergy = Mathf.Max(1, maxEnergy);
+            AttackPower = Mathf.Max(0, attackPower);
+            DefensePower = Mathf.Max(0, defensePower);
+            BodyTimeRemainingSeconds = Mathf.Max(0, bodyTimeRemainingSeconds);
+            BodyTimeMaxSeconds = Mathf.Max(0, bodyTimeMaxSeconds);
+            BodyTimeDangerDrainRate = Mathf.Max(0, bodyTimeDangerDrainRate);
+
+            Hp = previousMaxHealth > 0
+                ? Mathf.Clamp(Mathf.Round(MaxHealth * healthRatio), 1f, MaxHealth)
+                : MaxHealth;
+            Stamina = previousMaxEnergy > 0
+                ? Mathf.Clamp(Mathf.Round(MaxEnergy * energyRatio), 1f, MaxEnergy)
+                : MaxEnergy;
+        }
+
+        private void ApplyDefaultStats()
+        {
+            Level = 1;
+            Vitality = 10;
+            Force = 8;
+            Agility = 8;
+            Focus = 8;
+            Resilience = 8;
+            MaxHealth = 100;
+            MaxEnergy = 50;
+            AttackPower = 10;
+            DefensePower = 5;
+            BodyTimeRemainingSeconds = 24 * 60 * 60;
+            BodyTimeMaxSeconds = 24 * 60 * 60;
+            BodyTimeDangerDrainRate = 1;
+            Hp = MaxHealth;
+            Stamina = MaxEnergy;
+        }
+
+        private float GetRunSpeed()
+        {
+            return _moveSpeed * GetAgilitySpeedMultiplier();
+        }
+
+        private float GetWalkSpeed()
+        {
+            return _walkSpeed * GetAgilitySpeedMultiplier();
+        }
+
+        private float GetAgilitySpeedMultiplier()
+        {
+            if (Agility <= 0)
+            {
+                return 1f;
+            }
+
+            return Mathf.Clamp(Agility / 8f, 0.75f, 1.4f);
         }
     }
 }
