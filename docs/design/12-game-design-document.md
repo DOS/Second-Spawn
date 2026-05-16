@@ -178,6 +178,10 @@ Open feel decisions:
 
 ## 8. Player Lifecycle
 
+The player is not a blank avatar shell. The player is a durable consciousness profile that enters a current NPC-like synthetic body at spawn. That body can already have its own body-level constraints, stat bias, characteristics, memory hooks, soul imprint, BodyTime, lifecycle state, and agent runtime state.
+
+The design must support many NPCs and many player-controlled bodies using the same broad actor-profile shape. The difference is ownership and authority: a player may inhabit and control one current body, while world NPCs, offline agents, and OpenClaw-connected actors are governed by their own policy and validation paths.
+
 The character is split into durable identity and current-body state.
 
 | Layer | Meaning | Survives Reincarnation |
@@ -186,12 +190,38 @@ The character is split into durable identity and current-body state.
 | Soul profile | Personality, goals, behavior style, long-term agent guidance | Yes |
 | Agent policy | Player-approved offline behavior limits | Yes |
 | Memory records | Compact curated memories for LLM context | Yes, with decay rules later |
+| Agent runtime | Bounded operational counters, recent activity, fallback tracking | Yes, bounded |
 | Cultivation | Durable consciousness progression | Partially, exact carryover is undecided |
 | Body profile | Current synthetic body, visual archetype, BodyTime, lifecycle | No |
+| Body characteristics | Current-body tendencies such as curiosity, courage, discipline, aggression, and sociability | Mostly no |
 | Character stats | Current body combat and movement stats | Mostly no |
 | Equipment and local inventory | Body-bound owned or equipped state | Reset or reconciled through escrow rules |
 
 The gameplay design should preserve the idea that a body is temporary, but the player's cultivated consciousness and authored identity persist.
+
+### Actor Profile Bundle
+
+Every important NPC-like actor should eventually resolve to a bundle with clear ownership:
+
+| Bundle Piece | Purpose |
+| ---- | ---- |
+| `BodyProfile` | Current vessel, archetype, visual key, lifecycle, BodyTime, and body-bound state |
+| `CharacterStats` | Combat, movement, health, energy, attack, defense, and level values |
+| `CharacterTraits` | Personality and behavior tendencies for agent decisions |
+| `SoulProfile` | Durable identity, name, drive, temperament, goals, and moral boundaries |
+| `MemoryRecord` | Bounded memories used by LLM and deterministic agent context |
+| `AgentPolicy` or NPC policy | What the actor is allowed to attempt |
+| `AgentRuntime` | Counters, fallback visibility, and recent operational state |
+| `AgentActivity` | Player-facing or operator-facing audit summary |
+
+Server-side systems decide which parts are editable, inherited, generated, or read-only for each actor type.
+
+Open body-model decisions:
+
+- How the first body is chosen when a new player spawns: [TODO: JOY input]
+- Whether each body has pre-existing memory before the player enters it: [TODO: JOY input]
+- Whether the player can reject a candidate body during reincarnation: [TODO: JOY input]
+- How much body-level memory survives once the player leaves or the body dies: [TODO: JOY input]
 
 ---
 
@@ -225,6 +255,7 @@ Death can be caused by combat failure, BodyTime reaching zero, or offline-agent 
 - SECOND token source and sink design beyond reincarnation: [TODO: JOY input]
 - Cultivation carryover ratio or rule: [TODO: JOY input]
 - Faction reputation carryover: [TODO: JOY input]
+- Body selection and candidate reroll rules: [TODO: JOY input]
 - Memory decay across bodies: [TODO: JOY input]
 - Reincarnation grace period after zero `BodyTime`: [TODO: JOY input]
 
@@ -565,7 +596,7 @@ Required vertical-slice UX flows:
 
 First-time player experience:
 
-1. Spawn in a safe hub.
+1. Spawn in a safe hub by entering a current NPC-like synthetic body.
 2. Learn movement and camera.
 3. See BodyTime but do not immediately panic.
 4. Enter one danger area where BodyTime matters.
