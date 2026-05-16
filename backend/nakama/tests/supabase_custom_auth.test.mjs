@@ -151,6 +151,17 @@ assert.throws(
   /storage create conflict/
 );
 
+const actorCreateConflictHarness = createRuntimeHarness(module);
+actorCreateConflictHarness.conflictNextCreateOnlyWrite();
+const actorCreateRaceProfile = JSON.parse(actorCreateConflictHarness.registeredRpcs.get("secondspawn_actor_profile_get")(
+  { userId: "actor-create-race-user", env: {} },
+  actorCreateConflictHarness.logger,
+  actorCreateConflictHarness.nk,
+  JSON.stringify({ actor_id: "npc-race" })
+));
+assert.equal(actorCreateRaceProfile.actor_id, "npc-race");
+assert.equal(actorCreateRaceProfile.body.body_id, "body-npc-race");
+
 const healthPayload = harness.registeredRpcs.get("secondspawn_health")({ userId: "user-1", env: {} }, harness.logger, harness.nk, "");
 assert.equal(JSON.parse(healthPayload).service, "second-spawn-nakama");
 

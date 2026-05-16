@@ -368,7 +368,15 @@ function getOrCreateActorProfileState(ctx: nkruntime.Context, nk: nkruntime.Naka
   }
 
   var profile = defaultActorProfile(ownerId, actorId, request);
-  writeActorProfile(nk, profile, "");
+  try {
+    writeActorProfile(nk, profile, "");
+  } catch (err) {
+    var raced = readActorProfile(nk, ownerId, actorId);
+    if (raced) {
+      return normalizeExistingActorProfileState(nk, ownerId, actorId, raced);
+    }
+    throw err;
+  }
   var created = readActorProfile(nk, ownerId, actorId);
   if (created) {
     return {
@@ -384,9 +392,9 @@ function getOrCreateActorProfileState(ctx: nkruntime.Context, nk: nkruntime.Naka
 }
 
 function normalizeExistingActorProfileState(nk: nkruntime.Nakama, ownerId: string, actorId: string, existing: any): any {
-  var before = JSON.stringify(existing.value || {});
+  var needsPersistence = actorProfileNeedsNormalization(existing.value || {});
   var profile = ensureActorProfile(existing.value || {}, ownerId, actorId);
-  if (JSON.stringify(profile) !== before) {
+  if (needsPersistence) {
     profile.updated_at = new Date().toISOString();
     writeActorProfile(nk, profile, existing.version);
     var rewritten = readActorProfile(nk, ownerId, actorId);
@@ -402,6 +410,31 @@ function normalizeExistingActorProfileState(nk: nkruntime.Nakama, ownerId: strin
     profile: profile,
     version: existing.version
   };
+}
+
+function actorProfileNeedsNormalization(profile: any): boolean {
+  return !profile ||
+    !profile.actor_id ||
+    !profile.actor_type ||
+    !profile.owner_player_id ||
+    !profile.display_name ||
+    !profile.body ||
+    !profile.body.body_id ||
+    !profile.body.archetype_id ||
+    !profile.body.visual_prefab_key ||
+    !profile.body.equipment ||
+    !profile.body.stats ||
+    !profile.body.characteristics ||
+    !profile.body.time ||
+    !profile.body.cultivation ||
+    !profile.body.lifecycle ||
+    !profile.body.agent_policy ||
+    !profile.body.soul ||
+    !profile.memory ||
+    !profile.agent_runtime ||
+    !profile.agent_activity ||
+    !profile.created_at ||
+    !profile.updated_at;
 }
 
 function readActorProfile(nk: nkruntime.Nakama, ownerId: string, actorId: string): any {
@@ -910,52 +943,6 @@ function normalizeTraits(traits: any): any {
     discipline: clampNumber(traits.discipline || 5, 1, 10),
     aggression: clampNumber(traits.aggression || 3, 1, 10),
     sociability: clampNumber(traits.sociability || 5, 1, 10)
-  };
-}
-
-function defaultCharacterStats(): any {
-  return {
-    level: 1,
-    vitality: 10,
-    force: 8,
-    agility: 8,
-    focus: 8,
-    resilience: 8,
-    max_health: 100,
-    max_energy: 50,
-    attack_power: 10,
-    defense_power: 5
-  };
-}
-
-function normalizeStats(stats: any): any {
-  var defaults = defaultCharacterStats();
-  return {
-    level: clampNumber(numberOrDefault(stats.level, defaults.level), 1, 100),
-    vitality: clampNumber(numberOrDefault(stats.vitality, defaults.vitality), 1, 9999),
-    force: clampNumber(numberOrDefault(stats.force, defaults.force), 1, 9999),
-    agility: clampNumber(numberOrDefault(stats.agility, defaults.agility), 1, 9999),
-    focus: clampNumber(numberOrDefault(stats.focus, defaults.focus), 1, 9999),
-    resilience: clampNumber(numberOrDefault(stats.resilience, defaults.resilience), 1, 9999),
-    max_health: clampNumber(numberOrDefault(stats.max_health, defaults.max_health), 1, 999999),
-    max_energy: clampNumber(numberOrDefault(stats.max_energy, defaults.max_energy), 0, 999999),
-    attack_power: clampNumber(numberOrDefault(stats.attack_power, defaults.attack_power), 0, 999999),
-    defense_power: clampNumber(numberOrDefault(stats.defense_power, defaults.defense_power), 0, 999999)
-  };
-}
-
-function normalizeBodyTime(time: any): any {
-  return {
-    remaining_seconds: clampNumber(numberOrDefault(time.remaining_seconds, 86400), 0, 31536000),
-    max_seconds: clampNumber(numberOrDefault(time.max_seconds, 86400), 1, 31536000),
-    danger_drain_rate: clampNumber(numberOrDefault(time.danger_drain_rate, 1), 0, 1000)
-  };
-}
-
-function normalizeCultivation(cultivation: any): any {
-  return {
-    tier: trimString(cultivation.tier) || "Awakening",
-    progress_xp: clampNumber(numberOrDefault(cultivation.progress_xp, 0), 0, agentRuntimeMetricMax)
   };
 }
 
