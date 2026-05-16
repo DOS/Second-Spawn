@@ -189,6 +189,7 @@ namespace SecondSpawn.Networking
 
             var previousMaxHealth = MaxHealth;
             var previousMaxEnergy = MaxEnergy;
+            var wasDead = Hp <= 0f;
             var healthRatio = previousMaxHealth > 0 ? Hp / previousMaxHealth : 1f;
             var energyRatio = previousMaxEnergy > 0 ? Stamina / previousMaxEnergy : 1f;
 
@@ -206,11 +207,13 @@ namespace SecondSpawn.Networking
             BodyTimeMaxSeconds = Mathf.Max(0, bodyTimeMaxSeconds);
             BodyTimeDangerDrainRate = Mathf.Max(0, bodyTimeDangerDrainRate);
 
-            Hp = previousMaxHealth > 0
+            Hp = wasDead
+                ? 0f
+                : previousMaxHealth > 0
                 ? Mathf.Clamp(Mathf.Round(MaxHealth * healthRatio), 1f, MaxHealth)
                 : MaxHealth;
             Stamina = previousMaxEnergy > 0
-                ? Mathf.Clamp(Mathf.Round(MaxEnergy * energyRatio), 1f, MaxEnergy)
+                ? Mathf.Clamp(Mathf.Round(MaxEnergy * energyRatio), 0f, MaxEnergy)
                 : MaxEnergy;
         }
 

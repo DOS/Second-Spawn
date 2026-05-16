@@ -23,6 +23,7 @@ namespace SecondSpawn.UI
 
         private NetworkPlayer _cachedPlayer;
         private GUIStyle _labelStyle;
+        private float _nextPlayerRefreshAt;
 
         private void OnGUI()
         {
@@ -60,6 +61,12 @@ namespace SecondSpawn.UI
                 return _cachedPlayer;
             }
 
+            if (Time.unscaledTime < _nextPlayerRefreshAt)
+            {
+                return null;
+            }
+
+            _nextPlayerRefreshAt = Time.unscaledTime + 0.5f;
             var players = FindObjectsByType<NetworkPlayer>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
             foreach (var player in players)
             {
