@@ -14,6 +14,7 @@ var rpcIdSoulUpdate = "secondspawn_soul_update";
 var rpcIdAgentDecide = "secondspawn_agent_decide";
 var rpcIdAgentActivityAdd = "secondspawn_agent_activity_add";
 var agentActivityLogLimit = 32;
+var agentRuntimeMetricMax = 1000000000;
 
 let InitModule: nkruntime.InitModule = function (
   ctx: nkruntime.Context,
@@ -50,9 +51,10 @@ function rpcProfileGet(
   nk: nkruntime.Nakama,
   payload: string
 ): string {
-  var context = getOrCreateAgentContext(ctx, nk);
+  var state = getOrCreateAgentContextState(ctx, nk);
+  var context = state.context;
   if (ensureAgentRuntime(context)) {
-    writeAgentContext(nk, context);
+    writeAgentContext(nk, context, state.version);
   }
   return JSON.stringify(context);
 }
@@ -63,7 +65,8 @@ function rpcMemoryAdd(
   nk: nkruntime.Nakama,
   payload: string
 ): string {
-  var context = getOrCreateAgentContext(ctx, nk);
+  var state = getOrCreateAgentContextState(ctx, nk);
+  var context = state.context;
   var memory = parseJson(payload || "{}", "memory payload");
   memory.kind = normalizeMemoryKind(memory.kind);
   memory.summary = trimString(memory.summary);
@@ -76,7 +79,7 @@ function rpcMemoryAdd(
   }
 
   upsertMemory(context, memory);
-  writeAgentContext(nk, context);
+  writeAgentContext(nk, context, state.version);
   return JSON.stringify(context);
 }
 
@@ -86,14 +89,15 @@ function rpcSoulUpdate(
   nk: nkruntime.Nakama,
   payload: string
 ): string {
-  var context = getOrCreateAgentContext(ctx, nk);
+  var state = getOrCreateAgentContextState(ctx, nk);
+  var context = state.context;
   var request = parseJson(payload || "{}", "soul payload");
 
   context.body.soul = normalizeSoul(request.soul || {}, context.player.display_name);
   context.body.characteristics = normalizeTraits(request.characteristics || {});
   context.body.agent_policy = normalizePolicy(request.agent_policy || {});
 
-  writeAgentContext(nk, context);
+  writeAgentContext(nk, context, state.version);
   return JSON.stringify(context);
 }
 
@@ -103,7 +107,8 @@ function rpcAgentDecide(
   nk: nkruntime.Nakama,
   payload: string
 ): string {
-  var context = getOrCreateAgentContext(ctx, nk);
+  var state = getOrCreateAgentContextState(ctx, nk);
+  var context = state.context;
   var request = parseJson(payload || "{}", "agent decision payload");
   var world = request.world_snapshot || {};
   var allowed = request.allowed || ["move", "interact", "say", "stop"];
@@ -119,7 +124,7 @@ function rpcAgentDecide(
       source_reason: "nakama_body_time_policy"
     };
     recordAgentDecision(context, decision);
-    writeAgentContext(nk, context);
+    writeAgentContext(nk, context, state.version);
     return JSON.stringify(decision);
   }
 
@@ -137,7 +142,7 @@ function rpcAgentDecide(
       source_reason: "nakama_prototype_patrol"
     };
     recordAgentDecision(context, decision);
-    writeAgentContext(nk, context);
+    writeAgentContext(nk, context, state.version);
     return JSON.stringify(decision);
   }
 
@@ -151,7 +156,7 @@ function rpcAgentDecide(
       source_reason: "nakama_social_fallback"
     };
     recordAgentDecision(context, decision);
-    writeAgentContext(nk, context);
+    writeAgentContext(nk, context, state.version);
     return JSON.stringify(decision);
   }
 
@@ -163,7 +168,7 @@ function rpcAgentDecide(
     source_reason: "nakama_no_allowed_action"
   };
   recordAgentDecision(context, decision);
-  writeAgentContext(nk, context);
+  writeAgentContext(nk, context, state.version);
   return JSON.stringify(decision);
 }
 
@@ -173,13 +178,14 @@ function rpcAgentActivityAdd(
   nk: nkruntime.Nakama,
   payload: string
 ): string {
-  var context = getOrCreateAgentContext(ctx, nk);
+  var state = getOrCreateAgentContextState(ctx, nk);
+  var context = state.context;
   var request = parseJson(payload || "{}", "agent activity payload");
   var activity = normalizeAgentActivity(context, request);
 
   addAgentActivity(context, activity);
   applyActivityMetrics(context.body.agent_runtime, request.metrics || {});
-  writeAgentContext(nk, context);
+  writeAgentContext(nk, context, state.version);
   return JSON.stringify(context);
 }
 
@@ -238,15 +244,33 @@ function beforeAuthenticateCustom(
 }
 
 function getOrCreateAgentContext(ctx: nkruntime.Context, nk: nkruntime.Nakama): any {
+  return getOrCreateAgentContextState(ctx, nk).context;
+}
+
+function getOrCreateAgentContextState(ctx: nkruntime.Context, nk: nkruntime.Nakama): any {
   var userId = requireUserId(ctx);
   var existing = readAgentContext(nk, userId);
   if (existing) {
-    return existing;
+    return {
+      context: existing.value,
+      version: existing.version
+    };
   }
 
   var context = defaultAgentContext(userId);
-  writeAgentContext(nk, context);
-  return context;
+  writeAgentContext(nk, context, "");
+  var created = readAgentContext(nk, userId);
+  if (created) {
+    return {
+      context: created.value,
+      version: created.version
+    };
+  }
+
+  return {
+    context: context,
+    version: null
+  };
 }
 
 function readAgentContext(nk: nkruntime.Nakama, userId: string): any {
@@ -260,18 +284,25 @@ function readAgentContext(nk: nkruntime.Nakama, userId: string): any {
     return null;
   }
 
-  return objects[0].value;
+  return {
+    value: objects[0].value,
+    version: objects[0].version || null
+  };
 }
 
-function writeAgentContext(nk: nkruntime.Nakama, context: any): void {
-  nk.storageWrite([{
+function writeAgentContext(nk: nkruntime.Nakama, context: any, version: string): void {
+  var write: any = {
     collection: collectionAgent,
     key: keyAgentContext,
     userId: context.player.player_id,
     value: context,
     permissionRead: 1,
     permissionWrite: 0
-  }]);
+  };
+  if (version) {
+    write.version = version;
+  }
+  nk.storageWrite([write]);
 }
 
 function defaultAgentContext(playerId: string): any {
@@ -364,14 +395,14 @@ function ensureAgentRuntime(context: any): boolean {
     changed = true;
   }
 
-  context.body.agent_runtime.decision_count = clampNumber(context.body.agent_runtime.decision_count || 0, 0, 1000000000);
-  context.body.agent_runtime.fallback_decision_count = clampNumber(context.body.agent_runtime.fallback_decision_count || 0, 0, 1000000000);
-  context.body.agent_runtime.move_intent_count = clampNumber(context.body.agent_runtime.move_intent_count || 0, 0, 1000000000);
-  context.body.agent_runtime.say_intent_count = clampNumber(context.body.agent_runtime.say_intent_count || 0, 0, 1000000000);
-  context.body.agent_runtime.stop_intent_count = clampNumber(context.body.agent_runtime.stop_intent_count || 0, 0, 1000000000);
-  context.body.agent_runtime.interact_intent_count = clampNumber(context.body.agent_runtime.interact_intent_count || 0, 0, 1000000000);
-  context.body.agent_runtime.offline_seconds = clampNumber(context.body.agent_runtime.offline_seconds || 0, 0, 1000000000);
-  context.body.agent_runtime.activity_count = clampNumber(context.body.agent_runtime.activity_count || context.body.agent_activity.length, 0, 1000000000);
+  context.body.agent_runtime.decision_count = clampNumber(context.body.agent_runtime.decision_count || 0, 0, agentRuntimeMetricMax);
+  context.body.agent_runtime.fallback_decision_count = clampNumber(context.body.agent_runtime.fallback_decision_count || 0, 0, agentRuntimeMetricMax);
+  context.body.agent_runtime.move_intent_count = clampNumber(context.body.agent_runtime.move_intent_count || 0, 0, agentRuntimeMetricMax);
+  context.body.agent_runtime.say_intent_count = clampNumber(context.body.agent_runtime.say_intent_count || 0, 0, agentRuntimeMetricMax);
+  context.body.agent_runtime.stop_intent_count = clampNumber(context.body.agent_runtime.stop_intent_count || 0, 0, agentRuntimeMetricMax);
+  context.body.agent_runtime.interact_intent_count = clampNumber(context.body.agent_runtime.interact_intent_count || 0, 0, agentRuntimeMetricMax);
+  context.body.agent_runtime.offline_seconds = clampNumber(context.body.agent_runtime.offline_seconds || 0, 0, agentRuntimeMetricMax);
+  context.body.agent_runtime.activity_count = clampNumber(context.body.agent_runtime.activity_count || context.body.agent_activity.length, 0, agentRuntimeMetricMax);
   return changed;
 }
 
@@ -438,7 +469,7 @@ function normalizeAgentActivity(context: any, request: any): any {
     id: trimString(request.id) || newActivityId(context),
     kind: kind,
     summary: summary,
-    occurred_at: trimString(request.occurred_at) || new Date().toISOString(),
+    occurred_at: normalizeTimestamp(request.occurred_at),
     source: trimString(request.source) || "client",
     metrics: request.metrics || {}
   };
@@ -481,21 +512,39 @@ function addAgentActivity(context: any, activity: any): void {
 }
 
 function applyActivityMetrics(runtime: any, metrics: any): void {
-  runtime.offline_seconds += positiveMetric(metrics.offline_seconds);
-  runtime.decision_count += positiveMetric(metrics.decisions_made || metrics.decision_count);
-  runtime.fallback_decision_count += positiveMetric(metrics.fallback_decisions || metrics.fallback_decision_count);
-  runtime.move_intent_count += positiveMetric(metrics.move_intents || metrics.move_intent_count);
-  runtime.say_intent_count += positiveMetric(metrics.say_intents || metrics.say_intent_count);
-  runtime.stop_intent_count += positiveMetric(metrics.stop_intents || metrics.stop_intent_count);
-  runtime.interact_intent_count += positiveMetric(metrics.interact_intents || metrics.interact_intent_count);
+  runtime.offline_seconds = addRuntimeMetric(runtime.offline_seconds, metrics.offline_seconds);
+  runtime.decision_count = addRuntimeMetric(runtime.decision_count, metrics.decisions_made || metrics.decision_count);
+  runtime.fallback_decision_count = addRuntimeMetric(runtime.fallback_decision_count, metrics.fallback_decisions || metrics.fallback_decision_count);
+  runtime.move_intent_count = addRuntimeMetric(runtime.move_intent_count, metrics.move_intents || metrics.move_intent_count);
+  runtime.say_intent_count = addRuntimeMetric(runtime.say_intent_count, metrics.say_intents || metrics.say_intent_count);
+  runtime.stop_intent_count = addRuntimeMetric(runtime.stop_intent_count, metrics.stop_intents || metrics.stop_intent_count);
+  runtime.interact_intent_count = addRuntimeMetric(runtime.interact_intent_count, metrics.interact_intents || metrics.interact_intent_count);
+}
+
+function addRuntimeMetric(current: any, increment: any): number {
+  return clampNumber(Number(current || 0) + positiveMetric(increment), 0, agentRuntimeMetricMax);
 }
 
 function positiveMetric(value: any): number {
   var numberValue = Number(value || 0);
-  if (isNaN(numberValue) || numberValue < 0) {
+  if (isNaN(numberValue) || !isFinite(numberValue) || numberValue < 0) {
     return 0;
   }
   return Math.floor(numberValue);
+}
+
+function normalizeTimestamp(value: any): string {
+  var timestamp = trimString(value);
+  if (!timestamp) {
+    return new Date().toISOString();
+  }
+
+  var parsed = new Date(timestamp).getTime();
+  if (isNaN(parsed) || !isFinite(parsed)) {
+    return new Date().toISOString();
+  }
+
+  return new Date(parsed).toISOString();
 }
 
 function upsertMemory(context: any, memory: any): void {

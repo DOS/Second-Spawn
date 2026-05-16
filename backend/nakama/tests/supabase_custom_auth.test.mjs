@@ -25,6 +25,8 @@ function createRuntimeHarness(module) {
   const registeredHooks = [];
   const registeredRpcs = new Map();
   const storage = new Map();
+  let storageVersion = 0;
+  let conflictOnNextVersionedWrite = false;
   const logger = {
     debug: () => {},
     error: (message) => {
@@ -38,9 +40,20 @@ function createRuntimeHarness(module) {
       .filter(Boolean),
     storageWrite: (requests) => {
       for (const request of requests) {
-        storage.set(storageKey(request.userId, request.collection, request.key), {
+        const key = storageKey(request.userId, request.collection, request.key);
+        const existing = storage.get(key);
+        if (conflictOnNextVersionedWrite && request.version && existing) {
+          storageVersion += 1;
+          existing.version = `external-version-${storageVersion}`;
+          conflictOnNextVersionedWrite = false;
+        }
+        if (request.version && (!existing || existing.version !== request.version)) {
+          throw new Error("storage version conflict");
+        }
+        storageVersion += 1;
+        storage.set(key, {
           ...request,
-          version: "test-version",
+          version: `test-version-${storageVersion}`,
         });
       }
     },
@@ -56,7 +69,16 @@ function createRuntimeHarness(module) {
     }
   );
 
-  return { registeredHooks, registeredRpcs, storage, logger, nk };
+  return {
+    registeredHooks,
+    registeredRpcs,
+    storage,
+    logger,
+    nk,
+    conflictNextWrite: () => {
+      conflictOnNextVersionedWrite = true;
+    },
+  };
 }
 
 function storageKey(userId, collection, key) {
@@ -214,6 +236,47 @@ assert.equal(activityContext.body.agent_runtime.offline_seconds, 45);
 assert.equal(activityContext.body.agent_runtime.fallback_decision_count, 4);
 assert.equal(activityContext.body.agent_runtime.say_intent_count, 1);
 assert.equal(activityContext.body.agent_activity[0].kind, "offline_session");
+
+const normalizedActivityContext = JSON.parse(harness.registeredRpcs.get("secondspawn_agent_activity_add")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  JSON.stringify({
+    kind: "offline_session",
+    summary: "Agent attempted to report malformed metrics.",
+    occurred_at: "not-a-real-date",
+    metrics: {
+      offline_seconds: "1e309",
+      decisions_made: 9999999999,
+      fallback_decisions: -4,
+      say_intents: "2.9"
+    }
+  })
+));
+assert.notEqual(normalizedActivityContext.body.agent_activity[0].occurred_at, "not-a-real-date");
+assert.ok(!Number.isNaN(Date.parse(normalizedActivityContext.body.agent_activity[0].occurred_at)));
+assert.equal(normalizedActivityContext.body.agent_runtime.offline_seconds, 45);
+assert.equal(normalizedActivityContext.body.agent_runtime.decision_count, 1000000000);
+assert.equal(normalizedActivityContext.body.agent_runtime.fallback_decision_count, 4);
+assert.equal(normalizedActivityContext.body.agent_runtime.say_intent_count, 3);
+
+const conflictHarness = createRuntimeHarness(module);
+conflictHarness.registeredRpcs.get("secondspawn_profile_get")(
+  { userId: "conflict-user", env: {} },
+  conflictHarness.logger,
+  conflictHarness.nk,
+  ""
+);
+conflictHarness.conflictNextWrite();
+assert.throws(
+  () => conflictHarness.registeredRpcs.get("secondspawn_memory_add")(
+    { userId: "conflict-user", env: {} },
+    conflictHarness.logger,
+    conflictHarness.nk,
+    JSON.stringify({ kind: "preference", summary: "This write should detect a stale version." })
+  ),
+  /storage version conflict/
+);
 
 const calls = [];
 const response = harness.registeredHooks[0](

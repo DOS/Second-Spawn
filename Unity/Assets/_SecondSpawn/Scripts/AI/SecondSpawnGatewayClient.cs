@@ -335,17 +335,6 @@ namespace SecondSpawn.AI
                 yield break;
             }
 
-            AgentContextDto context = null;
-            yield return GetNakamaContext(result => context = result, error =>
-            {
-                Debug.LogWarning($"[SecondSpawnGatewayClient] Nakama profile bootstrap failed: {error}");
-            });
-
-            if (context == null)
-            {
-                yield break;
-            }
-
             yield return AddNakamaAgentActivity(new AgentActivityRecordDto
             {
                 kind = "profile_bootstrap",
