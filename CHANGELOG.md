@@ -20,6 +20,9 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 - Nakama agent runtime counters for profile bootstrap, fallback decisions,
   action intent counts, activity count, and offline-agent seconds.
 - Bounded Nakama `agent_activity` log with `secondspawn_agent_activity_add`.
+- Nakama `secondspawn_bodytime_event` RPC for prototype BodyTime earn, spend,
+  and danger-zone drain events with source caps, retry idempotency, earn
+  cooldown, activity logging, and zero-time body death.
 
 ### Changed
 
@@ -34,6 +37,8 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   profile activity event after successful authentication.
 - Nakama deterministic decision RPC now records runtime decision counters before
   returning prototype fallback intent.
+- Unity gateway client now has a Nakama BodyTime event wrapper and exposes body
+  lifecycle state in the shared profile DTO.
 
 ### Verification
 
