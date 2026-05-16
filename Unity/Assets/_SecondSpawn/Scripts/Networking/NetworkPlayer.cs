@@ -102,22 +102,27 @@ namespace SecondSpawn.Networking
 
         public void SetPrototypeAgentInput(NetworkInputData input)
         {
+            if (!HasStateAuthority)
+            {
+                Debug.LogWarning("[NetworkPlayer] Ignored prototype agent input on a non-authoritative player. Offline agents must be driven by the server/state authority.");
+                return;
+            }
+
             _prototypeAgentInput = input;
             _hasPrototypeAgentInput = true;
-            if (HasStateAuthority)
-            {
-                IsAgentControlled = true;
-            }
+            IsAgentControlled = true;
         }
 
         public void ClearPrototypeAgentInput()
         {
+            if (!HasStateAuthority)
+            {
+                return;
+            }
+
             _prototypeAgentInput = default;
             _hasPrototypeAgentInput = false;
-            if (HasStateAuthority)
-            {
-                IsAgentControlled = false;
-            }
+            IsAgentControlled = false;
         }
 
         private bool TryGetAuthoritativeInput(out NetworkInputData input)

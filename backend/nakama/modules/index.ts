@@ -66,7 +66,7 @@ function rpcMemoryAdd(
   }
   memory.importance = clampNumber(memory.importance || 5, 1, 10);
   if (!memory.id) {
-    memory.id = "mem-" + nowId() + "-" + (context.body.memory.length + 1);
+    memory.id = newMemoryId(context);
   }
 
   upsertMemory(context, memory);
@@ -178,7 +178,12 @@ function beforeAuthenticateCustom(
     return null;
   }
 
-  var body = JSON.parse(response.body);
+  var body = parseJsonOrNull(response.body);
+  if (!body) {
+    logger.error("Supabase Auth returned invalid JSON");
+    return null;
+  }
+
   if (!body.id) {
     logger.error("Supabase Auth returned invalid user payload");
     return null;
@@ -400,6 +405,21 @@ function parseJson(payload: string, label: string): any {
   } catch (err) {
     throw new Error("invalid " + label);
   }
+}
+
+function parseJsonOrNull(payload: string): any {
+  try {
+    return JSON.parse(payload || "{}");
+  } catch (err) {
+    return null;
+  }
+}
+
+function newMemoryId(context: any): string {
+  var playerId = sanitizeNakamaIdentifier(context.player.player_id || "player", "player");
+  var randomPart = Math.floor(Math.random() * 0x100000000).toString(36);
+  var sequence = String((context.body.memory || []).length + 1);
+  return "mem-" + playerId + "-" + nowId() + "-" + randomPart + "-" + sequence;
 }
 
 function requireUserId(ctx: nkruntime.Context): string {

@@ -431,16 +431,12 @@ namespace SecondSpawn.AI
                 }
 
                 var json = Encoding.UTF8.GetString(Convert.FromBase64String(payload));
-                var marker = $"\"{claimName}\":\"";
-                var start = json.IndexOf(marker, StringComparison.Ordinal);
-                if (start < 0)
+                var claims = JsonUtility.FromJson<NakamaJwtClaimsDto>(json);
+                return claimName switch
                 {
-                    return "";
-                }
-
-                start += marker.Length;
-                var end = json.IndexOf('"', start);
-                return end > start ? json.Substring(start, end - start) : "";
+                    "uid" => claims?.uid ?? "",
+                    _ => ""
+                };
             }
             catch (Exception)
             {
@@ -502,6 +498,12 @@ namespace SecondSpawn.AI
         {
             public string token;
             public string refresh_token;
+        }
+
+        [Serializable]
+        private sealed class NakamaJwtClaimsDto
+        {
+            public string uid;
         }
     }
 }

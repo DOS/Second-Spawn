@@ -68,8 +68,6 @@ namespace SecondSpawn.Networking
         [SerializeField, Tooltip("Vertical speed threshold that switches the visual from jump to fall. Positive values start the fall blend just before the physical apex to avoid a held jump pose.")]
         private float _fallVelocityThreshold = 0.8f;
 
-        private Vector3 _previousPosition;
-        private bool _hasPreviousPosition;
         private bool _hasMovingParameter;
         private bool _hasVelocityXParameter;
         private bool _hasVelocityZParameter;
@@ -93,20 +91,6 @@ namespace SecondSpawn.Networking
         private void Awake()
         {
             ResolveAnimator();
-            _previousPosition = transform.position;
-            _hasPreviousPosition = true;
-        }
-
-        private void OnEnable()
-        {
-            _previousPosition = transform.position;
-            _hasPreviousPosition = true;
-        }
-
-        public override void Spawned()
-        {
-            _previousPosition = transform.position;
-            _hasPreviousPosition = true;
         }
 
         public override void FixedUpdateNetwork()
@@ -116,17 +100,14 @@ namespace SecondSpawn.Networking
                 return;
             }
 
-            var deltaTime = Runner != null ? Runner.DeltaTime : Time.fixedDeltaTime;
-            if (!_hasPreviousPosition || deltaTime <= 0f)
+            _kcc ??= GetComponent<SimpleKCC>();
+            if (_kcc == null)
             {
-                _previousPosition = transform.position;
-                _hasPreviousPosition = true;
                 return;
             }
 
-            var worldVelocity = (transform.position - _previousPosition) / deltaTime;
+            var worldVelocity = _kcc.RealVelocity;
             worldVelocity.y = 0f;
-            _previousPosition = transform.position;
 
             var localVelocity = transform.InverseTransformDirection(worldVelocity);
             var referenceMoveSpeed = Mathf.Max(0.01f, _referenceMoveSpeed);
