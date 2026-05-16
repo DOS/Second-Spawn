@@ -289,6 +289,45 @@ assert.equal(normalizedActivityContext.body.agent_runtime.decision_count, 100000
 assert.equal(normalizedActivityContext.body.agent_runtime.fallback_decision_count, 5);
 assert.equal(normalizedActivityContext.body.agent_runtime.say_intent_count, 3);
 
+const idempotencyHarness = createRuntimeHarness(module);
+idempotencyHarness.registeredRpcs.get("secondspawn_profile_get")(
+  { userId: "idempotent-user", env: {} },
+  idempotencyHarness.logger,
+  idempotencyHarness.nk,
+  ""
+);
+const retryActivityPayload = JSON.stringify({
+  id: "activity-retry-1",
+  kind: "offline_session",
+  summary: "Retried activity should only count once.",
+  metrics: {
+    offline_seconds: 12,
+    decisions_made: 2
+  }
+});
+idempotencyHarness.registeredRpcs.get("secondspawn_agent_activity_add")(
+  { userId: "idempotent-user", env: {} },
+  idempotencyHarness.logger,
+  idempotencyHarness.nk,
+  retryActivityPayload
+);
+idempotencyHarness.registeredRpcs.get("secondspawn_agent_activity_add")(
+  { userId: "idempotent-user", env: {} },
+  idempotencyHarness.logger,
+  idempotencyHarness.nk,
+  retryActivityPayload
+);
+const afterRetriedActivity = JSON.parse(idempotencyHarness.registeredRpcs.get("secondspawn_profile_get")(
+  { userId: "idempotent-user", env: {} },
+  idempotencyHarness.logger,
+  idempotencyHarness.nk,
+  ""
+));
+assert.equal(afterRetriedActivity.body.agent_runtime.offline_seconds, 12);
+assert.equal(afterRetriedActivity.body.agent_runtime.decision_count, 2);
+assert.equal(afterRetriedActivity.body.agent_runtime.activity_count, 2);
+assert.equal(afterRetriedActivity.body.agent_activity.filter((activity) => activity.id === "activity-retry-1").length, 1);
+
 const interactHarness = createRuntimeHarness(module);
 interactHarness.registeredRpcs.get("secondspawn_profile_get")(
   { userId: "interact-user", env: {} },

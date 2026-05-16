@@ -183,9 +183,10 @@ function rpcAgentActivityAdd(
   var request = parseJson(payload || "{}", "agent activity payload");
   var activity = normalizeAgentActivity(context, request, nk);
 
-  addAgentActivity(context, activity, nk);
-  applyActivityMetrics(context.body.agent_runtime, request.metrics || {});
-  writeAgentContext(nk, context, state.version);
+  if (addAgentActivity(context, activity, nk)) {
+    applyActivityMetrics(context.body.agent_runtime, request.metrics || {});
+    writeAgentContext(nk, context, state.version);
+  }
   return JSON.stringify(context);
 }
 
@@ -519,10 +520,13 @@ function normalizeAgentActivityKind(kind: any): string {
   return "manual_note";
 }
 
-function addAgentActivity(context: any, activity: any, nk: nkruntime.Nakama): void {
+function addAgentActivity(context: any, activity: any, nk: nkruntime.Nakama): boolean {
   ensureAgentRuntime(context);
+  var activities = context.body.agent_activity || [];
   if (!activity.id) {
     activity.id = newActivityId(context, nk);
+  } else if (hasAgentActivityId(activities, activity.id)) {
+    return false;
   }
   if (!activity.occurred_at) {
     activity.occurred_at = new Date().toISOString();
@@ -531,7 +535,6 @@ function addAgentActivity(context: any, activity: any, nk: nkruntime.Nakama): vo
     activity.source = "nakama";
   }
 
-  var activities = context.body.agent_activity || [];
   activities.unshift(activity);
   if (activities.length > agentActivityLogLimit) {
     activities = activities.slice(0, agentActivityLogLimit);
@@ -539,6 +542,17 @@ function addAgentActivity(context: any, activity: any, nk: nkruntime.Nakama): vo
   context.body.agent_activity = activities;
   context.body.agent_runtime.activity_count += 1;
   context.body.agent_runtime.last_activity_at = activity.occurred_at;
+  return true;
+}
+
+function hasAgentActivityId(activities: any[], activityId: string): boolean {
+  var normalizedId = trimString(activityId);
+  for (var index = 0; index < activities.length; index += 1) {
+    if (trimString(activities[index] && activities[index].id) === normalizedId) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function applyActivityMetrics(runtime: any, metrics: any): void {
