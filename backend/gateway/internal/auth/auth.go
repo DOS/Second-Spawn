@@ -41,6 +41,12 @@ var ErrMissingAuth = errors.New("missing Authorization header")
 // signature, wrong issuer).
 var ErrInvalidJWT = errors.New("invalid JWT")
 
+const (
+	maxAuthorizationHeaderBytes = 8 * 1024
+	maxBearerTokenBytes         = 6 * 1024
+	maxJWTPartBytes             = 3 * 1024
+)
+
 // Verifier validates Supabase JWTs and extracts the player ID.
 // The concrete impl uses the Supabase project's JWT secret (HS256) -
 // no network call to Supabase per request, the secret is enough to
@@ -65,6 +71,9 @@ func FromRequest(r *http.Request) (string, error) {
 	if authHdr == "" {
 		return "", ErrMissingAuth
 	}
+	if len(authHdr) > maxAuthorizationHeaderBytes {
+		return "", ErrInvalidJWT
+	}
 	const prefix = "Bearer "
 	if !strings.HasPrefix(authHdr, prefix) {
 		return "", ErrMissingAuth
@@ -72,6 +81,9 @@ func FromRequest(r *http.Request) (string, error) {
 	token := strings.TrimSpace(authHdr[len(prefix):])
 	if token == "" {
 		return "", ErrMissingAuth
+	}
+	if len(token) > maxBearerTokenBytes {
+		return "", ErrInvalidJWT
 	}
 	return token, nil
 }
@@ -95,9 +107,17 @@ type supabaseClaims struct {
 }
 
 func (v hs256Verifier) Verify(_ context.Context, jwt string) (Identity, error) {
+	if len(jwt) > maxBearerTokenBytes {
+		return Identity{}, ErrInvalidJWT
+	}
 	parts := strings.Split(jwt, ".")
 	if len(parts) != 3 {
 		return Identity{}, ErrInvalidJWT
+	}
+	for _, part := range parts {
+		if part == "" || len(part) > maxJWTPartBytes {
+			return Identity{}, ErrInvalidJWT
+		}
 	}
 
 	var header jwtHeader

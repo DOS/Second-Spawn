@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -297,6 +298,22 @@ func TestAgentDecideRequiresAuthWhenVerifierConfigured(t *testing.T) {
 	srv.Routes().ServeHTTP(rec, newAgentDecideRequest("body-profile-1"))
 	if rec.Code != http.StatusUnauthorized {
 		t.Fatalf("expected missing auth to return 401, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestAgentDecideRejectsOversizedBearerBeforeDecider(t *testing.T) {
+	decider := &staticAgentDecider{}
+	srv := NewWithDependencies(&config.Config{Env: "test", SupabaseJWTSecret: "test-secret"}, nil, decider)
+	req := newAgentDecideRequest("body-profile-1")
+	req.Header.Set("Authorization", "Bearer "+strings.Repeat("a", 7*1024))
+
+	rec := httptest.NewRecorder()
+	srv.Routes().ServeHTTP(rec, req)
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("expected oversized auth to return 401, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if decider.calls != 0 {
+		t.Fatalf("expected decider not to be called, got %d", decider.calls)
 	}
 }
 

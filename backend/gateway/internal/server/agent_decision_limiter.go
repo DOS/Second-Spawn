@@ -24,7 +24,9 @@ type agentDecisionLimiter struct {
 	cfg        *config.Config
 	now        func() time.Time
 	lastPruned time.Time
-	players    map[string]*agentDecisionLimitState
+	// TODO(#13): Move limiter state to Redis or another shared store before
+	// running more than one gateway instance.
+	players map[string]*agentDecisionLimitState
 }
 
 type agentDecisionLimitState struct {
