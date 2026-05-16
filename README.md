@@ -19,8 +19,9 @@
 
 - Unity 6.5 beta + URP
 - Photon Fusion 2 (dedicated server mode in production)
-- Supabase (auth, Postgres, realtime, storage)
-- Go LLM gateway (server-authoritative LLM intent validation)
+- Nakama OSS (game backend, auth bridge, profiles, memory, social primitives)
+- Supabase sidecar (identity bridge, analytics, storage, external product data)
+- Go LLM gateway (server-side provider calls and intent validation)
 - DOS Chain (NFT, wallet auth via thirdweb)
 - Convai (phase 1 NPC dialogue) -> custom LLM (phase 2)
 
@@ -28,7 +29,7 @@
 
 ```
 /Unity/           Unity project (Assets, Packages, ProjectSettings)
-/backend/        Go LLM gateway, server-side services
+/backend/        Nakama runtime modules and Go LLM gateway
 /docs/            Design docs, ADRs, architecture
 /.claude/         AI agent context, templates, conventions
 ```
@@ -44,7 +45,8 @@ Requirements:
 - Unity 6.5 beta `6000.5.0b7`
 - Git LFS
 - Photon Fusion 2 app ID
-- Supabase project (or local Postgres for offline dev)
+- Nakama local backend for backend work
+- Supabase project for identity bridge work
 
 ```bash
 git clone https://github.com/DOS/Second-Spawn.git
@@ -54,6 +56,9 @@ git lfs pull
 ```
 
 Open the `Unity/` subfolder in Unity Hub, let it compile, then configure Photon app ID and Supabase URL in `Unity/Assets/_SecondSpawn/Settings/SecondSpawnConfig.asset`.
+
+See `ROADMAP.md` for implementation status and `CHANGELOG.md` for the current
+pre-alpha change history.
 
 ## Contributing
 
