@@ -57,6 +57,7 @@ namespace SecondSpawn.AI
         private Coroutine _brainLoop;
         private Vector3 _homePosition;
         private Vector3 _moveTarget;
+        private float _baseMoveSpeed;
         private bool _hasMoveTarget;
         private float _nextTalkAt;
         private int _pendingFootAlignFrames;
@@ -67,6 +68,7 @@ namespace SecondSpawn.AI
         private void Awake()
         {
             _homePosition = transform.position;
+            _baseMoveSpeed = _moveSpeed;
             _speechBubble = GetOrAdd<PrototypeSpeechBubble>();
             _voiceCue = GetOrAdd<PrototypeVoiceCue>();
             _gateway = FindAnyObjectByType<SecondSpawnGatewayClient>();
@@ -370,7 +372,7 @@ namespace SecondSpawn.AI
             var stats = body.stats;
             if (stats != null)
             {
-                _moveSpeed = Mathf.Clamp(_moveSpeed * Mathf.Clamp(stats.agility / 8f, 0.75f, 1.4f), 0.5f, 6f);
+                _moveSpeed = Mathf.Clamp(_baseMoveSpeed * Mathf.Clamp(stats.agility / 8f, 0.75f, 1.4f), 0.5f, 6f);
             }
         }
 

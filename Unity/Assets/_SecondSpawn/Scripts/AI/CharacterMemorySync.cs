@@ -110,6 +110,7 @@ namespace SecondSpawn.AI
             }
 
             const float maxWaitSeconds = 10f;
+            const float retryIntervalSeconds = 0.25f;
             var elapsed = 0f;
             while (elapsed < maxWaitSeconds)
             {
@@ -118,8 +119,8 @@ namespace SecondSpawn.AI
                     yield break;
                 }
 
-                elapsed += Time.deltaTime;
-                yield return null;
+                elapsed += retryIntervalSeconds;
+                yield return new WaitForSeconds(retryIntervalSeconds);
             }
 
             Debug.LogWarning("[CharacterMemorySync] No local state-authority player was ready for profile body sync.");
