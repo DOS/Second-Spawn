@@ -75,7 +75,7 @@ function rpcMemoryAdd(
   }
   memory.importance = clampNumber(memory.importance || 5, 1, 10);
   if (!memory.id) {
-    memory.id = newMemoryId(context);
+    memory.id = newMemoryId(context, nk);
   }
 
   upsertMemory(context, memory);
@@ -167,7 +167,7 @@ function rpcAgentDecide(
     };
   }
 
-  recordAgentDecision(context, decision);
+  recordAgentDecision(context, decision, nk);
   writeAgentContext(nk, context, state.version);
   return JSON.stringify(decision);
 }
@@ -181,9 +181,9 @@ function rpcAgentActivityAdd(
   var state = getOrCreateAgentContextState(ctx, nk);
   var context = state.context;
   var request = parseJson(payload || "{}", "agent activity payload");
-  var activity = normalizeAgentActivity(context, request);
+  var activity = normalizeAgentActivity(context, request, nk);
 
-  addAgentActivity(context, activity);
+  addAgentActivity(context, activity, nk);
   applyActivityMetrics(context.body.agent_runtime, request.metrics || {});
   writeAgentContext(nk, context, state.version);
   return JSON.stringify(context);
@@ -422,7 +422,7 @@ function defaultAgentRuntime(timestamp: string): any {
   };
 }
 
-function recordAgentDecision(context: any, decision: any): void {
+function recordAgentDecision(context: any, decision: any, nk: nkruntime.Nakama): void {
   ensureAgentRuntime(context);
   var runtime = context.body.agent_runtime;
   runtime.decision_count += 1;
@@ -440,7 +440,7 @@ function recordAgentDecision(context: any, decision: any): void {
       metrics: {
         decisions_made: 1
       }
-    });
+    }, nk);
   }
 }
 
@@ -488,7 +488,7 @@ function incrementDecisionAction(runtime: any, action: string): void {
   }
 }
 
-function normalizeAgentActivity(context: any, request: any): any {
+function normalizeAgentActivity(context: any, request: any, nk: nkruntime.Nakama): any {
   var kind = normalizeAgentActivityKind(request.kind);
   var summary = trimString(request.summary);
   if (!summary) {
@@ -496,7 +496,7 @@ function normalizeAgentActivity(context: any, request: any): any {
   }
 
   return {
-    id: trimString(request.id) || newActivityId(context),
+    id: trimString(request.id) || newActivityId(context, nk),
     kind: kind,
     summary: summary,
     occurred_at: normalizeTimestamp(request.occurred_at),
@@ -519,10 +519,10 @@ function normalizeAgentActivityKind(kind: any): string {
   return "manual_note";
 }
 
-function addAgentActivity(context: any, activity: any): void {
+function addAgentActivity(context: any, activity: any, nk: nkruntime.Nakama): void {
   ensureAgentRuntime(context);
   if (!activity.id) {
-    activity.id = newActivityId(context);
+    activity.id = newActivityId(context, nk);
   }
   if (!activity.occurred_at) {
     activity.occurred_at = new Date().toISOString();
@@ -710,18 +710,16 @@ function parseJsonOrNull(payload: string): any {
   }
 }
 
-function newMemoryId(context: any): string {
+function newMemoryId(context: any, nk: nkruntime.Nakama): string {
   var playerId = sanitizeNakamaIdentifier(context.player.player_id || "player", "player");
-  var randomPart = Math.floor(Math.random() * 0x100000000).toString(36);
   var sequence = String((context.body.memory || []).length + 1);
-  return "mem-" + playerId + "-" + nowId() + "-" + randomPart + "-" + sequence;
+  return "mem-" + playerId + "-" + nk.uuidv4() + "-" + sequence;
 }
 
-function newActivityId(context: any): string {
+function newActivityId(context: any, nk: nkruntime.Nakama): string {
   var playerId = sanitizeNakamaIdentifier(context.player.player_id || "player", "player");
-  var randomPart = Math.floor(Math.random() * 0x100000000).toString(36);
   var sequence = String((context.body.agent_activity || []).length + 1);
-  return "act-" + playerId + "-" + nowId() + "-" + randomPart + "-" + sequence;
+  return "act-" + playerId + "-" + nk.uuidv4() + "-" + sequence;
 }
 
 function requireUserId(ctx: nkruntime.Context): string {
@@ -811,8 +809,4 @@ function lowercase(value: any): string {
 
 function trimTrailingSlash(value: string): string {
   return value.replace(/\/+$/g, "");
-}
-
-function nowId(): string {
-  return String(new Date().getTime());
 }

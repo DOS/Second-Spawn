@@ -26,6 +26,7 @@ function createRuntimeHarness(module) {
   const registeredRpcs = new Map();
   const storage = new Map();
   let storageVersion = 0;
+  let uuidCounter = 0;
   let conflictOnNextVersionedWrite = false;
   const logger = {
     debug: () => {},
@@ -56,6 +57,10 @@ function createRuntimeHarness(module) {
           version: `test-version-${storageVersion}`,
         });
       }
+    },
+    uuidv4: () => {
+      uuidCounter += 1;
+      return `00000000-0000-4000-8000-${String(uuidCounter).padStart(12, "0")}`;
     },
   };
 
@@ -150,6 +155,7 @@ const updatedMemory = JSON.parse(harness.registeredRpcs.get("secondspawn_memory_
   harness.nk,
   JSON.stringify({ kind: "preference", summary: "Prefers safe farming overnight.", importance: 9 })
 ));
+assert.match(updatedMemory.body.memory[0].id, /^mem-user-1-00000000-0000-4000-8000-000000000001-2$/);
 assert.equal(updatedMemory.body.memory[0].summary, "Prefers safe farming overnight.");
 assert.equal(updatedMemory.body.memory[0].importance, 9);
 
@@ -197,6 +203,7 @@ const afterMoveDecision = JSON.parse(harness.registeredRpcs.get("secondspawn_pro
 assert.equal(afterMoveDecision.body.agent_runtime.decision_count, 1);
 assert.equal(afterMoveDecision.body.agent_runtime.move_intent_count, 1);
 assert.equal(afterMoveDecision.body.agent_activity[0].kind, "agent_decision");
+assert.match(afterMoveDecision.body.agent_activity[0].id, /^act-user-1-00000000-0000-4000-8000-[0-9]{12}-2$/);
 assert.equal(afterMoveDecision.body.agent_activity[0].metrics.decisions_made, 1);
 
 const lowTimeDecision = JSON.parse(harness.registeredRpcs.get("secondspawn_agent_decide")(
