@@ -1,0 +1,13 @@
+{
+  "name": "@second-spawn/nakama-runtime",
+  "private": true,
+  "version": "0.1.0",
+  "description": "SECOND SPAWN Nakama OSS runtime modules.",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node tests/supabase_custom_auth.test.mjs"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3"
+  }
+}

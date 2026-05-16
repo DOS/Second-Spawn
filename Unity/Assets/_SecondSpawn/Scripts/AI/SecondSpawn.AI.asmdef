@@ -2,7 +2,8 @@
     "name": "SecondSpawn.AI",
     "rootNamespace": "SecondSpawn.AI",
     "references": [
-        "SecondSpawn.Networking"
+        "SecondSpawn.Networking",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

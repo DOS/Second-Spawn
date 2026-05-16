@@ -36,7 +36,7 @@ namespace SecondSpawn.Settings
 
         [Header("Gateway")]
         [Tooltip("Base URL of the Go LLM gateway. All LLM + NFT calls go through here.")]
-        public string GatewayBaseUrl = "http://localhost:8080";
+        public string GatewayBaseUrl = "https://second-spawn-gateway-535583621422.asia-southeast1.run.app";
 
         [Header("Supabase (public-safe values only)")]
         [Tooltip("Supabase project URL, e.g. https://your-project.supabase.co")]

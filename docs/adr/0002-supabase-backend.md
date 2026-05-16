@@ -1,6 +1,6 @@
 # ADR 0002: Supabase as backend (auth, persistence, realtime side-channel)
 
-**Status:** Accepted
+**Status:** Superseded by [ADR 0010: Nakama OSS Game Backend](0010-nakama-oss-game-backend.md)
 **Date:** 2026-05-13
 **Decision maker:** JOY
 

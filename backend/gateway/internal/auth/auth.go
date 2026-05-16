@@ -19,6 +19,16 @@ import (
 // PlayerID is the Supabase user ID extracted from the JWT.
 type PlayerID string
 
+// Identity is the trusted player identity extracted from a verified Supabase
+// access token.
+type Identity struct {
+	PlayerID    PlayerID
+	Role        string
+	Email       string
+	IsAnonymous bool
+	ExpiresAt   int64
+}
+
 // ErrMissingAuth is returned when the Authorization header is absent.
 var ErrMissingAuth = errors.New("missing Authorization header")
 
@@ -31,7 +41,7 @@ var ErrInvalidJWT = errors.New("invalid JWT")
 // no network call to Supabase per request, the secret is enough to
 // verify locally.
 type Verifier interface {
-	Verify(ctx context.Context, jwt string) (PlayerID, error)
+	Verify(ctx context.Context, jwt string) (Identity, error)
 }
 
 // FromRequest extracts the bearer token from an HTTP request.

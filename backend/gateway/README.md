@@ -1,6 +1,7 @@
-# SECOND SPAWN - LLM Gateway
+# SECOND SPAWN - Prototype LLM Gateway Contract
 
-Go HTTP service that fronts every LLM call from the Unity game server.
+Prototype Go HTTP service that fronts LLM-style calls from the Unity game
+server while the shared `api.dos.ai` integration is not wired yet.
 The Unity client and the dedicated game server never hold LLM API keys -
 all calls are routed through this gateway, which enforces:
 
@@ -14,13 +15,21 @@ all calls are routed through this gateway, which enforces:
 Reuses the operational pattern of `D:\Projects\DOSRouter` (the Go LLM
 router JOY already operates for DOSafe / DOS.AI).
 
+Boundary:
+
+- Production AI/LLM calls should move to the shared `api.dos.ai` Go gateway.
+- Game backend logic belongs in Nakama OSS runtime modules under
+  `backend/nakama/`.
+- Do not add profile, inventory, matchmaking, guild, wallet mutation, or
+  gameplay APIs here.
+
 ## Run locally
 
 ```bash
 cd backend/gateway
 cp .env.example .env       # then fill in the real secrets
 make run
-curl localhost:8080/healthz
+curl localhost:8090/readyz
 ```
 
 ## Test
@@ -35,11 +44,18 @@ CI runs `make test` on every PR (see `.github/workflows/backend-test.yml`).
 
 ```bash
 make docker
-docker run --rm -p 8080:8080 --env-file .env second-spawn-gateway:local
+docker run --rm -p 8090:8090 --env-file .env second-spawn-gateway:local
 ```
 
-The production deploy target is a VPS (Hetzner) or Modal. Image is
-distroless, runs as non-root, no shell.
+Local development defaults to `:8090` because CoplayDev MCP for Unity uses
+`localhost:8080`.
+
+The preferred prototype deploy target is Google Cloud Run. The same image can
+move to a VPS later if the gateway needs co-location with dedicated game server
+infrastructure. Image is distroless, runs as non-root, no shell.
+
+Cloud Run injects `PORT`; local development still defaults to `:8090`.
+See `docs/setup/game-gateway-cloud-run.md`.
 
 ## Package layout
 
@@ -54,20 +70,31 @@ backend/gateway/
 └── internal/
     ├── config/             # env var loader (no secrets in code)
     ├── server/             # HTTP routes, handlers, middleware
+    ├── agent/              # offline-agent decision contract
     ├── auth/               # Supabase JWT verification
     ├── llm/                # provider interface (Anthropic, OpenAI, Convai)
+    ├── character/          # profile, soul, stats, and agent memory contract
     └── intent/             # structured intent schema + validator contract
 ```
 
 `internal/` packages are not importable outside this module - keeps the
 public API of the gateway minimal (just the HTTP routes).
 
-## Open work
+## Current prototype routes
 
-The scaffold compiles and `/healthz` + `/readyz` work. Wire-up for the
-real handlers (`/v1/npc/chat`, `/v1/agent/decide`, `/v1/intent/validate`)
-is staged but commented out in `internal/server/server.go` until the LLM
-provider implementations and Supabase JWT verifier are written.
+The scaffold compiles and has prototype handlers for:
+
+- `GET /readyz`
+- `GET /v1/characters/{playerID}/context`
+- `PUT /v1/characters/{playerID}/soul`
+- `POST /v1/characters/{playerID}/memory`
+- `POST /v1/agent/decide`
+- `POST /v1/npc/chat`
+- `POST /v1/voice/session`
+
+Real provider calls, persistent storage, full route-level Supabase JWT
+enforcement, and rate limiting are still open work. Nakama custom authentication
+is handled inside `backend/nakama/`, not through this gateway.
 
 See:
 - `internal/llm/provider.go` for the provider interface

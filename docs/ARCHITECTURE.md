@@ -5,14 +5,14 @@ High-level architecture overview. For detailed component design see `docs/design
 ## System Diagram (logical)
 
 ```
-+-------------------+         +------------------------+
-|   Unity Client    |         |  AI Agent (offline)    |
-|  (player online)  |         |  controls character    |
-|                   |         |  when player away      |
-+---------+---------+         +-----------+------------+
-          |                               |
-          |  Photon Fusion 2 (tick 30Hz)  |
-          v                               v
++-------------------+   +------------------------+   +----------------------+
+|   Unity Client    |   |  AI Agent (offline)    |   | OpenClaw Agent NPC   |
+|  (player online)  |   |  controls character    |   | user-owned agent     |
+|                   |   |  when player away      |   | as world actor       |
++---------+---------+   +-----------+------------+   +----------+-----------+
+          |                         |                           |
+          |      Photon Fusion 2 (tick 30Hz) / validated intents |
+          v                         v                           v
    +-------------------------------------------------+
    |        Dedicated Game Server (headless)         |
    |        - Authoritative game state               |
@@ -24,19 +24,19 @@ High-level architecture overview. For detailed component design see `docs/design
            |                  | LLM intent request
            v                  v
    +---------------+   +----------------------------+
-   | Supabase      |   | Go LLM Gateway             |
-   | - Auth        |   | - Convai (phase 1)         |
-   | - Postgres    |   | - Anthropic + OpenAI (P2)  |
-   | - Realtime    |   | - RAG memory (pgvector)    |
-   | - Storage     |   | - Rate limit + safety      |
+   | Nakama OSS    |   | api.dos.ai / Go LLM Gateway|
+   | - Game APIs   |   | - Convai (phase 1)         |
+   | - Social      |   | - Anthropic + OpenAI (P2)  |
+   | - Storage     |   | - RAG memory retrieval     |
+   | - Postgres    |   | - AI rate limit + safety   |
    +---------------+   +-------------+--------------+
            |                         |
            v                         v
    +---------------+   +----------------------------+
-   | DOS Chain     |   | Redis                      |
-   | (NFT, wallet) |   | - Session                  |
-   | via thirdweb  |   | - Rate limit               |
-   |               |   | - Transient cache          |
+   | DOS Chain     |   | Supabase Sidecar / Redis   |
+   | (NFT, wallet) |   | - Identity bridge          |
+   | via thirdweb  |   | - External profile data    |
+   |               |   | - Rate limit / cache       |
    +---------------+   +----------------------------+
 ```
 
@@ -45,7 +45,7 @@ High-level architecture overview. For detailed component design see `docs/design
 ### Unity Client
 
 - Render, input, local prediction
-- Communicates only with Fusion server and Supabase Auth
+- Communicates only with Fusion server and approved auth/backend endpoints
 - NEVER calls LLM API directly
 - NEVER holds API keys
 - Receives state updates via Fusion tick
@@ -55,35 +55,59 @@ High-level architecture overview. For detailed component design see `docs/design
 - Source of truth for in-zone state (position, HP, combat, drops)
 - Source of truth for `BodyTime` earn, spend, drain, transfer, and expiration
 - Validates every action intent (from player input or AI agent)
-- Persists durable state to Supabase Postgres (snapshots + events)
-- Triggers LLM gateway for NPC dialogue when triggered
+- Persists durable state through Nakama/Postgres (snapshots + events)
+- Triggers `api.dos.ai` / Go LLM Gateway for NPC dialogue when triggered
 - Manages zone lifecycle (load / unload / spawn)
 - Tick rate: 30Hz (60Hz for boss encounters if needed)
 
 ### AI Agent (offline player simulation)
 
-- Runs as separate process (could be Go service co-located with gateway)
+- Runs as a game-server worker, Nakama runtime task, or separate worker if needed
 - Subscribes to Fusion server state for offline characters
 - Decision loop: read state -> reason via LLM -> emit action intent
 - Subject to same server validation as a real player
 - Inherits player's character cultivation tier + persona + history
 
-### Supabase Backend
+### OpenClaw-Connected NPC
 
-- **Auth:** Reuse DOS.Me pattern (email / wallet / OAuth)
-- **Postgres:** durable state (profile, inventory, quest progress, NFT lock state, cultivation tier, character history, reincarnation and time-as-currency events)
-- **Realtime:** chat global, presence, friend list, party invite, notification (NOT combat / movement)
-- **Storage:** avatar, screenshot, UGC
+- User-owned OpenClaw agent connected into SECOND SPAWN as an NPC-like world actor
+- May appear as a companion, hub NPC, merchant-like persona, quest-adjacent character, or social world citizen
+- Bound to Nakama identity, consent scope, moderation state, rate limits, and activity logs
+- Uses `api.dos.ai` / Go LLM Gateway for prompt safety, provider routing, and memory context
+- Emits dialogue or structured intent only
+- Never mutates gameplay state directly; Fusion server validates every in-world action
 
-### Go LLM Gateway (DOSRouter pattern)
+### Nakama OSS Game Backend
+
+- Game backend APIs for profile, inventory, quest progress, activity logs, and social features
+- Postgres-backed durable storage
+- Candidate home for groups, leaderboards, matchmaking, and party flows
+- Extensible through Nakama server runtime modules for auth hooks, RPCs,
+  inventory, profile, stats, social, matchmaking, leaderboards, activity logs,
+  and moderation
+- May bridge to Supabase or DOS.Me identity patterns where useful
+- Does not replace Photon Fusion 2 server authority for movement, combat, or physics
+- Default home for game backend custom logic. Do not add a separate game API
+  gateway unless a Nakama module is the wrong tool for the feature.
+
+### Supabase Sidecar
+
+- Optional identity bridge, wallet/profile integration, storage, analytics, or external product data
+- Can be used where it clearly reduces integration work
+- Not the primary game backend baseline after ADR 0010
+- Never used for combat / movement sync
+
+### `api.dos.ai` / Go LLM Gateway
 
 - All LLM calls go through here
 - Multi-provider routing (Convai phase 1, Anthropic + OpenAI phase 2)
-- RAG memory retrieval (Supabase pgvector)
-- Rate limit per player + per NPC
+- RAG memory retrieval (Nakama/Postgres, Supabase pgvector, or Qdrant depending on later implementation)
+- AI token and request rate limits
 - Prompt injection defense
 - Returns **structured intent**, never raw text trusted by server
 - Server validates intent before applying
+- Not the game backend. Do not add inventory, profile, matchmaking, guild,
+  leaderboard, or gameplay mutation APIs here.
 
 ### DOS Chain (via thirdweb)
 
@@ -103,7 +127,7 @@ High-level architecture overview. For detailed component design see `docs/design
 
 1. **Server is the only authority.** Client + AI agent emit intents; server applies or rejects.
 2. **LLM never mutates state directly.** LLM emits structured intent -> server validates -> applies.
-3. **API keys live only in Go gateway env.** Never in Unity client, never in Supabase Edge Function reaching the client.
+3. **LLM API keys live only in `api.dos.ai` / Go LLM Gateway env.** Never in Unity client, never in Supabase Edge Function reaching the client.
 4. **NFT lock is on-chain.** When equipped, escrow contract holds. Server reads on-chain state, does not assume off-chain.
 5. **AI agent inherits player limits.** No agent can do what a real player cannot.
 6. **Time mutations are server-authoritative.** `BodyTime` is gameplay state; client, LLM, and AI agents can only request validated time intents.

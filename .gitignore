@@ -91,6 +91,16 @@ backend/dist/
 # Photon credentials (if checked-in template)
 PhotonServerSettings.asset.local
 
+# Paid Unity Asset Store assets (installed locally via Package Manager > My Assets)
+Unity/Assets/ExplosiveLLC/
+Unity/Assets/ExplosiveLLC.meta
+
+# Local clean visual prefabs generated from ignored Asset Store character packs.
+Unity/Assets/_SecondSpawn/Art/Characters/GeneratedVisuals/
+Unity/Assets/_SecondSpawn/Art/Characters/GeneratedVisuals.meta
+Unity/Assets/_SecondSpawn/Art/Characters/GeneratedVisualsV2/
+Unity/Assets/_SecondSpawn/Art/Characters/GeneratedVisualsV2.meta
+
 # Claude Code worktrees (ephemeral, per-session branches)
 .claude/worktrees/
 
@@ -99,3 +109,12 @@ PhotonServerSettings.asset.local
 
 # Codex CLI working dir (auto-regenerated mirror of .claude/skills/, do not commit)
 .agents/
+
+# Local agent/editor scratch artifacts
+.tmp-import/
+Unity/Assets/Screenshots/
+Unity/Assets/Screenshots.meta
+Unity/Assets/_Recovery/
+Unity/Assets/_Recovery.meta
+Unity/Assets/AI Toolkit/
+Unity/Assets/AI Toolkit.meta

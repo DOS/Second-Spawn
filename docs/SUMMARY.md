@@ -16,6 +16,9 @@
 - [Overview Design](design/06-overview-design.md)
 - [Networked Player Controller Prototype](design/07-player-controller-prototype.md)
 - [Time-as-Currency](design/08-time-as-currency.md)
+- [Pirate Adventure Reference Review](design/09-pirate-adventure-reference-review.md)
+- [Character Profile, Soul, and Agent Memory](design/10-character-profile-agent-memory.md)
+- [NPC Agent Brain Architecture](design/11-npc-agent-brain-architecture.md)
 
 ## Architecture Decision Records
 
@@ -28,10 +31,12 @@
 - [ADR 0007: Fusion 2.0.12 Unity 6.5 Beta Incompatibility](adr/0007-photon-fusion-2-0-12-unity-6-5-beta-incompat.md)
 - [ADR 0008: Codex Primary Agent Workflow](adr/0008-codex-primary-agent-workflow.md)
 - [ADR 0009: Fusion Networking Assembly Unsafe Code](adr/0009-fusion-networking-assembly-unsafe-code.md)
+- [ADR 0010: Nakama OSS Game Backend](adr/0010-nakama-oss-game-backend.md)
 
 ## Setup
 
 - [Agent Handoff](setup/agent-handoff.md)
 - [Fusion Install](setup/fusion-install.md)
+- [Game Gateway Cloud Run Deployment](setup/game-gateway-cloud-run.md)
+- [Paid Asset Setup](setup/paid-assets.md)
 - [Unity Conventions](setup/unity-conventions.md)
-
