@@ -227,10 +227,7 @@ namespace SecondSpawn.AI
             onSuccess?.Invoke(decision);
             if (HasNakamaSession)
             {
-                yield return AddNakamaAgentActivity(BuildGatewayDecisionActivity(decision), null, error =>
-                {
-                    Debug.LogWarning($"[SecondSpawnGatewayClient] Gateway decision activity write failed: {error}");
-                });
+                StartCoroutine(RecordGatewayDecisionActivity(decision));
             }
         }
 
@@ -472,6 +469,14 @@ namespace SecondSpawn.AI
                 source = "unity_gateway",
                 metrics = BuildGatewayDecisionMetrics(decision)
             };
+        }
+
+        private IEnumerator RecordGatewayDecisionActivity(AgentDecisionDto decision)
+        {
+            yield return AddNakamaAgentActivity(BuildGatewayDecisionActivity(decision), null, error =>
+            {
+                Debug.LogWarning($"[SecondSpawnGatewayClient] Gateway decision activity write failed: {error}");
+            });
         }
 
         private static AgentActivityMetricsDto BuildGatewayDecisionMetrics(AgentDecisionDto decision)

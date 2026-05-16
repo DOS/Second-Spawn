@@ -169,6 +169,8 @@ assert.equal(profile.body.agent_activity.length, 1);
 assert.equal(profile.body.agent_activity[0].kind, "profile_bootstrap");
 
 const storedProfile = harness.storage.get(storageKey("user-1", "secondspawn_agent", "context"));
+delete storedProfile.value.body.time;
+delete storedProfile.value.body.agent_policy;
 delete storedProfile.value.body.agent_runtime;
 delete storedProfile.value.body.agent_activity;
 const migratedProfile = JSON.parse(harness.registeredRpcs.get("secondspawn_profile_get")(
@@ -177,9 +179,14 @@ const migratedProfile = JSON.parse(harness.registeredRpcs.get("secondspawn_profi
   harness.nk,
   ""
 ));
+assert.equal(migratedProfile.body.time.remaining_seconds, 86400);
+assert.equal(migratedProfile.body.agent_policy.mode, "observe_and_keep_safe");
 assert.equal(migratedProfile.body.agent_runtime.activity_count, 1);
 assert.equal(migratedProfile.body.agent_activity.length, 1);
 assert.equal(migratedProfile.body.agent_activity[0].kind, "profile_bootstrap");
+const normalizedStoredProfile = harness.storage.get(storageKey("user-1", "secondspawn_agent", "context"));
+assert.equal(normalizedStoredProfile.value.body.time.remaining_seconds, 86400);
+assert.equal(normalizedStoredProfile.value.body.agent_policy.mode, "observe_and_keep_safe");
 
 const updatedMemory = JSON.parse(harness.registeredRpcs.get("secondspawn_memory_add")(
   { userId: "user-1", env: {} },

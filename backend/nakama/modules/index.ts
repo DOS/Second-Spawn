@@ -252,10 +252,7 @@ function getOrCreateAgentContextState(ctx: nkruntime.Context, nk: nkruntime.Naka
   var userId = requireUserId(ctx);
   var existing = readAgentContext(nk, userId);
   if (existing) {
-    return {
-      context: existing.value,
-      version: existing.version
-    };
+    return normalizeExistingAgentContextState(nk, userId, existing);
   }
 
   var context = defaultAgentContext(userId);
@@ -271,6 +268,26 @@ function getOrCreateAgentContextState(ctx: nkruntime.Context, nk: nkruntime.Naka
   return {
     context: context,
     version: null
+  };
+}
+
+function normalizeExistingAgentContextState(nk: nkruntime.Nakama, userId: string, existing: any): any {
+  var before = JSON.stringify(existing.value || {});
+  var context = ensureAgentContext(existing.value || {}, userId);
+  if (JSON.stringify(context) !== before) {
+    writeAgentContext(nk, context, existing.version);
+    var rewritten = readAgentContext(nk, userId);
+    if (rewritten) {
+      return {
+        context: ensureAgentContext(rewritten.value, userId),
+        version: rewritten.version
+      };
+    }
+  }
+
+  return {
+    context: context,
+    version: existing.version
   };
 }
 
@@ -321,18 +338,7 @@ function defaultAgentContext(playerId: string): any {
       archetype_id: "prototype-hunter",
       visual_prefab_key: "prototype-random",
       equipment: normalizeEquipment({}),
-      stats: {
-        level: 1,
-        vitality: 10,
-        force: 8,
-        agility: 8,
-        focus: 8,
-        resilience: 8,
-        max_health: 100,
-        max_energy: 50,
-        attack_power: 10,
-        defense_power: 5
-      },
+      stats: defaultCharacterStats(),
       characteristics: normalizeTraits({}),
       time: {
         remaining_seconds: 86400,
@@ -363,6 +369,30 @@ function defaultAgentContext(playerId: string): any {
       created_at: timestamp
     }
   };
+}
+
+function ensureAgentContext(context: any, playerId: string): any {
+  var timestamp = new Date().toISOString();
+  context.player = context.player || {};
+  context.player.player_id = trimString(context.player.player_id) || playerId;
+  context.player.display_name = trimString(context.player.display_name) || context.player.player_id;
+  context.player.created_at = trimString(context.player.created_at) || timestamp;
+  context.body = context.body || {};
+  context.body.body_id = trimString(context.body.body_id) || "body-" + context.player.player_id;
+  context.body.archetype_id = trimString(context.body.archetype_id) || "prototype-hunter";
+  context.body.visual_prefab_key = trimString(context.body.visual_prefab_key) || "prototype-random";
+  context.body.equipment = normalizeEquipment(context.body.equipment || {});
+  context.body.stats = normalizeStats(context.body.stats || {});
+  context.body.characteristics = normalizeTraits(context.body.characteristics || {});
+  context.body.time = normalizeBodyTime(context.body.time || {});
+  context.body.cultivation = normalizeCultivation(context.body.cultivation || {});
+  context.body.lifecycle = trimString(context.body.lifecycle) || "alive";
+  context.body.agent_policy = normalizePolicy(context.body.agent_policy || {});
+  context.body.soul = normalizeSoul(context.body.soul || {}, context.player.display_name);
+  context.body.memory = sortAndBoundMemories(context.body.memory || []);
+  context.body.created_at = trimString(context.body.created_at) || timestamp;
+  ensureAgentRuntime(context);
+  return context;
 }
 
 function ensureAgentRuntime(context: any): boolean {
@@ -420,6 +450,52 @@ function defaultAgentRuntime(timestamp: string): any {
     stop_intent_count: 0,
     interact_intent_count: 0,
     offline_seconds: 0
+  };
+}
+
+function defaultCharacterStats(): any {
+  return {
+    level: 1,
+    vitality: 10,
+    force: 8,
+    agility: 8,
+    focus: 8,
+    resilience: 8,
+    max_health: 100,
+    max_energy: 50,
+    attack_power: 10,
+    defense_power: 5
+  };
+}
+
+function normalizeStats(stats: any): any {
+  var defaults = defaultCharacterStats();
+  return {
+    level: clampNumber(numberOrDefault(stats.level, defaults.level), 1, 100),
+    vitality: clampNumber(numberOrDefault(stats.vitality, defaults.vitality), 1, 9999),
+    force: clampNumber(numberOrDefault(stats.force, defaults.force), 1, 9999),
+    agility: clampNumber(numberOrDefault(stats.agility, defaults.agility), 1, 9999),
+    focus: clampNumber(numberOrDefault(stats.focus, defaults.focus), 1, 9999),
+    resilience: clampNumber(numberOrDefault(stats.resilience, defaults.resilience), 1, 9999),
+    max_health: clampNumber(numberOrDefault(stats.max_health, defaults.max_health), 1, 999999),
+    max_energy: clampNumber(numberOrDefault(stats.max_energy, defaults.max_energy), 0, 999999),
+    attack_power: clampNumber(numberOrDefault(stats.attack_power, defaults.attack_power), 0, 999999),
+    defense_power: clampNumber(numberOrDefault(stats.defense_power, defaults.defense_power), 0, 999999)
+  };
+}
+
+function normalizeBodyTime(time: any): any {
+  return {
+    remaining_seconds: clampNumber(numberOrDefault(time.remaining_seconds, 86400), 0, 31536000),
+    max_seconds: clampNumber(numberOrDefault(time.max_seconds, 86400), 1, 31536000),
+    danger_drain_rate: clampNumber(numberOrDefault(time.danger_drain_rate, 1), 0, 1000)
+  };
+}
+
+function normalizeCultivation(cultivation: any): any {
+  return {
+    tier: trimString(cultivation.tier) || "Awakening",
+    progress_xp: clampNumber(numberOrDefault(cultivation.progress_xp, 0), 0, agentRuntimeMetricMax)
   };
 }
 
@@ -808,6 +884,13 @@ function clampNumber(value: any, min: number, max: number): number {
     return max;
   }
   return numberValue;
+}
+
+function numberOrDefault(value: any, fallback: number): any {
+  if (value === null || value === undefined || value === "") {
+    return fallback;
+  }
+  return value;
 }
 
 function trimString(value: any): string {
