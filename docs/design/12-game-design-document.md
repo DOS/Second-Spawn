@@ -14,6 +14,10 @@ This is not marketing copy and it does not lock balance numbers. Economy costs, 
 
 When this GDD conflicts with a newer ADR or per-system design doc, prefer the newer, more specific document and update this GDD afterward.
 
+### Modern GDD Inputs
+
+This document follows a modern living-GDD shape rather than a static monolithic spec. The structure borrows from current GitBook and Heroic Labs guidance: start with vision, core loop, systems, content, UX, production scope, risks, and business constraints. It also reuses useful MetaDOS GDD patterns where they fit SECOND SPAWN: clear overview copy, match or session flow, currency taxonomy, cosmetics and account progression separation, and detailed feature notes once a system graduates from concept to implementation.
+
 ---
 
 ## 2. Game Overview
@@ -121,7 +125,7 @@ Key lore anchors:
 - Synthetic bodies: Replaceable vessels with finite operating life.
 - Consciousness transfer: The sci-fi basis of reincarnation.
 - Hunters: Player-controlled or agent-controlled characters who fight, cultivate, and survive.
-- SECOND token: The token used for reincarnation costs. Exact economy design is undecided.
+- SECOND token: Account-level time reserve denominated in seconds. The token is used for reincarnation costs and must stay distinct from current-body `BodyTime` unless a future ADR explicitly merges them.
 
 ---
 
@@ -150,6 +154,25 @@ Key lore anchors:
 3. Improve player skill and build knowledge.
 4. Collect or equip approved NFT-linked skins, weapons, or pets where applicable.
 5. Build social and faction relationships with players, NPCs, and connected agents.
+
+### Controls, Camera, and Game Feel
+
+SECOND SPAWN should feel like a modern top-down ARPG first, with networking and AI systems supporting that feel instead of replacing it.
+
+Current direction:
+
+- Camera: top-down or high isometric combat view with strong battlefield readability.
+- Movement: direct character movement suitable for mouse-and-keyboard first, controller later.
+- Combat verbs: move, basic attack, use skill, dodge or reposition, interact, talk, and stop.
+- Targeting: readable enemy threat indicators and clear intent feedback.
+- Session feel: compact, responsive, and tactical rather than slow MMORPG tab-target combat.
+
+Open feel decisions:
+
+- Exact camera height and angle: [TODO: prototype]
+- Mouse movement vs WASD default: [TODO: JOY input]
+- Dodge roll, dash, or movement skill baseline: [TODO: prototype]
+- Ability slot count for the first Hunter class: [TODO: prototype]
 
 ---
 
@@ -191,15 +214,19 @@ Death can be caused by combat failure, BodyTime reaching zero, or offline-agent 
 - LLMs and clients cannot trigger successful reincarnation directly.
 - Cultivation carries over partially, but the exact rule is [TODO: JOY input].
 - Equipment, quest state, location, and current body stats reset or reconcile according to future system rules.
-- SECOND token is distinct from `BodyTime` unless a future ADR explicitly merges them.
+- SECOND token is denominated in seconds and is distinct from current-body `BodyTime` unless a future ADR explicitly merges them.
+- Reincarnation should consume enough SECOND to create a new playable body-time package.
+- Candidate reincarnation package is 5-7 days of playable body lifetime. The vertical-slice recommendation is 7 days by default, then tune toward 5 days only if early testing shows the loop is too forgiving.
 
 ### Open Reincarnation Decisions
 
-- SECOND token cost per reincarnation: [TODO: JOY input]
-- SECOND token source and sink design: [TODO: JOY input]
+- Default reincarnation package: 5 days or 7 days: [TODO: JOY input]
+- Whether the SECOND cost directly seeds the new body's `BodyTime`, or only gates body creation while `BodyTime` is assigned separately: [TODO: JOY input]
+- SECOND token source and sink design beyond reincarnation: [TODO: JOY input]
 - Cultivation carryover ratio or rule: [TODO: JOY input]
 - Faction reputation carryover: [TODO: JOY input]
 - Memory decay across bodies: [TODO: JOY input]
+- Reincarnation grace period after zero `BodyTime`: [TODO: JOY input]
 
 ---
 
@@ -288,6 +315,14 @@ Current controller direction:
 4. Opsive Ultimate Character Controller evaluation only if it proves value.
 
 Combat must be playable by both human input and offline-agent intents through the same server-validated action surface.
+
+Combat content that still needs its own feature spec:
+
+- First Hunter class kit.
+- Enemy taxonomy: trash, ranged, elite, boss, neutral hazard.
+- Damage formula and defense formula.
+- Skill cooldown and resource model.
+- Boss phase rules and LLM dialogue trigger rules.
 
 ---
 
@@ -455,7 +490,7 @@ The economy is not fully designed. This GDD only defines resource roles and boun
 | Resource | Meaning | Current Design Boundary |
 | ---- | ---- | ---- |
 | `BodyTime` | Current body's remaining operating life and spendable tactical resource | Body-bound, lost on body death unless future rules say otherwise |
-| SECOND token | Reincarnation and ecosystem token | Account or wallet-level, exact source and sink design undecided |
+| SECOND token | Account-level time reserve denominated in seconds, used for reincarnation | Account or wallet-level, exact source and sink design undecided |
 | Nibirium | Cultivation progress material | Earned through gameplay, exact rates undecided |
 | Loot and supplies | Tactical power and run support | Server-owned, no client-granted drops |
 | NFT assets | Ownership-linked skins, weapons, pets | Bound through DOS Chain and escrow rules |
@@ -468,13 +503,118 @@ Design constraints:
 - Do not place chain or wallet mutation authority in the Unity client.
 - Keep vertical slice economy small: one BodyTime earn source, one BodyTime spend sink, and test-token reincarnation.
 
+### SECOND and BodyTime Relationship
+
+`SECOND` and `BodyTime` both use the fantasy of time, but they operate at different layers:
+
+- `SECOND` is account-level reserve and reincarnation fuel.
+- `BodyTime` is current-body operating life and tactical pressure.
+- Reincarnation consumes SECOND and results in a new body with a playable `BodyTime` package.
+- The working package range is 5-7 days. Seven days is the recommended vertical-slice default because it gives new players and offline-agent behavior enough room for testing.
+- Direct conversion between `SECOND` and `BodyTime` should not exist until the anti-abuse and economy model is explicit.
+
 Open economy decisions:
 
-- SECOND token cost per reincarnation: [TODO: JOY input]
-- SECOND token earning and sink design: [TODO: JOY input]
+- Default reincarnation package: 5 days or 7 days of playable lifetime: [TODO: JOY input]
+- Whether SECOND directly seeds BodyTime or only gates body creation: [TODO: JOY input]
+- SECOND token earning and sink design beyond reincarnation: [TODO: JOY input]
 - BodyTime earn and spend values: [TODO: JOY input]
 - Nibirium thresholds and tuning beyond prototype values: [TODO: JOY input]
 - Marketplace design: [TODO: JOY input]
+
+### Loot, Items, and Cosmetics
+
+Loot and itemization should support the ARPG loop without diluting the reincarnation pillar.
+
+Vertical slice direction:
+
+- Use a small item set first: basic weapon, armor or module, consumable, and one quest item.
+- Gear found during play is body-bound unless a future rule says otherwise.
+- Current-body gear should mostly reset or be reconciled on reincarnation.
+- Durable cosmetics, achievements, titles, badges, and account progression can survive body death.
+- NFT-linked assets must stay optional and bounded by server-side equip rules.
+
+MetaDOS patterns worth reusing later:
+
+- Clear separation between gameplay gear and cosmetic surfaces.
+- Account-level badges, trackers, banners, frames, emotes, and profile presentation.
+- Rarity language for cosmetics, not raw combat power.
+- Feature-specific docs once a cosmetic or account system becomes implementation-ready.
+
+Open item decisions:
+
+- First weapon archetype: [TODO: prototype]
+- Loot rarity names and count: [TODO: JOY input]
+- Which gear survives reincarnation, if any: [TODO: JOY input]
+- Cosmetic rarity model: [TODO: JOY input]
+
+### UI, UX, and Onboarding
+
+UI must make the signature systems legible before adding cosmetic depth.
+
+Required vertical-slice UX flows:
+
+- First login and character/profile bootstrap.
+- BodyTime HUD and low-time warning.
+- Death and reincarnation screen.
+- SECOND cost confirmation for reincarnation.
+- Offline-agent policy setup.
+- Offline-agent return report with recent activity.
+- Basic NPC dialogue UI.
+- Wallet/NFT equip status only where needed for the vertical slice.
+
+First-time player experience:
+
+1. Spawn in a safe hub.
+2. Learn movement and camera.
+3. See BodyTime but do not immediately panic.
+4. Enter one danger area where BodyTime matters.
+5. Fight one enemy, earn or spend time once.
+6. Meet one NPC or boss dialogue moment.
+7. Experience a controlled death or reincarnation tutorial.
+8. Set a basic offline-agent policy before logging out.
+
+Accessibility requirements for future passes:
+
+- Readable BodyTime warnings beyond color alone.
+- Remappable controls.
+- Subtitle support for NPC dialogue and voice.
+- UI scale options.
+- Avoid time-critical wallet prompts in combat.
+
+### Art and Audio Direction
+
+Current direction:
+
+- Visual style: dark sci-fi, cyberpunk, post-apocalyptic, stylized enough for production speed.
+- Environment: ruined high-tech zones, synthetic-body facilities, Nibirium corruption, hub town contrast.
+- Character readability: silhouettes and ability effects must stay readable from top-down camera distance.
+- Audio: tense biotech/sci-fi ambience, clear combat hits, distinct BodyTime warning sounds, restrained AI/NPC voice use.
+
+Open art/audio decisions:
+
+- Exact stylization level for vertical slice: [TODO: prototype]
+- First hub visual identity: [TODO: JOY input]
+- First dungeon visual identity: [TODO: JOY input]
+- Music direction and reference tracks: [TODO: JOY input]
+
+### Content Inventory for Vertical Slice
+
+The first slice should list content volume explicitly so scope cannot silently inflate.
+
+| Content Type | Target Count | Notes |
+| ---- | ---- | ---- |
+| Hub area | 1 | Small safe zone with NPC, vendor or shrine, reincarnation entry point |
+| Danger zone | 1 | BodyTime drain is visible here |
+| Dungeon | 1 | Short instance with one readable objective |
+| Player class | 1 | One Hunter archetype |
+| Basic enemies | 1-2 | Enough to test combat and rewards |
+| Elite or boss | 1 | Includes LLM dialogue trigger if feasible |
+| Questline | 1 | 3-5 steps |
+| NPCs | 2-3 | Hub NPC, quest NPC, boss or mentor |
+| Items | 4-8 | Weapon, armor or module, consumable, objective item, optional cosmetic |
+| Offline-agent policies | 2-3 | Observe, safe farm, stop below threshold |
+| Reincarnation flow | 1 | Placeholder but server-authoritative |
 
 ---
 
@@ -614,13 +754,16 @@ Useful source documents:
 | Decision | Needed Before |
 | ---- | ---- |
 | Final public game name | Public launch planning |
-| SECOND token reincarnation cost, sources, and sinks | Reincarnation MVP |
+| Default reincarnation package: 5 days or 7 days of playable lifetime | Reincarnation MVP |
+| Whether SECOND directly seeds BodyTime or only gates body creation | Reincarnation MVP |
+| SECOND token sources and sinks beyond reincarnation | Reincarnation MVP |
 | BodyTime drain, earn, spend, transfer, and conversion rules | BodyTime MVP |
 | Cultivation carryover rule after reincarnation | Reincarnation MVP |
 | Offline-agent default policy and risk threshold | Offline-agent MVP |
 | Hunter NFT integration approach | NFT equip MVP |
 | First OpenClaw-connected NPC role | OpenClaw bridge prototype |
 | Voice NPC provider | Voice phase |
+| First class kit and skill slot count | Combat prototype |
+| First hub and dungeon visual identity | Vertical slice art pass |
 | Dedicated server region and Hetzner specs | Server Mode load test |
 | Photon Fusion license tier beyond free CCU | Post-slice scaling |
-
