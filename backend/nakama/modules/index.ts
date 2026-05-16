@@ -359,7 +359,7 @@ function ensureAgentRuntime(context: any): boolean {
       occurred_at: timestamp,
       source: "nakama"
     });
-    context.body.agent_runtime.activity_count = clampNumber(context.body.agent_runtime.activity_count || 0, 0, 1000000000) + 1;
+    context.body.agent_runtime.activity_count = 1;
     context.body.agent_runtime.last_activity_at = timestamp;
     changed = true;
   }

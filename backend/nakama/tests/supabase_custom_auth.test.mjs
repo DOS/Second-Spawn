@@ -109,6 +109,19 @@ assert.equal(profile.body.agent_runtime.fallback_decision_count, 0);
 assert.equal(profile.body.agent_activity.length, 1);
 assert.equal(profile.body.agent_activity[0].kind, "profile_bootstrap");
 
+const storedProfile = harness.storage.get(storageKey("user-1", "secondspawn_agent", "context"));
+delete storedProfile.value.body.agent_runtime;
+delete storedProfile.value.body.agent_activity;
+const migratedProfile = JSON.parse(harness.registeredRpcs.get("secondspawn_profile_get")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  ""
+));
+assert.equal(migratedProfile.body.agent_runtime.activity_count, 1);
+assert.equal(migratedProfile.body.agent_activity.length, 1);
+assert.equal(migratedProfile.body.agent_activity[0].kind, "profile_bootstrap");
+
 const updatedMemory = JSON.parse(harness.registeredRpcs.get("secondspawn_memory_add")(
   { userId: "user-1", env: {} },
   harness.logger,

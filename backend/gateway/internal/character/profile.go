@@ -157,6 +157,7 @@ type AgentActivity struct {
 	Metrics    AgentActivityMetrics `json:"metrics"`
 }
 
+// AgentActivityMetrics carries optional counters reported with an activity.
 type AgentActivityMetrics struct {
 	OfflineSeconds    int64 `json:"offline_seconds"`
 	DecisionsMade     int64 `json:"decisions_made"`
