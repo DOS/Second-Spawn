@@ -27,6 +27,7 @@ namespace SecondSpawn.AI
         public CharacterTraitsDto characteristics;
         public BodyTimeDto time;
         public CultivationDto cultivation;
+        public string lifecycle = "alive";
         public AgentPolicyDto agent_policy;
         public SoulProfileDto soul;
         public MemoryRecordDto[] memory;
@@ -73,6 +74,16 @@ namespace SecondSpawn.AI
         public long remaining_seconds;
         public long max_seconds;
         public long danger_drain_rate;
+    }
+
+    [Serializable]
+    public sealed class BodyTimeEventRequestDto
+    {
+        public string id;
+        public string kind;
+        public string source;
+        public long amount_seconds;
+        public string note;
     }
 
     [Serializable]

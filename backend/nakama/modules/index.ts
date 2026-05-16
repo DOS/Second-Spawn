@@ -13,8 +13,14 @@ var rpcIdMemoryAdd = "secondspawn_memory_add";
 var rpcIdSoulUpdate = "secondspawn_soul_update";
 var rpcIdAgentDecide = "secondspawn_agent_decide";
 var rpcIdAgentActivityAdd = "secondspawn_agent_activity_add";
+var rpcIdBodyTimeEvent = "secondspawn_bodytime_event";
 var agentActivityLogLimit = 32;
 var agentRuntimeMetricMax = 1000000000;
+var bodyTimeMaxSeconds = 86400 * 30;
+var bodyTimeEarnCapSeconds = 3600;
+var bodyTimeSpendCapSeconds = 600;
+var bodyTimeDrainCapSeconds = 300;
+var bodyTimeEarnCooldownSeconds = 60;
 
 let InitModule: nkruntime.InitModule = function (
   ctx: nkruntime.Context,
@@ -28,6 +34,7 @@ let InitModule: nkruntime.InitModule = function (
   initializer.registerRpc(rpcIdSoulUpdate, rpcSoulUpdate);
   initializer.registerRpc(rpcIdAgentDecide, rpcAgentDecide);
   initializer.registerRpc(rpcIdAgentActivityAdd, rpcAgentActivityAdd);
+  initializer.registerRpc(rpcIdBodyTimeEvent, rpcBodyTimeEvent);
   initializer.registerBeforeAuthenticateCustom(beforeAuthenticateCustom);
   logger.info("Second Spawn Nakama runtime loaded.");
 };
@@ -187,6 +194,26 @@ function rpcAgentActivityAdd(
     applyActivityMetrics(context.body.agent_runtime, request.metrics || {});
     writeAgentContext(nk, context, state.version);
   }
+  return JSON.stringify(context);
+}
+
+function rpcBodyTimeEvent(
+  ctx: nkruntime.Context,
+  logger: nkruntime.Logger,
+  nk: nkruntime.Nakama,
+  payload: string
+): string {
+  var state = getOrCreateAgentContextState(ctx, nk);
+  var context = state.context;
+  var event = normalizeBodyTimeEvent(parseJson(payload || "{}", "body time payload"));
+
+  ensureBodyTime(context);
+  if (event.id && hasAgentActivityId(context.body.agent_activity || [], event.id)) {
+    return JSON.stringify(context);
+  }
+
+  applyBodyTimeEvent(context, event, nk);
+  writeAgentContext(nk, context, state.version);
   return JSON.stringify(context);
 }
 
@@ -423,6 +450,146 @@ function defaultAgentRuntime(timestamp: string): any {
   };
 }
 
+function ensureBodyTime(context: any): void {
+  if (!context.body) {
+    context.body = {};
+  }
+
+  if (!context.body.time) {
+    context.body.time = {};
+  }
+
+  var time = context.body.time;
+  var maxSeconds = finiteNumberOrDefault(time.max_seconds, 86400);
+  time.max_seconds = clampNumber(Math.floor(maxSeconds), 1, bodyTimeMaxSeconds);
+
+  var remainingSeconds = finiteNumberOrDefault(time.remaining_seconds, time.max_seconds);
+  time.remaining_seconds = clampNumber(Math.floor(remainingSeconds), 0, time.max_seconds);
+
+  var drainRate = finiteNumberOrDefault(time.danger_drain_rate, 1);
+  time.danger_drain_rate = clampNumber(Math.floor(drainRate), 0, 3600);
+
+  if (!context.body.lifecycle) {
+    context.body.lifecycle = time.remaining_seconds <= 0 ? "dead" : "alive";
+  }
+}
+
+function normalizeBodyTimeEvent(request: any): any {
+  var kind = normalizeBodyTimeEventKind(request.kind);
+  var source = normalizeBodyTimeEventSource(kind, request.source);
+  var amount = normalizeBodyTimeAmount(kind, firstDefined(request.amount_seconds, request.seconds));
+  return {
+    id: trimString(request.id),
+    kind: kind,
+    source: source,
+    amount_seconds: amount,
+    note: trimString(request.note)
+  };
+}
+
+function normalizeBodyTimeEventKind(kind: any): string {
+  var value = trimString(kind);
+  if (value === "earn" || value === "spend" || value === "drain") {
+    return value;
+  }
+  throw new Error("body time event kind must be earn, spend, or drain");
+}
+
+function normalizeBodyTimeEventSource(kind: string, source: any): string {
+  var value = trimString(source);
+  if (kind === "earn" && value === "prototype_safe_farming") {
+    return value;
+  }
+  if (kind === "spend" && value === "prototype_service") {
+    return value;
+  }
+  if (kind === "drain" && value === "danger_zone_tick") {
+    return value;
+  }
+  throw new Error("body time source is not allowed for " + kind);
+}
+
+function normalizeBodyTimeAmount(kind: string, amount: any): number {
+  var numberValue = Number(amount);
+  if (isNaN(numberValue) || !isFinite(numberValue) || numberValue <= 0) {
+    throw new Error("body time amount_seconds must be a positive finite number");
+  }
+
+  var maxAmount = bodyTimeDrainCapSeconds;
+  if (kind === "earn") {
+    maxAmount = bodyTimeEarnCapSeconds;
+  } else if (kind === "spend") {
+    maxAmount = bodyTimeSpendCapSeconds;
+  }
+
+  return clampNumber(Math.floor(numberValue), 1, maxAmount);
+}
+
+function applyBodyTimeEvent(context: any, event: any, nk: nkruntime.Nakama): void {
+  ensureBodyTime(context);
+  if (context.body.lifecycle === "dead") {
+    throw new Error("body time cannot be changed on a dead body before reincarnation");
+  }
+  if (event.kind === "earn" && hasRecentBodyTimeEvent(context, event, bodyTimeEarnCooldownSeconds)) {
+    throw new Error("body time earn source is on cooldown");
+  }
+
+  var time = context.body.time;
+  var beforeSeconds = time.remaining_seconds;
+  var delta = event.kind === "earn" ? event.amount_seconds : -event.amount_seconds;
+  time.remaining_seconds = clampNumber(beforeSeconds + delta, 0, time.max_seconds);
+  if (time.remaining_seconds <= 0) {
+    context.body.lifecycle = "dead";
+  }
+
+  addAgentActivity(context, {
+    id: event.id || "",
+    kind: "body_time",
+    summary: bodyTimeActivitySummary(event, beforeSeconds, time.remaining_seconds),
+    source: "nakama",
+    body_time_kind: event.kind,
+    body_time_source: event.source,
+    body_time_amount_seconds: event.amount_seconds,
+    metrics: {
+      body_time_delta_seconds: delta,
+      body_time_before_seconds: beforeSeconds,
+      body_time_after_seconds: time.remaining_seconds
+    }
+  }, nk);
+}
+
+function hasRecentBodyTimeEvent(context: any, event: any, cooldownSeconds: number): boolean {
+  var activities = context.body.agent_activity || [];
+  var nowMs = new Date().getTime();
+  for (var index = 0; index < activities.length; index += 1) {
+    var activity = activities[index];
+    if (
+      activity &&
+      activity.kind === "body_time" &&
+      activity.body_time_kind === event.kind &&
+      activity.body_time_source === event.source
+    ) {
+      var occurredMs = new Date(activity.occurred_at || "").getTime();
+      if (!isNaN(occurredMs) && nowMs - occurredMs < cooldownSeconds * 1000) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function bodyTimeActivitySummary(event: any, beforeSeconds: number, afterSeconds: number): string {
+  var verb = event.kind === "earn" ? "earned" : event.kind === "spend" ? "spent" : "drained";
+  var summary = "BodyTime " + verb + " " + event.amount_seconds + "s from " + event.source + ".";
+  if (event.note) {
+    summary += " " + event.note;
+  }
+  if (afterSeconds <= 0 && beforeSeconds > 0) {
+    summary += " Body reached zero time and died.";
+  }
+  return summary;
+}
+
 function recordAgentDecision(context: any, decision: any, nk: nkruntime.Nakama): void {
   ensureAgentRuntime(context);
   var runtime = context.body.agent_runtime;
@@ -512,6 +679,7 @@ function normalizeAgentActivityKind(kind: any): string {
     value === "profile_bootstrap" ||
     value === "offline_session" ||
     value === "agent_decision" ||
+    value === "body_time" ||
     value === "memory_sync" ||
     value === "manual_note"
   ) {
@@ -808,6 +976,18 @@ function clampNumber(value: any, min: number, max: number): number {
     return max;
   }
   return numberValue;
+}
+
+function finiteNumberOrDefault(value: any, fallback: number): number {
+  var numberValue = Number(value);
+  if (isNaN(numberValue) || !isFinite(numberValue)) {
+    return fallback;
+  }
+  return numberValue;
+}
+
+function firstDefined(primary: any, fallback: any): any {
+  return primary === undefined || primary === null ? fallback : primary;
 }
 
 function trimString(value: any): string {

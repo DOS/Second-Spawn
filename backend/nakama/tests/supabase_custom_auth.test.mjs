@@ -129,13 +129,14 @@ assert.equal(
 
 const harness = createRuntimeHarness(module);
 assert.equal(harness.registeredHooks.length, 1);
-assert.equal(harness.registeredRpcs.size, 6);
+assert.equal(harness.registeredRpcs.size, 7);
 assert.ok(harness.registeredRpcs.has("secondspawn_health"));
 assert.ok(harness.registeredRpcs.has("secondspawn_profile_get"));
 assert.ok(harness.registeredRpcs.has("secondspawn_memory_add"));
 assert.ok(harness.registeredRpcs.has("secondspawn_soul_update"));
 assert.ok(harness.registeredRpcs.has("secondspawn_agent_decide"));
 assert.ok(harness.registeredRpcs.has("secondspawn_agent_activity_add"));
+assert.ok(harness.registeredRpcs.has("secondspawn_bodytime_event"));
 
 const createConflictHarness = createRuntimeHarness(module);
 createConflictHarness.conflictNextCreateOnlyWrite();
@@ -168,10 +169,72 @@ assert.equal(profile.body.stats.vitality, 10);
 assert.equal(profile.body.stats.agility, 8);
 assert.equal(profile.body.stats.max_health, 100);
 assert.equal(profile.body.stats.attack_power, 10);
+assert.equal(profile.body.time.remaining_seconds, 86400);
+assert.equal(profile.body.lifecycle, "alive");
 assert.equal(profile.body.agent_runtime.decision_count, 0);
 assert.equal(profile.body.agent_runtime.fallback_decision_count, 0);
 assert.equal(profile.body.agent_activity.length, 1);
 assert.equal(profile.body.agent_activity[0].kind, "profile_bootstrap");
+
+const spentBodyTime = JSON.parse(harness.registeredRpcs.get("secondspawn_bodytime_event")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  JSON.stringify({
+    id: "bodytime-spend-1",
+    kind: "spend",
+    source: "prototype_service",
+    amount_seconds: 600,
+    note: "Prototype recovery service."
+  })
+));
+assert.equal(spentBodyTime.body.time.remaining_seconds, 85800);
+assert.equal(spentBodyTime.body.lifecycle, "alive");
+assert.equal(spentBodyTime.body.agent_activity[0].id, "bodytime-spend-1");
+assert.equal(spentBodyTime.body.agent_activity[0].kind, "body_time");
+assert.match(spentBodyTime.body.agent_activity[0].summary, /spent 600s/);
+
+const earnedBodyTime = JSON.parse(harness.registeredRpcs.get("secondspawn_bodytime_event")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  JSON.stringify({
+    id: "bodytime-earn-1",
+    kind: "earn",
+    source: "prototype_safe_farming",
+    amount_seconds: 300
+  })
+));
+assert.equal(earnedBodyTime.body.time.remaining_seconds, 86100);
+assert.equal(earnedBodyTime.body.agent_activity[0].id, "bodytime-earn-1");
+
+const retriedBodyTimeEarn = JSON.parse(harness.registeredRpcs.get("secondspawn_bodytime_event")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  JSON.stringify({
+    id: "bodytime-earn-1",
+    kind: "earn",
+    source: "prototype_safe_farming",
+    amount_seconds: 300
+  })
+));
+assert.equal(retriedBodyTimeEarn.body.time.remaining_seconds, 86100);
+assert.equal(retriedBodyTimeEarn.body.agent_activity.filter((activity) => activity.id === "bodytime-earn-1").length, 1);
+assert.throws(
+  () => harness.registeredRpcs.get("secondspawn_bodytime_event")(
+    { userId: "user-1", env: {} },
+    harness.logger,
+    harness.nk,
+    JSON.stringify({
+      id: "bodytime-earn-2",
+      kind: "earn",
+      source: "prototype_safe_farming",
+      amount_seconds: 300
+    })
+  ),
+  /earn source is on cooldown/
+);
 
 const storedProfile = harness.storage.get(storageKey("user-1", "secondspawn_agent", "context"));
 delete storedProfile.value.body.agent_runtime;
@@ -364,6 +427,69 @@ assert.equal(afterRetriedActivity.body.agent_runtime.offline_seconds, 12);
 assert.equal(afterRetriedActivity.body.agent_runtime.decision_count, 2);
 assert.equal(afterRetriedActivity.body.agent_runtime.activity_count, 2);
 assert.equal(afterRetriedActivity.body.agent_activity.filter((activity) => activity.id === "activity-retry-1").length, 1);
+
+const bodyTimeDeathHarness = createRuntimeHarness(module);
+bodyTimeDeathHarness.registeredRpcs.get("secondspawn_profile_get")(
+  { userId: "bodytime-death-user", env: {} },
+  bodyTimeDeathHarness.logger,
+  bodyTimeDeathHarness.nk,
+  ""
+);
+const deathStoredProfile = bodyTimeDeathHarness.storage.get(storageKey("bodytime-death-user", "secondspawn_agent", "context"));
+deathStoredProfile.value.body.time.remaining_seconds = 120;
+const drainedBodyTime = JSON.parse(bodyTimeDeathHarness.registeredRpcs.get("secondspawn_bodytime_event")(
+  { userId: "bodytime-death-user", env: {} },
+  bodyTimeDeathHarness.logger,
+  bodyTimeDeathHarness.nk,
+  JSON.stringify({
+    id: "bodytime-drain-1",
+    kind: "drain",
+    source: "danger_zone_tick",
+    amount_seconds: 300
+  })
+));
+assert.equal(drainedBodyTime.body.time.remaining_seconds, 0);
+assert.equal(drainedBodyTime.body.lifecycle, "dead");
+assert.match(drainedBodyTime.body.agent_activity[0].summary, /died/);
+assert.throws(
+  () => bodyTimeDeathHarness.registeredRpcs.get("secondspawn_bodytime_event")(
+    { userId: "bodytime-death-user", env: {} },
+    bodyTimeDeathHarness.logger,
+    bodyTimeDeathHarness.nk,
+    JSON.stringify({
+      kind: "earn",
+      source: "prototype_safe_farming",
+      amount_seconds: 60
+    })
+  ),
+  /dead body/
+);
+assert.throws(
+  () => bodyTimeDeathHarness.registeredRpcs.get("secondspawn_bodytime_event")(
+    { userId: "bodytime-death-user", env: {} },
+    bodyTimeDeathHarness.logger,
+    bodyTimeDeathHarness.nk,
+    JSON.stringify({
+      kind: "drain",
+      source: "danger_zone_tick",
+      amount_seconds: 60
+    })
+  ),
+  /dead body/
+);
+assert.throws(
+  () => bodyTimeDeathHarness.registeredRpcs.get("secondspawn_bodytime_event")(
+    { userId: "bodytime-death-user", env: {} },
+    bodyTimeDeathHarness.logger,
+    bodyTimeDeathHarness.nk,
+    JSON.stringify({
+      kind: "earn",
+      source: "unknown_source",
+      amount_seconds: 60
+    })
+  ),
+  /source is not allowed/
+);
 
 const interactHarness = createRuntimeHarness(module);
 interactHarness.registeredRpcs.get("secondspawn_profile_get")(

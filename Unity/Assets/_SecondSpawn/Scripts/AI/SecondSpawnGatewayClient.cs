@@ -156,6 +156,11 @@ namespace SecondSpawn.AI
             yield return SendNakamaRpc("secondspawn_agent_activity_add", activity, onSuccess, onError);
         }
 
+        public IEnumerator ApplyNakamaBodyTimeEvent(BodyTimeEventRequestDto request, Action<AgentContextDto> onSuccess = null, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_bodytime_event", request, onSuccess, onError);
+        }
+
         public IEnumerator UpdateNakamaSoul(UpdateSoulRequestDto request, Action<AgentContextDto> onSuccess = null, Action<string> onError = null)
         {
             yield return SendNakamaRpc("secondspawn_soul_update", request, onSuccess, onError);
