@@ -34,7 +34,7 @@ func Load() (*Config, error) {
 
 	cfg := &Config{
 		Env:        env,
-		ListenAddr: getEnv("GATEWAY_LISTEN_ADDR", ":8080"),
+		ListenAddr: getEnv("GATEWAY_LISTEN_ADDR", defaultListenAddr()),
 
 		SupabaseURL:            os.Getenv("SUPABASE_URL"),
 		SupabaseJWTSecret:      os.Getenv("SUPABASE_JWT_SECRET"),
@@ -67,6 +67,17 @@ func Load() (*Config, error) {
 	}
 
 	return cfg, nil
+}
+
+func defaultListenAddr() string {
+	port := strings.TrimSpace(os.Getenv("PORT"))
+	if port == "" {
+		return ":8090"
+	}
+	if strings.HasPrefix(port, ":") {
+		return port
+	}
+	return ":" + port
 }
 
 func getEnv(key, fallback string) string {

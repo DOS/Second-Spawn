@@ -1,3 +1,4 @@
+using System;
 using Fusion;
 using UnityEngine;
 
@@ -10,7 +11,9 @@ namespace SecondSpawn.Networking
     /// <list type="bullet">
     ///   <item><c>Application.isBatchMode</c> true (Linux headless server build)
     ///         -> <see cref="GameMode.Server"/> dedicated, production canonical.</item>
-    ///   <item><c>Application.isBatchMode</c> false (editor / standalone client)
+    ///   <item><c>-secondspawn-client</c> command-line flag
+    ///         -> <see cref="GameMode.Client"/> for local multi-client smoke tests.</item>
+    ///   <item><c>Application.isBatchMode</c> false with no override
     ///         -> <see cref="GameMode.Host"/> on Photon Cloud free 20 CCU, DEV ONLY.</item>
     /// </list>
     ///
@@ -44,9 +47,10 @@ namespace SecondSpawn.Networking
             }
 
             _runner = gameObject.AddComponent<NetworkRunner>();
-            _runner.ProvideInput = !Application.isBatchMode;
+            var mode = ResolveGameMode();
+            _runner.ProvideInput = mode != GameMode.Server;
+            RegisterRunnerCallbacks();
 
-            var mode = Application.isBatchMode ? GameMode.Server : GameMode.Host;
             Debug.Log($"[NetworkRunnerSetup] Starting {mode} session '{_sessionName}' (max {_maxPlayersPerZone} players).");
 
             var startArgs = new StartGameArgs
@@ -76,6 +80,48 @@ namespace SecondSpawn.Networking
             {
                 _ = _runner.Shutdown();
             }
+        }
+
+        private void RegisterRunnerCallbacks()
+        {
+            foreach (var callback in GetComponents<INetworkRunnerCallbacks>())
+            {
+                _runner.AddCallbacks(callback);
+            }
+        }
+
+        private static GameMode ResolveGameMode()
+        {
+            var args = Environment.GetCommandLineArgs();
+            if (HasArg(args, "-secondspawn-client"))
+            {
+                return GameMode.Client;
+            }
+
+            if (HasArg(args, "-secondspawn-host"))
+            {
+                return GameMode.Host;
+            }
+
+            if (HasArg(args, "-secondspawn-server") || Application.isBatchMode)
+            {
+                return GameMode.Server;
+            }
+
+            return GameMode.Host;
+        }
+
+        private static bool HasArg(string[] args, string expected)
+        {
+            foreach (var arg in args)
+            {
+                if (string.Equals(arg, expected, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

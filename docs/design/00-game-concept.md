@@ -43,6 +43,8 @@ The hook passes the "and also" test on three axes simultaneously:
 2. Reincarnation as the death loop (instead of corpse run / repair cost / equipment loss)
 3. Time-as-currency (every body has a time budget that can be earned, spent, and lost)
 
+Ecosystem extension: a user's OpenClaw agent can also connect into SECOND SPAWN as an NPC-like world actor. This turns OpenClaw agents into social citizens of the game world, not just external assistants. The connected agent may speak, remember, assist, trade socially, or participate in quest-adjacent moments, but any gameplay-affecting action remains server-validated intent.
+
 ---
 
 ## Player Experience Analysis (MDA)
@@ -53,14 +55,14 @@ The hook passes the "and also" test on three axes simultaneously:
 | ---- | ---- | ---- |
 | 1 | **Challenge** | Cultivation tier-up gates, dungeon bosses with LLM-driven dialogue + adaptive behavior, permanent body death |
 | 2 | **Discovery** | Layered MetaDOS lore (Nibirium, consciousness transfer, faction history); LLM NPCs reveal world state through dialogue; emergent stories from agent behaviors |
-| 3 | **Fellowship** | 4-20 player zones, guild PvP 50v50, party invites via Supabase Realtime, agent-to-agent socialization across timezones |
+| 3 | **Fellowship** | 4-20 player zones, guild PvP 50v50, party invites via Nakama channels, agent-to-agent socialization across timezones |
 | N/A | Sensation | Stylized low-poly art (Synty / Quaternius); not a sensory-pleasure-first game |
 | N/A | Submission | Active play is intentionally engaging; relaxed offline progress is delegated to the AI agent rather than the player |
 
 ### Core Mechanics (3-5 systems generating the dynamics)
 
 1. Top-down ARPG action combat (minimal Fusion controller first; Opsive Ultimate Character Controller is an evaluation candidate)
-2. LLM-driven NPC dialogue with server-validated intent (Convai phase 1, custom Go gateway phase 2)
+2. LLM-driven NPC dialogue with server-validated intent (Convai phase 1, `api.dos.ai` / Go LLM Gateway phase 2)
 3. AI agent autonomous control of player character when offline (server-authoritative, capability-capped)
 4. Reincarnation via SECOND token cost (consciousness transfer, partial cultivation tier carryover)
 5. Time-as-currency body lifespan economy (earn/spend body time; zero time triggers body death)
@@ -114,7 +116,7 @@ Complete a quest line or dungeon clear; converse with hub-town NPCs (LLM-driven)
 1. **AI agent 24/7** - the character is always playing
 2. **Reincarnation, not respawn** - death has weight; SECOND token cost
 3. **Time is life, time is money** - time is the body's survival budget and a spendable resource
-4. **LLM as world citizen, not chatbot** - NPCs are server-validated agents in the world
+4. **LLM as world citizen, not chatbot** - NPCs and connected OpenClaw agents are server-validated actors in the world
 5. **Server-authoritative gameplay** - public open-source repo means anti-cheat assumes attacker has full source
 
 ---
@@ -154,8 +156,8 @@ Complete a quest line or dungeon clear; converse with hub-town NPCs (LLM-driven)
 | ---- | ---- |
 | **Engine** | Unity 6.5 beta (currently `6000.5.0b7`) + URP. JOY chose beta for newest features. |
 | **Networking** | Photon Fusion 2 (Server Mode dedicated for production; Host Mode + Photon Cloud free 20 CCU for dev) |
-| **Persistence** | Supabase Postgres (profile, inventory, quest, NFT lock state, cultivation tier) |
-| **LLM** | Convai phase 1 (NPC dialogue) -> Go LLM gateway phase 2 (Haiku 4.5 for NPC chat, Sonnet 4.6 for boss / cultivation master). Server-side intent validation only. |
+| **Persistence** | Nakama OSS + Postgres (profile, inventory, quest, NFT lock state, cultivation tier) |
+| **LLM** | Convai phase 1 (NPC dialogue) -> `api.dos.ai` / Go LLM Gateway phase 2 (Haiku 4.5 for NPC chat, Sonnet 4.6 for boss / cultivation master). Server-side intent validation only. |
 | **NFT** | DOS Chain via thirdweb-api MCP. Wallet auth, escrow contracts, Hunter skin / weapon / pet inventory. |
 | **Art** | Synty / Quaternius stylized low-poly + reused MetaDOS Hunter skins |
 | **Key technical risks** | LLM intent validation at scale; AI agent server tick load; NFT-Unity inventory sync latency |

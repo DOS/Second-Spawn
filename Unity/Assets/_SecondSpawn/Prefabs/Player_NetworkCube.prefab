@@ -10,10 +10,15 @@ GameObject:
   m_Component:
   - component: {fileID: 999036358833122982}
   - component: {fileID: 8687074654810685659}
-  - component: {fileID: 4513379572288692258}
   - component: {fileID: 6036230797588115926}
+  - component: {fileID: 7123456789012345679}
   - component: {fileID: 8357749372956170795}
   - component: {fileID: 8359936860818564255}
+  - component: {fileID: 7123456789012345678}
+  - component: {fileID: 6129384756102938475}
+  - component: {fileID: 3400762132235786765}
+  - component: {fileID: 1778901195370216267}
+  - component: {fileID: 586566440311235492}
   m_Layer: 0
   m_Name: Player_NetworkCube
   m_TagString: Untagged
@@ -44,27 +49,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5762444949739102863}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!65 &4513379572288692258
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5762444949739102863}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &6036230797588115926
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -114,6 +98,33 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!54 &7123456789012345679
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5762444949739102863}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!114 &8357749372956170795
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -124,14 +135,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
   SortKey: 3133618377
   SendPriority: 1
-  Flags: 262146
+  Flags: 262402
   NestedObjects: []
   NetworkedBehaviours:
+  - {fileID: 7123456789012345678}
   - {fileID: 8359936860818564255}
+  - {fileID: 6129384756102938475}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &8359936860818564255
 MonoBehaviour:
@@ -143,13 +156,127 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f24eeab6b4af9434ea9eef6a45ab299a, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: SecondSpawn.Networking::SecondSpawn.Networking.NetworkPlayer
-  _NetworkedPosition: {x: 0, y: 0, z: 0}
-  _NetworkedRotation: {x: 0, y: 0, z: 0, w: 0}
   _CultivationTier: 0
   _Hp: 0
   _Stamina: 0
+  _VisualVariant: 0
   _IsAgentControlled:
     RawValue: 0
   _moveSpeed: 5
+  _walkSpeed: 2.2
+  _jumpImpulse: 7.5
+--- !u!114 &7123456789012345678
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5762444949739102863}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1869825851, guid: 977dbcf975465374990f471e1497f563, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Fusion.Addons.SimpleKCC.dll::Fusion.Addons.SimpleKCC.SimpleKCC
+  _stateAuthorityChangeErrorCorrectionDelta: 0.15
+  _settings:
+    Shape: 1
+    IsTrigger: 0
+    Radius: 0.5
+    Height: 2
+    Extent: 0.035
+    ColliderLayer: 0
+    CollisionLayerMask:
+      serializedVersion: 2
+      m_Bits: 4294967295
+    ProxyInterpolationMode: 0
+    MaxPenetrationSteps: 8
+    CCDRadiusMultiplier: 0.75
+    AntiJitterDistance: {x: 0.025, y: 0.01}
+    CompressNetworkPosition: 0
+    ForcePredictedLookRotation: 1
+    StepHeight: 0.3
+    StepDepth: 0.2
+    StepSpeed: 1
+    StepMinPushBack: 0.5
+    StepGroundCheckRadiusScale: 0.5
+    StepRequireGroundTarget: 0
+    SnapDistance: 0.4
+    SnapSpeed: 4
+--- !u!114 &6129384756102938475
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5762444949739102863}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f51f6baf6b447e4b8fd7e7f7fdd3df8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: SecondSpawn.Networking::SecondSpawn.Networking.NetworkAnimatorBridge
+  _NetSpeed: 0
+  _NetVelocityX: 0
+  _NetVelocityZ: 0
+  _NetJumping: 0
+  _animator: {fileID: 0}
+  _referenceMoveSpeed: 5
+  _movingParameter: Moving
+  _velocityXParameter: Velocity X
+  _velocityZParameter: Velocity Z
+  _velocityParameter: Velocity
+  _animationSpeedParameter: AnimationSpeed
+  _animationSpeedSpacedParameter: Animation Speed
+  _weaponParameter: Weapon
+  _defaultWeaponValue: -1
+  _jumpingParameter: Jumping
+  _triggerNumberParameter: TriggerNumber
+  _triggerNumberSpacedParameter: Trigger Number
+  _triggerParameter: Trigger
+  _fallVelocityThreshold: 0.8
+--- !u!114 &3400762132235786765
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5762444949739102863}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 778cc9b36fce47cfb206fdaf99bb5b71, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: SecondSpawn.Networking::SecondSpawn.Networking.LocalVisualPrefabLoader
+  _resourcePath: SecondSpawn/RPGCharacterVisual
+  _localPosition: {x: 0, y: 0, z: 0}
+  _localEulerAngles: {x: 0, y: 0, z: 0}
+  _localScale: {x: 1, y: 1, z: 1}
+  _hideRootRenderers: 1
+--- !u!114 &1778901195370216267
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5762444949739102863}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55a4c759766b46d9a6d9c8085b86fe6c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: SecondSpawn.Networking::SecondSpawn.Networking.PrototypeVisualActionHotkeys
+--- !u!114 &586566440311235492
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5762444949739102863}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c82a1923923545c408fda6f62a7bde81, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.PrototypeLLMAgentDriver
+  _enableOnStart: 0
+  _decisionIntervalSeconds: 1.25
+  _moveHoldSeconds: 0.9
+  _zoneId: prototype-hub

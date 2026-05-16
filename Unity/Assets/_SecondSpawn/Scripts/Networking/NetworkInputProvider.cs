@@ -20,6 +20,8 @@ namespace SecondSpawn.Networking
     {
         public float HorizontalAxis;
         public float VerticalAxis;
+        public NetworkBool Run;
+        public NetworkBool Jump;
         public NetworkBool Interact;
         public NetworkBool AbilitySlot1;
     }
@@ -38,6 +40,8 @@ namespace SecondSpawn.Networking
     public sealed class NetworkInputProvider : MonoBehaviour, INetworkRunnerCallbacks
     {
         private NetworkRunner _runner;
+        private bool _jumpQueued;
+        private bool _runToggled = true;
 
         private void Awake()
         {
@@ -48,6 +52,25 @@ namespace SecondSpawn.Networking
         private void OnDestroy()
         {
             if (_runner != null) _runner.RemoveCallbacks(this);
+        }
+
+        private void Update()
+        {
+            var kb = Keyboard.current;
+            if (kb == null)
+            {
+                return;
+            }
+
+            if (kb.leftShiftKey.wasPressedThisFrame || kb.rightShiftKey.wasPressedThisFrame)
+            {
+                _runToggled = !_runToggled;
+            }
+
+            if (kb.spaceKey.wasPressedThisFrame)
+            {
+                _jumpQueued = true;
+            }
         }
 
         public void OnInput(NetworkRunner runner, NetworkInput input)
@@ -62,15 +85,19 @@ namespace SecondSpawn.Networking
             {
                 HorizontalAxis = (kb.dKey.isPressed ? 1f : 0f) - (kb.aKey.isPressed ? 1f : 0f),
                 VerticalAxis = (kb.wKey.isPressed ? 1f : 0f) - (kb.sKey.isPressed ? 1f : 0f),
+                Run = _runToggled,
+                Jump = _jumpQueued,
                 Interact = kb.eKey.isPressed,
                 AbilitySlot1 = kb.digit1Key.isPressed,
             };
 
+            _jumpQueued = false;
             input.Set(data);
         }
 
         // Unused callbacks - implement so INetworkRunnerCallbacks is satisfied.
         // Real handlers land as slice phase 2+ features need them.
+#pragma warning disable UNT0006 // Fusion callbacks intentionally share names with Unity messages but use Fusion-specific signatures.
         public void OnConnectedToServer(NetworkRunner runner) { }
         public void OnConnectFailed(NetworkRunner runner, NetAddress remoteAddress, NetConnectFailedReason reason) { }
         public void OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token) { }
@@ -92,5 +119,6 @@ namespace SecondSpawn.Networking
 #pragma warning disable CS0618 // SimulationMessagePtr is obsolete in Fusion 2.1+ but the interface still requires the implementation per Photon/Fusion/release_history.txt line 408.
         public void OnUserSimulationMessage(NetworkRunner runner, SimulationMessagePtr message) { }
 #pragma warning restore CS0618
+#pragma warning restore UNT0006
     }
 }

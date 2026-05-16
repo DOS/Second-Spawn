@@ -1,4 +1,5 @@
 using Fusion;
+using Fusion.Addons.SimpleKCC;
 using UnityEngine;
 
 namespace SecondSpawn.Networking
@@ -17,51 +18,122 @@ namespace SecondSpawn.Networking
     /// <c>[Networked]</c> properties (session layer).</para>
     /// </summary>
     [DisallowMultipleComponent]
+    [RequireComponent(typeof(SimpleKCC))]
     public sealed class NetworkPlayer : NetworkBehaviour
     {
-        [Networked] public Vector3 NetworkedPosition { get; set; }
-        [Networked] public Quaternion NetworkedRotation { get; set; }
         [Networked] public int CultivationTier { get; set; }
         [Networked] public float Hp { get; set; }
         [Networked] public float Stamina { get; set; }
+        [Networked] public int VisualVariant { get; set; }
+        [Networked] public int EquipmentVisualId { get; set; }
 
         /// <summary>True when the offline AI agent is driving this character (Pillar 1).</summary>
         [Networked] public NetworkBool IsAgentControlled { get; set; }
 
-        [SerializeField, Tooltip("Movement speed in units/second. Will be replaced by Opsive UCC stats in slice phase 2.")]
+        [SerializeField, Tooltip("Run speed in units/second. Simple KCC owns authoritative movement for this spike.")]
         private float _moveSpeed = 5f;
+
+        [SerializeField, Tooltip("Walk speed in units/second. Shift toggles between walk and run during the prototype.")]
+        private float _walkSpeed = 2.2f;
+
+        [SerializeField, Tooltip("Authoritative jump impulse applied by Fusion Simple KCC.")]
+        private float _jumpImpulse = 7.5f;
+
+        private SimpleKCC _kcc;
+        private NetworkInputData _prototypeAgentInput;
+        private bool _hasPrototypeAgentInput;
+
+        private void Awake()
+        {
+            _kcc = GetComponent<SimpleKCC>();
+        }
 
         public override void Spawned()
         {
+            _kcc ??= GetComponent<SimpleKCC>();
+
             if (HasStateAuthority)
             {
-                NetworkedPosition = transform.position;
-                NetworkedRotation = transform.rotation;
                 CultivationTier = 1; // Awakening - starting tier per docs/design/04-cultivation-system.md
                 Hp = 100f;
                 Stamina = 100f;
+                if (EquipmentVisualId == EquipmentVisualCatalog.None)
+                {
+                    EquipmentVisualId = EquipmentVisualCatalog.GetDefaultForVisualVariant(VisualVariant);
+                }
+
                 IsAgentControlled = false;
             }
         }
 
         public override void FixedUpdateNetwork()
         {
-            // Server-authoritative input application. Client never mutates
-            // [Networked] state directly; client only sends INetworkInput
-            // suggestions which the server validates here.
-            if (GetInput(out NetworkInputData input))
+            if (_kcc == null)
+            {
+                return;
+            }
+
+            var moveVelocity = Vector3.zero;
+            var jumpImpulse = 0f;
+
+            // Server-authoritative input application. The client sends
+            // INetworkInput suggestions; Simple KCC owns predicted and
+            // replicated movement state for the character body.
+            if (TryGetAuthoritativeInput(out NetworkInputData input))
             {
                 var move = new Vector3(input.HorizontalAxis, 0f, input.VerticalAxis);
-                if (move.sqrMagnitude > 0f)
+                move = Vector3.ClampMagnitude(move, 1f);
+
+                if (move.sqrMagnitude > 0.0001f)
                 {
-                    NetworkedPosition += move.normalized * _moveSpeed * Runner.DeltaTime;
+                    _kcc.SetLookRotation(Quaternion.LookRotation(move), preservePitch: false, preserveYaw: false);
+                    var speed = input.Run ? _moveSpeed : _walkSpeed;
+                    moveVelocity = move * speed;
+                }
+
+                if (input.Jump)
+                {
+                    jumpImpulse = _jumpImpulse;
                 }
             }
 
-            // Apply networked transform to GameObject so all clients see the
-            // server-authoritative position.
-            transform.position = NetworkedPosition;
-            transform.rotation = NetworkedRotation;
+            _kcc.Move(moveVelocity, jumpImpulse);
+        }
+
+        public void SetPrototypeAgentInput(NetworkInputData input)
+        {
+            if (!HasStateAuthority)
+            {
+                Debug.LogWarning("[NetworkPlayer] Ignored prototype agent input on a non-authoritative player. Offline agents must be driven by the server/state authority.");
+                return;
+            }
+
+            _prototypeAgentInput = input;
+            _hasPrototypeAgentInput = true;
+            IsAgentControlled = true;
+        }
+
+        public void ClearPrototypeAgentInput()
+        {
+            if (!HasStateAuthority)
+            {
+                return;
+            }
+
+            _prototypeAgentInput = default;
+            _hasPrototypeAgentInput = false;
+            IsAgentControlled = false;
+        }
+
+        private bool TryGetAuthoritativeInput(out NetworkInputData input)
+        {
+            if (_hasPrototypeAgentInput && IsAgentControlled)
+            {
+                input = _prototypeAgentInput;
+                return true;
+            }
+
+            return GetInput(out input);
         }
     }
 }

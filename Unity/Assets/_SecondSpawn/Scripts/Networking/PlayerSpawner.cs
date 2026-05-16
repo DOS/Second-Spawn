@@ -56,10 +56,20 @@ namespace SecondSpawn.Networking
             }
 
             var spawnPos = ComputeSpawnPosition(_spawnCounter);
-            var playerObject = runner.Spawn(_playerPrefab, spawnPos, Quaternion.identity, player);
+            var visualVariant = Random.Range(0, Mathf.Max(1, VisualPrefabCatalog.Count));
+            var equipmentVisualId = EquipmentVisualCatalog.GetDefaultForVisualVariant(visualVariant);
+            var playerObject = runner.Spawn(_playerPrefab, spawnPos, Quaternion.identity, player, (_, obj) =>
+            {
+                var networkPlayer = obj.GetComponent<NetworkPlayer>();
+                if (networkPlayer != null)
+                {
+                    networkPlayer.VisualVariant = visualVariant;
+                    networkPlayer.EquipmentVisualId = equipmentVisualId;
+                }
+            });
             runner.SetPlayerObject(player, playerObject);
             _spawnCounter++;
-            Debug.Log($"[PlayerSpawner] Spawned player cube for {player} at {spawnPos}");
+            Debug.Log($"[PlayerSpawner] Spawned player cube for {player} at {spawnPos} with visual variant {visualVariant} and equipment visual {equipmentVisualId}");
         }
 
         public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
@@ -82,6 +92,7 @@ namespace SecondSpawn.Networking
         }
 
         // Unused INetworkRunnerCallbacks members - implement to satisfy interface.
+#pragma warning disable UNT0006 // Fusion callbacks intentionally share names with Unity messages but use Fusion-specific signatures.
         public void OnConnectedToServer(NetworkRunner runner) { }
         public void OnConnectFailed(NetworkRunner runner, NetAddress remoteAddress, NetConnectFailedReason reason) { }
         public void OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token) { }
@@ -102,5 +113,6 @@ namespace SecondSpawn.Networking
 #pragma warning disable CS0618 // SimulationMessagePtr is obsolete in Fusion 2.1+ but the interface still requires the implementation per Photon/Fusion/release_history.txt line 408.
         public void OnUserSimulationMessage(NetworkRunner runner, SimulationMessagePtr message) { }
 #pragma warning restore CS0618
+#pragma warning restore UNT0006
     }
 }

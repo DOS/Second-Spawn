@@ -9,5 +9,5 @@ FROM gcr.io/distroless/static-debian12:nonroot
 WORKDIR /app
 COPY --from=build /out/gateway /app/gateway
 USER nonroot:nonroot
-EXPOSE 8080
+EXPOSE 8090
 ENTRYPOINT ["/app/gateway"]
