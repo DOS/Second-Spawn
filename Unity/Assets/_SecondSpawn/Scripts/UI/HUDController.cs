@@ -96,6 +96,11 @@ namespace SecondSpawn.UI
                 return $"{days}d {hours}h";
             }
 
+            if (hours == 0 && minutes == 0)
+            {
+                return $"{seconds}s";
+            }
+
             return hours > 0 ? $"{hours}h {minutes}m" : $"{minutes}m";
         }
     }
