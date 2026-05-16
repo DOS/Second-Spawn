@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/DOS/Second-Spawn/backend/gateway/internal/agent"
+	"github.com/DOS/Second-Spawn/backend/gateway/internal/auth"
 	"github.com/DOS/Second-Spawn/backend/gateway/internal/config"
 )
 
@@ -248,6 +249,57 @@ func TestAgentDecideRateLimitPerPlayer(t *testing.T) {
 	}
 }
 
+func TestAgentDecideRateLimitUsesTrustedAuthSubject(t *testing.T) {
+	decider := &staticAgentDecider{
+		decision: agent.Decision{
+			Action:       agent.ActionSay,
+			Say:          "Authenticated subject owns the limiter key.",
+			Reason:       "say is allowed for this request",
+			Confidence:   0.8,
+			Source:       agent.DecisionSourceModel,
+			SourceReason: "validated_model_intent",
+		},
+	}
+	srv := NewWithDependencies(&config.Config{
+		Env:                         "test",
+		LLMRateLimitPerPlayerPerMin: 1,
+		LLMTokenBudgetPerPlayerDay:  0,
+	}, nil, decider)
+	srv.auth = staticAuthVerifier{playerID: "auth-user"}
+
+	first := httptest.NewRecorder()
+	srv.Routes().ServeHTTP(first, withBearer(newAgentDecideRequest("body-profile-1")))
+	if first.Code != http.StatusOK {
+		t.Fatalf("expected first decision 200, got %d: %s", first.Code, first.Body.String())
+	}
+
+	second := httptest.NewRecorder()
+	srv.Routes().ServeHTTP(second, withBearer(newAgentDecideRequest("body-profile-2")))
+	if second.Code != http.StatusTooManyRequests {
+		t.Fatalf("expected second decision to use auth subject limit key, got %d: %s", second.Code, second.Body.String())
+	}
+	if !bytes.Contains(second.Body.Bytes(), []byte(`"player_id":"auth-user"`)) {
+		t.Fatalf("expected limit response to name trusted auth subject, got %s", second.Body.String())
+	}
+	if decider.calls != 1 {
+		t.Fatalf("expected decider to be called once, got %d", decider.calls)
+	}
+}
+
+func TestAgentDecideRequiresAuthWhenVerifierConfigured(t *testing.T) {
+	srv := NewWithDependencies(&config.Config{
+		Env:                         "test",
+		LLMRateLimitPerPlayerPerMin: 1,
+	}, nil, &staticAgentDecider{})
+	srv.auth = staticAuthVerifier{playerID: "auth-user"}
+
+	rec := httptest.NewRecorder()
+	srv.Routes().ServeHTTP(rec, newAgentDecideRequest("body-profile-1"))
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("expected missing auth to return 401, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
 func TestAgentDecideTokenBudgetPerPlayer(t *testing.T) {
 	decider := &staticAgentDecider{
 		decision: agent.Decision{
@@ -305,6 +357,24 @@ func TestAgentDecisionLimiterResetsWindows(t *testing.T) {
 	}
 }
 
+func TestAgentDecisionLimiterPrunesExpiredPlayerState(t *testing.T) {
+	now := time.Date(2026, 5, 17, 12, 0, 0, 0, time.UTC)
+	limiter := newAgentDecisionLimiter(&config.Config{
+		LLMRateLimitPerPlayerPerMin: 10,
+	}, func() time.Time { return now })
+
+	if allowed, result := limiter.Allow("old-user", 1); !allowed {
+		t.Fatalf("expected old user request allowed, got %+v", result)
+	}
+	now = now.Add(agentDecisionLimitStateTTL + time.Minute)
+	if allowed, result := limiter.Allow("new-user", 1); !allowed {
+		t.Fatalf("expected new user request allowed, got %+v", result)
+	}
+	if _, ok := limiter.players["old-user"]; ok {
+		t.Fatal("expected stale player limiter state to be pruned")
+	}
+}
+
 func TestNPCChatPrototype(t *testing.T) {
 	srv := New(&config.Config{Env: "test"})
 
@@ -340,6 +410,14 @@ func (d *staticAgentDecider) Decide(_ context.Context, req agent.DecisionRequest
 	return d.decision, nil
 }
 
+type staticAuthVerifier struct {
+	playerID string
+}
+
+func (v staticAuthVerifier) Verify(_ context.Context, _ string) (auth.Identity, error) {
+	return auth.Identity{PlayerID: auth.PlayerID(v.playerID)}, nil
+}
+
 func newAgentDecideRequest(playerID string) *http.Request {
 	return httptest.NewRequest(http.MethodPost, "/v1/agent/decide", bytes.NewReader([]byte(`{
 		"context": {
@@ -356,4 +434,9 @@ func newAgentDecideRequest(playerID string) *http.Request {
 		},
 		"allowed": ["say"]
 	}`)))
+}
+
+func withBearer(req *http.Request) *http.Request {
+	req.Header.Set("Authorization", "Bearer test-token")
+	return req
 }

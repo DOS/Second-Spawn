@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/DOS/Second-Spawn/backend/gateway/internal/agent"
+	"github.com/DOS/Second-Spawn/backend/gateway/internal/auth"
 	"github.com/DOS/Second-Spawn/backend/gateway/internal/character"
 	"github.com/DOS/Second-Spawn/backend/gateway/internal/config"
 	"github.com/DOS/Second-Spawn/backend/gateway/internal/llm"
@@ -24,6 +25,7 @@ type Server struct {
 	store   character.Store
 	decider agent.Decider
 	limiter *agentDecisionLimiter
+	auth    auth.Verifier
 	now     func() time.Time
 }
 
@@ -53,6 +55,7 @@ func NewWithDependencies(cfg *config.Config, store character.Store, decider agen
 		cfg:     cfg,
 		store:   store,
 		decider: decider,
+		auth:    auth.NewHS256Verifier(cfg.SupabaseJWTSecret),
 		now:     func() time.Time { return time.Now().UTC() },
 	}
 	srv.limiter = newAgentDecisionLimiter(cfg, srv.now)
@@ -145,8 +148,18 @@ func (s *Server) handleAgentDecide(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	trustedPlayerID, err := s.resolveTrustedPlayerID(r)
+	if err != nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]any{"error": err.Error()})
+		return
+	}
+
 	if strings.TrimSpace(req.Context.Player.PlayerID) == "" {
-		ctx, err := s.store.GetOrCreateContext(r.Context(), "dev-player")
+		playerID := "dev-player"
+		if trustedPlayerID != "" {
+			playerID = trustedPlayerID
+		}
+		ctx, err := s.store.GetOrCreateContext(r.Context(), playerID)
 		if err != nil {
 			writeError(w, err)
 			return
@@ -154,7 +167,11 @@ func (s *Server) handleAgentDecide(w http.ResponseWriter, r *http.Request) {
 		req.Context = ctx
 	}
 	req.Allowed = ensureStopAllowed(req.Allowed)
-	if allowed, result := s.limiter.Allow(req.Context.Player.PlayerID, estimateAgentDecisionTokens(req)); !allowed {
+	limitPlayerID := req.Context.Player.PlayerID
+	if trustedPlayerID != "" {
+		limitPlayerID = trustedPlayerID
+	}
+	if allowed, result := s.limiter.Allow(limitPlayerID, estimateAgentDecisionTokens(req)); !allowed {
 		if result.RetryAfterSeconds > 0 {
 			w.Header().Set("Retry-After", strconv.FormatInt(result.RetryAfterSeconds, 10))
 		}
@@ -176,18 +193,57 @@ func (s *Server) handleAgentDecide(w http.ResponseWriter, r *http.Request) {
 
 const agentDecisionOutputTokenReserve = 400
 
-func estimateAgentDecisionTokens(req agent.DecisionRequest) int {
-	payload, err := json.Marshal(req)
+func (s *Server) resolveTrustedPlayerID(r *http.Request) (string, error) {
+	if s.auth == nil {
+		return "", nil
+	}
+	token, err := auth.FromRequest(r)
 	if err != nil {
-		return agentDecisionOutputTokenReserve
+		return "", err
 	}
-	// Rough English/JSON estimate: four bytes per token plus the configured
-	// maximum completion reserve used by the model-backed decision path.
-	estimate := len(payload)/4 + agentDecisionOutputTokenReserve
-	if estimate < agentDecisionOutputTokenReserve {
-		return agentDecisionOutputTokenReserve
+	identity, err := s.auth.Verify(r.Context(), token)
+	if err != nil {
+		return "", err
 	}
-	return estimate
+	playerID := strings.TrimSpace(string(identity.PlayerID))
+	if playerID == "" {
+		return "", auth.ErrInvalidJWT
+	}
+	return playerID, nil
+}
+
+func estimateAgentDecisionTokens(req agent.DecisionRequest) int {
+	chars := len(req.Context.Player.PlayerID) +
+		len(req.Context.Player.DisplayName) +
+		len(req.Context.Body.BodyID) +
+		len(req.Context.Body.ArchetypeID) +
+		len(req.Context.Body.VisualPrefabKey) +
+		len(req.Context.Body.Equipment.PrimaryWeapon) +
+		len(req.Context.Body.Cultivation.Tier) +
+		len(req.Context.Body.AgentPolicy.Mode) +
+		len(req.Context.Body.Soul.Name) +
+		len(req.Context.Body.Soul.CoreDrive) +
+		len(req.Context.Body.Soul.Temperament) +
+		len(req.Context.Body.Soul.CombatStyle) +
+		len(req.Context.Body.Soul.SocialStyle) +
+		len(req.Context.Body.Soul.PlayerNotes) +
+		len(req.WorldSnapshot.ZoneID)
+	for _, goal := range req.Context.Body.Soul.LongTermGoals {
+		chars += len(goal)
+	}
+	for _, boundary := range req.Context.Body.Soul.MoralBoundaries {
+		chars += len(boundary)
+	}
+	for _, memory := range req.Context.Body.Memory {
+		chars += len(memory.ID) + len(memory.Kind) + len(memory.Summary) + 16
+	}
+	chars += len(req.Allowed) * 12
+	chars += len(req.WorldSnapshot.NearbyTargets) * 48
+	chars += len(req.WorldSnapshot.NearbyObjects) * 40
+
+	// Rough English/JSON estimate: four characters per token plus the
+	// completion reserve used by the model-backed decision path.
+	return max(chars/4+agentDecisionOutputTokenReserve, agentDecisionOutputTokenReserve)
 }
 
 type npcChatRequest struct {

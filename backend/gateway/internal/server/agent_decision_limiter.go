@@ -31,7 +31,10 @@ type agentDecisionLimitState struct {
 	minuteCount int
 	day         string
 	tokensUsed  int
+	lastSeen    time.Time
 }
+
+const agentDecisionLimitStateTTL = 25 * time.Hour
 
 func newAgentDecisionLimiter(cfg *config.Config, now func() time.Time) *agentDecisionLimiter {
 	if cfg == nil {
@@ -53,7 +56,7 @@ func (l *agentDecisionLimiter) Allow(playerID string, tokenEstimate int) (bool, 
 	}
 
 	playerID = normalizeLimitPlayerID(playerID)
-	tokenEstimate = maxInt(tokenEstimate, 1)
+	tokenEstimate = max(tokenEstimate, 1)
 	now := l.now().UTC()
 	minuteStart := now.Truncate(time.Minute)
 	day := now.Format("2006-01-02")
@@ -61,8 +64,10 @@ func (l *agentDecisionLimiter) Allow(playerID string, tokenEstimate int) (bool, 
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
+	l.pruneExpired(now)
 	state := l.playerState(playerID, minuteStart, day)
 	state.resetWindows(minuteStart, day)
+	state.lastSeen = now
 	if result, blocked := state.rateLimitResult(playerID, l.cfg.LLMRateLimitPerPlayerPerMin, now); blocked {
 		return false, result
 	}
@@ -87,6 +92,15 @@ func (l *agentDecisionLimiter) playerState(playerID string, minuteStart time.Tim
 	state = &agentDecisionLimitState{minuteStart: minuteStart, day: day}
 	l.players[playerID] = state
 	return state
+}
+
+func (l *agentDecisionLimiter) pruneExpired(now time.Time) {
+	cutoff := now.Add(-agentDecisionLimitStateTTL)
+	for playerID, state := range l.players {
+		if !state.lastSeen.IsZero() && state.lastSeen.Before(cutoff) {
+			delete(l.players, playerID)
+		}
+	}
 }
 
 func (s *agentDecisionLimitState) resetWindows(minuteStart time.Time, day string) {
@@ -127,7 +141,7 @@ func (s *agentDecisionLimitState) tokenBudgetResult(playerID string, tokenEstima
 		TokenEstimate:        tokenEstimate,
 		TokenBudgetPerDay:    tokenBudget,
 		TokenBudgetUsedToday: s.tokensUsed,
-		TokenBudgetRemaining: maxInt(tokenBudget-s.tokensUsed, 0),
+		TokenBudgetRemaining: max(tokenBudget-s.tokensUsed, 0),
 	}, true
 }
 
@@ -137,11 +151,4 @@ func normalizeLimitPlayerID(playerID string) string {
 		return "unknown"
 	}
 	return playerID
-}
-
-func maxInt(a int, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }
