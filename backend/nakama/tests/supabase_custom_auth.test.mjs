@@ -197,6 +197,7 @@ const afterMoveDecision = JSON.parse(harness.registeredRpcs.get("secondspawn_pro
 assert.equal(afterMoveDecision.body.agent_runtime.decision_count, 1);
 assert.equal(afterMoveDecision.body.agent_runtime.move_intent_count, 1);
 assert.equal(afterMoveDecision.body.agent_activity[0].kind, "agent_decision");
+assert.equal(afterMoveDecision.body.agent_activity[0].metrics.decisions_made, 1);
 
 const lowTimeDecision = JSON.parse(harness.registeredRpcs.get("secondspawn_agent_decide")(
   { userId: "user-1", env: {} },

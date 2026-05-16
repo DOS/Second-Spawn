@@ -113,7 +113,7 @@ function rpcAgentDecide(
   var world = request.world_snapshot || {};
   var allowed = request.allowed || ["move", "interact", "say", "stop"];
   var bodyTime = Number(world.body_time_seconds || context.body.time.remaining_seconds || 0);
-  var decision: any = null;
+  var decision: any;
 
   if (bodyTime > 0 && bodyTime <= context.body.agent_policy.stop_when_body_time_below) {
     decision = {
@@ -123,12 +123,7 @@ function rpcAgentDecide(
       source: "fallback",
       source_reason: "nakama_body_time_policy"
     };
-    recordAgentDecision(context, decision);
-    writeAgentContext(nk, context, state.version);
-    return JSON.stringify(decision);
-  }
-
-  if (arrayContains(allowed, "move")) {
+  } else if (arrayContains(allowed, "move")) {
     var position = world.position || { x: 0, z: 0 };
     decision = {
       action: "move",
@@ -141,12 +136,7 @@ function rpcAgentDecide(
       source: "fallback",
       source_reason: "nakama_prototype_patrol"
     };
-    recordAgentDecision(context, decision);
-    writeAgentContext(nk, context, state.version);
-    return JSON.stringify(decision);
-  }
-
-  if (arrayContains(allowed, "say")) {
+  } else if (arrayContains(allowed, "say")) {
     decision = {
       action: "say",
       say: "I am keeping this body safe until the player returns.",
@@ -155,18 +145,16 @@ function rpcAgentDecide(
       source: "fallback",
       source_reason: "nakama_social_fallback"
     };
-    recordAgentDecision(context, decision);
-    writeAgentContext(nk, context, state.version);
-    return JSON.stringify(decision);
+  } else {
+    decision = {
+      action: "stop",
+      reason: "no_allowed_action",
+      confidence: 0.5,
+      source: "fallback",
+      source_reason: "nakama_no_allowed_action"
+    };
   }
 
-  decision = {
-    action: "stop",
-    reason: "no_allowed_action",
-    confidence: 0.5,
-    source: "fallback",
-    source_reason: "nakama_no_allowed_action"
-  };
   recordAgentDecision(context, decision);
   writeAgentContext(nk, context, state.version);
   return JSON.stringify(decision);
@@ -436,7 +424,7 @@ function recordAgentDecision(context: any, decision: any): void {
     summary: "Agent chose " + trimString(decision.action || "unknown") + ": " + trimString(decision.reason || "no reason provided"),
     source: "nakama",
     metrics: {
-      decision_count: 1
+      decisions_made: 1
     }
   });
 }
