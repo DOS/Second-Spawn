@@ -10,6 +10,7 @@ import (
 	"github.com/DOS/Second-Spawn/backend/gateway/internal/agent"
 	"github.com/DOS/Second-Spawn/backend/gateway/internal/character"
 	"github.com/DOS/Second-Spawn/backend/gateway/internal/config"
+	"github.com/DOS/Second-Spawn/backend/gateway/internal/llm"
 )
 
 // Server is the HTTP entrypoint for the LLM gateway.
@@ -18,8 +19,9 @@ import (
 // a Supabase JWT, the gateway validates intent server-side, then proxies
 // to the chosen provider.
 type Server struct {
-	cfg   *config.Config
-	store character.Store
+	cfg     *config.Config
+	store   character.Store
+	decider agent.Decider
 }
 
 func New(cfg *config.Config) *Server {
@@ -27,10 +29,24 @@ func New(cfg *config.Config) *Server {
 }
 
 func NewWithStore(cfg *config.Config, store character.Store) *Server {
+	if cfg == nil {
+		cfg = &config.Config{}
+	}
+	provider := llm.NewAnthropicProvider(cfg.AnthropicAPIKey)
+	return NewWithDependencies(cfg, store, agent.NewModelBackedDecider(provider, llm.Model(cfg.AgentDecisionModel)))
+}
+
+func NewWithDependencies(cfg *config.Config, store character.Store, decider agent.Decider) *Server {
+	if cfg == nil {
+		cfg = &config.Config{}
+	}
 	if store == nil {
 		store = character.NewMemoryStore()
 	}
-	return &Server{cfg: cfg, store: store}
+	if decider == nil {
+		decider = agent.PrototypeDecider{}
+	}
+	return &Server{cfg: cfg, store: store, decider: decider}
 }
 
 // Routes registers all HTTP handlers. Keep this file small - real handler
@@ -128,7 +144,11 @@ func (s *Server) handleAgentDecide(w http.ResponseWriter, r *http.Request) {
 		req.Context = ctx
 	}
 	req.Allowed = ensureStopAllowed(req.Allowed)
-	decision := agent.DecidePrototype(req)
+	decision, err := s.decider.Decide(r.Context(), req)
+	if err != nil {
+		writeJSON(w, http.StatusBadGateway, map[string]any{"error": err.Error()})
+		return
+	}
 	if err := agent.ValidateDecision(req, decision); err != nil {
 		writeJSON(w, http.StatusUnprocessableEntity, map[string]any{"error": err.Error(), "decision": decision})
 		return

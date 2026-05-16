@@ -212,6 +212,6 @@ Every brain implementation must keep these boundaries:
 - [x] Unity can authenticate to Nakama with local device fallback.
 - [x] Local player agent prototype can move through bounded input intent.
 - [x] Local NPC brain exists in scene and runs the brain loop.
-- [ ] Brain loop logs phase transitions in a debug-friendly way.
+- [x] Brain loop logs phase transitions in a debug-friendly way.
 - [x] NPC can patrol and speak without Unity console errors.
-- [ ] Backend decision endpoint is upgraded from deterministic fallback to model-backed JSON intent.
+- [x] Backend decision endpoint is upgraded from deterministic fallback to model-backed JSON intent.

@@ -304,8 +304,10 @@ Implemented surfaces:
 - Prototype memory writes deduplicate by memory kind and summary. Repeated
   Unity Play Mode sessions update the existing memory timestamp instead of
   appending the same seed memory again.
-- `backend/gateway/internal/agent` returns deterministic prototype decisions
-  from bounded context and safe world snapshots.
+- `backend/gateway/internal/agent` validates model-backed JSON decisions from
+  bounded context and safe world snapshots. If no provider key is configured,
+  provider calls fail, or the model returns invalid intent, the endpoint falls
+  back to deterministic prototype decisions.
 - Cloud Run staging gateway:
   `https://second-spawn-gateway-535583621422.asia-southeast1.run.app`
 - Unity `SecondSpawnGatewayClient` authenticates with Nakama, reads/writes
@@ -325,7 +327,8 @@ Current limitations:
 - Most gateway routes are prototype-public. The Nakama runtime auth hook
   verifies Supabase access tokens for game login, but route-level JWT
   enforcement is still required before any non-local LLM or voice playtest.
-- Agent decisions are deterministic fallback logic, not real LLM reasoning yet.
+- Agent decisions have an Anthropic-backed JSON intent path, but local
+  development and provider failures still use deterministic fallback logic.
 - Voice is a local cue only. Real voice waits for OpenAI Realtime or ElevenLabs
   server-side token minting.
 

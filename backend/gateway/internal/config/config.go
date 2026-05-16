@@ -17,9 +17,10 @@ type Config struct {
 	SupabaseJWTSecret      string
 	SupabaseServiceRoleKey string
 
-	AnthropicAPIKey string
-	OpenAIAPIKey    string
-	ConvaiAPIKey    string
+	AnthropicAPIKey    string
+	OpenAIAPIKey       string
+	ConvaiAPIKey       string
+	AgentDecisionModel string
 
 	RedisURL string
 
@@ -40,9 +41,10 @@ func Load() (*Config, error) {
 		SupabaseJWTSecret:      os.Getenv("SUPABASE_JWT_SECRET"),
 		SupabaseServiceRoleKey: os.Getenv("SUPABASE_SERVICE_ROLE_KEY"),
 
-		AnthropicAPIKey: os.Getenv("ANTHROPIC_API_KEY"),
-		OpenAIAPIKey:    os.Getenv("OPENAI_API_KEY"),
-		ConvaiAPIKey:    os.Getenv("CONVAI_API_KEY"),
+		AnthropicAPIKey:    os.Getenv("ANTHROPIC_API_KEY"),
+		OpenAIAPIKey:       os.Getenv("OPENAI_API_KEY"),
+		ConvaiAPIKey:       os.Getenv("CONVAI_API_KEY"),
+		AgentDecisionModel: getEnv("AGENT_DECISION_MODEL", "claude-haiku-4-5"),
 
 		RedisURL: getEnv("REDIS_URL", "redis://localhost:6379/0"),
 

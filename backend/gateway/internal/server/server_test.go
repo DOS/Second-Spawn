@@ -2,11 +2,13 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/DOS/Second-Spawn/backend/gateway/internal/agent"
 	"github.com/DOS/Second-Spawn/backend/gateway/internal/config"
 )
 
@@ -131,6 +133,40 @@ func TestAgentDecidePrototype(t *testing.T) {
 	}
 }
 
+func TestAgentDecideUsesConfiguredDecider(t *testing.T) {
+	decider := &staticAgentDecider{
+		decision: agent.Decision{
+			Action:     agent.ActionSay,
+			Say:        "Model-backed intent is validated before use.",
+			Reason:     "say is allowed for this request",
+			Confidence: 0.8,
+		},
+	}
+	srv := NewWithDependencies(&config.Config{Env: "test"}, nil, decider)
+
+	req := httptest.NewRequest(http.MethodPost, "/v1/agent/decide", bytes.NewReader([]byte(`{
+		"world_snapshot": {
+			"zone_id": "hub",
+			"position": {"x": 0, "z": 0},
+			"safe_radius": 5,
+			"body_time_seconds": 3600
+		},
+		"allowed": ["say"]
+	}`)))
+	rec := httptest.NewRecorder()
+	srv.Routes().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected decision 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"action":"say"`)) {
+		t.Fatalf("expected configured decider response, got %s", rec.Body.String())
+	}
+	if !decider.stopWasAllowed {
+		t.Fatal("expected endpoint to add stop to allowed actions before deciding")
+	}
+}
+
 func TestNPCChatPrototype(t *testing.T) {
 	srv := New(&config.Config{Env: "test"})
 
@@ -147,4 +183,19 @@ func TestNPCChatPrototype(t *testing.T) {
 	if !bytes.Contains(rec.Body.Bytes(), []byte("voice")) {
 		t.Fatalf("expected voice-ready chat response, got %s", rec.Body.String())
 	}
+}
+
+type staticAgentDecider struct {
+	decision       agent.Decision
+	stopWasAllowed bool
+}
+
+func (d *staticAgentDecider) Decide(_ context.Context, req agent.DecisionRequest) (agent.Decision, error) {
+	for _, action := range req.Allowed {
+		if action == agent.ActionStop {
+			d.stopWasAllowed = true
+			break
+		}
+	}
+	return d.decision, nil
 }
