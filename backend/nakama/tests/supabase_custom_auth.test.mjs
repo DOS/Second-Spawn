@@ -228,6 +228,16 @@ assert.equal(npcProfile.body.cultivation.tier, "Awakening");
 assert.equal(npcProfile.body.cultivation.progress_xp, 0);
 assert.equal(npcProfile.memory.length, 1);
 
+assert.throws(
+  () => harness.registeredRpcs.get("secondspawn_actor_profile_get")(
+    { userId: "user-1", env: {} },
+    harness.logger,
+    harness.nk,
+    JSON.stringify({ actor_id: "npc-" + "x".repeat(80) })
+  ),
+  /actor_id is too long/
+);
+
 const npcMemory = JSON.parse(harness.registeredRpcs.get("secondspawn_actor_memory_add")(
   { userId: "user-1", env: {} },
   harness.logger,
@@ -254,6 +264,18 @@ assert.notEqual(secondNpcProfile.actor_id, npcMemory.actor_id);
 
 const storedNpcProfile = harness.storage.get(storageKey("user-1", "secondspawn_actor", "profile:npc-guide"));
 assert.equal(storedNpcProfile.value.actor_id, "npc-guide");
+
+delete storedNpcProfile.value.body.time;
+const normalizedNpcProfile = JSON.parse(harness.registeredRpcs.get("secondspawn_actor_profile_get")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  JSON.stringify({ actor_id: "npc-guide" })
+));
+assert.equal(normalizedNpcProfile.body.time.remaining_seconds, 86400);
+const rewrittenNpcProfile = harness.storage.get(storageKey("user-1", "secondspawn_actor", "profile:npc-guide"));
+assert.equal(rewrittenNpcProfile.value.body.time.remaining_seconds, 86400);
+assert.notEqual(rewrittenNpcProfile.version, storedNpcProfile.version);
 
 const updatedMemory = JSON.parse(harness.registeredRpcs.get("secondspawn_memory_add")(
   { userId: "user-1", env: {} },

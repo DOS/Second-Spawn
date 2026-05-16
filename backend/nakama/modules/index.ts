@@ -18,6 +18,7 @@ var rpcIdActorProfileGet = "secondspawn_actor_profile_get";
 var rpcIdActorMemoryAdd = "secondspawn_actor_memory_add";
 var agentActivityLogLimit = 32;
 var agentRuntimeMetricMax = 1000000000;
+var actorIdMaxLength = 64;
 
 let InitModule: nkruntime.InitModule = function (
   ctx: nkruntime.Context,
@@ -363,10 +364,7 @@ function getOrCreateActorProfileState(ctx: nkruntime.Context, nk: nkruntime.Naka
   var actorId = normalizeActorId(request.actor_id || request.body_id || request.npc_id);
   var existing = readActorProfile(nk, ownerId, actorId);
   if (existing) {
-    return {
-      profile: ensureActorProfile(existing.value, ownerId, actorId),
-      version: existing.version
-    };
+    return normalizeExistingActorProfileState(nk, ownerId, actorId, existing);
   }
 
   var profile = defaultActorProfile(ownerId, actorId, request);
@@ -382,6 +380,27 @@ function getOrCreateActorProfileState(ctx: nkruntime.Context, nk: nkruntime.Naka
   return {
     profile: profile,
     version: null
+  };
+}
+
+function normalizeExistingActorProfileState(nk: nkruntime.Nakama, ownerId: string, actorId: string, existing: any): any {
+  var before = JSON.stringify(existing.value || {});
+  var profile = ensureActorProfile(existing.value || {}, ownerId, actorId);
+  if (JSON.stringify(profile) !== before) {
+    profile.updated_at = new Date().toISOString();
+    writeActorProfile(nk, profile, existing.version);
+    var rewritten = readActorProfile(nk, ownerId, actorId);
+    if (rewritten) {
+      return {
+        profile: ensureActorProfile(rewritten.value, ownerId, actorId),
+        version: rewritten.version
+      };
+    }
+  }
+
+  return {
+    profile: profile,
+    version: existing.version
   };
 }
 
@@ -1020,6 +1039,9 @@ function normalizeActorId(actorId: any): string {
   var normalized = sanitizeNakamaIdentifier(trimString(actorId), "");
   if (!normalized) {
     throw new Error("actor_id is required");
+  }
+  if (normalized.length > actorIdMaxLength) {
+    throw new Error("actor_id is too long");
   }
   return normalized;
 }
