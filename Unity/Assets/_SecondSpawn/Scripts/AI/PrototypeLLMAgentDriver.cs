@@ -14,6 +14,7 @@ namespace SecondSpawn.AI
         [SerializeField] private float _moveHoldSeconds = 0.9f;
         [SerializeField] private string _zoneId = "prototype-hub";
         [SerializeField] private bool _allowPrototypeInteract;
+        [SerializeField] private bool _allowPrototypeAttack;
 
         private SecondSpawnGatewayClient _gateway;
         private CharacterMemorySync _memorySync;
@@ -139,11 +140,10 @@ namespace SecondSpawn.AI
                     position = new Vector2Dto { x = position.x, z = position.z },
                     safe_radius = 8f,
                     body_time_seconds = bodyTime,
+                    nearby_targets = BuildPrototypeTargets(position),
                     nearby_objects = System.Array.Empty<WorldObjectDto>()
                 },
-                allowed = _allowPrototypeInteract
-                    ? new[] { "move", "interact", "say", "stop" }
-                    : new[] { "move", "say", "stop" }
+                allowed = BuildAllowedActions()
             };
         }
 
@@ -183,6 +183,19 @@ namespace SecondSpawn.AI
                     Debug.Log("[PrototypeLLMAgentDriver] Ignored prototype interact decision. Interact is disabled for patrol mode.");
                 }
             }
+            else if (decision.action == "attack")
+            {
+                if (_allowPrototypeAttack)
+                {
+                    _networkPlayer.ClearPrototypeAgentInput();
+                    PlayVisualIntent(VisualAnimationIntent.Attack);
+                }
+                else
+                {
+                    _networkPlayer.ClearPrototypeAgentInput();
+                    Debug.Log("[PrototypeLLMAgentDriver] Ignored prototype attack decision. Attack is disabled for patrol mode.");
+                }
+            }
             else
             {
                 _networkPlayer.ClearPrototypeAgentInput();
@@ -197,11 +210,46 @@ namespace SecondSpawn.AI
 
         private void PlayVisualIntent(VisualAnimationIntent intent)
         {
-            var driver = GetComponentInChildren<VisualAnimationIntentDriver>();
-            if (driver != null)
+            if (_networkPlayer != null && _networkPlayer.TryPlayVisualIntent(intent))
             {
-                driver.TryPlay(intent);
+                return;
             }
+        }
+
+        private string[] BuildAllowedActions()
+        {
+            if (_allowPrototypeAttack && _allowPrototypeInteract)
+            {
+                return new[] { "move", "attack", "interact", "say", "stop" };
+            }
+
+            if (_allowPrototypeAttack)
+            {
+                return new[] { "move", "attack", "say", "stop" };
+            }
+
+            return _allowPrototypeInteract
+                ? new[] { "move", "interact", "say", "stop" }
+                : new[] { "move", "say", "stop" };
+        }
+
+        private WorldTargetDto[] BuildPrototypeTargets(Vector3 position)
+        {
+            if (!_allowPrototypeAttack)
+            {
+                return System.Array.Empty<WorldTargetDto>();
+            }
+
+            return new[]
+            {
+                new WorldTargetDto
+                {
+                    id = "training-dummy",
+                    kind = "prototype_dummy",
+                    distance = 2.5f,
+                    threat = 1
+                }
+            };
         }
     }
 }

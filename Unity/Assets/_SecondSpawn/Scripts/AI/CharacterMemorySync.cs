@@ -12,6 +12,7 @@ namespace SecondSpawn.AI
         [SerializeField] private bool _syncOnStart = true;
         [SerializeField] private bool _preferNakama = true;
         [SerializeField] private bool _seedPrototypeMemory = true;
+        [SerializeField] private bool _applyProfileStatsToLocalPlayer = true;
         [SerializeField] private bool _applyProfileEquipmentToLocalPlayer = true;
         [SerializeField, TextArea] private string _prototypeMemory =
             "JOY wants overnight prototype progress without client-side LLM secrets.";
@@ -59,7 +60,7 @@ namespace SecondSpawn.AI
                         var soulName = ctx?.body?.soul?.name ?? "unknown";
                         Debug.Log($"[CharacterMemorySync] Loaded Nakama soul '{soulName}'.");
                     }, Debug.LogWarning);
-                    yield return ApplyProfileEquipmentWhenAvailable();
+                    yield return ApplyProfileToLocalPlayerWhenAvailable();
                     yield break;
                 }
             }
@@ -70,7 +71,7 @@ namespace SecondSpawn.AI
                 var soulName = ctx?.body?.soul?.name ?? "unknown";
                 Debug.Log($"[CharacterMemorySync] Loaded gateway prototype soul '{soulName}'.");
             }, Debug.LogWarning);
-            yield return ApplyProfileEquipmentWhenAvailable();
+            yield return ApplyProfileToLocalPlayerWhenAvailable();
         }
 
         private IEnumerator WaitForAuthAttempt()
@@ -95,36 +96,37 @@ namespace SecondSpawn.AI
             yield return _gateway.AddMemory(memory, ctx => _context = ctx, Debug.LogWarning);
         }
 
-        private IEnumerator ApplyProfileEquipmentWhenAvailable()
+        private IEnumerator ApplyProfileToLocalPlayerWhenAvailable()
         {
-            if (!_applyProfileEquipmentToLocalPlayer)
+            if (!_applyProfileEquipmentToLocalPlayer && !_applyProfileStatsToLocalPlayer)
             {
                 yield break;
             }
 
-            var equipmentVisualId = _context?.body?.equipment?.equipment_visual_id ?? EquipmentVisualCatalog.None;
-            if (equipmentVisualId == EquipmentVisualCatalog.None)
+            var body = _context?.body;
+            if (body == null)
             {
                 yield break;
             }
 
             const float maxWaitSeconds = 10f;
+            const float retryIntervalSeconds = 0.25f;
             var elapsed = 0f;
             while (elapsed < maxWaitSeconds)
             {
-                if (TryApplyProfileEquipment(equipmentVisualId))
+                if (TryApplyProfileBody(body))
                 {
                     yield break;
                 }
 
-                elapsed += Time.deltaTime;
-                yield return null;
+                elapsed += retryIntervalSeconds;
+                yield return new WaitForSeconds(retryIntervalSeconds);
             }
 
-            Debug.LogWarning($"[CharacterMemorySync] No local state-authority player was ready for equipment visual {equipmentVisualId}.");
+            Debug.LogWarning("[CharacterMemorySync] No local state-authority player was ready for profile body sync.");
         }
 
-        private static bool TryApplyProfileEquipment(int equipmentVisualId)
+        private bool TryApplyProfileBody(BodyProfileDto body)
         {
             var players = Object.FindObjectsByType<NetworkPlayer>(FindObjectsInactive.Exclude);
             foreach (var player in players)
@@ -134,18 +136,67 @@ namespace SecondSpawn.AI
                     continue;
                 }
 
-                player.EquipmentVisualId = equipmentVisualId;
-                var loaders = player.GetComponentsInChildren<LocalVisualPrefabLoader>(includeInactive: true);
-                foreach (var loader in loaders)
+                if (_applyProfileStatsToLocalPlayer)
                 {
-                    loader.ApplyEquipmentVisual(equipmentVisualId);
+                    ApplyStats(player, body);
                 }
 
-                Debug.Log($"[CharacterMemorySync] Applied profile equipment visual {equipmentVisualId} to local player.");
+                if (_applyProfileEquipmentToLocalPlayer)
+                {
+                    ApplyEquipment(player, body);
+                }
+
+                Debug.Log($"[CharacterMemorySync] Applied profile body stats and visuals to local player '{player.name}'.");
                 return true;
             }
 
             return false;
+        }
+
+        private static void ApplyStats(NetworkPlayer player, BodyProfileDto body)
+        {
+            var stats = body.stats ?? new CharacterStatsDto();
+            var time = body.time ?? new BodyTimeDto();
+            player.ApplyProfileStats(
+                stats.level,
+                stats.vitality,
+                stats.force,
+                stats.agility,
+                stats.focus,
+                stats.resilience,
+                stats.max_health,
+                stats.max_energy,
+                stats.attack_power,
+                stats.defense_power,
+                ToNetworkSeconds(time.remaining_seconds),
+                ToNetworkSeconds(time.max_seconds),
+                ToNetworkSeconds(time.danger_drain_rate));
+        }
+
+        private static void ApplyEquipment(NetworkPlayer player, BodyProfileDto body)
+        {
+            var equipmentVisualId = body.equipment?.equipment_visual_id ?? EquipmentVisualCatalog.None;
+            if (equipmentVisualId == EquipmentVisualCatalog.None)
+            {
+                return;
+            }
+
+            player.ApplyProfileEquipment(equipmentVisualId);
+            var loaders = player.GetComponentsInChildren<LocalVisualPrefabLoader>(includeInactive: true);
+            foreach (var loader in loaders)
+            {
+                loader.ApplyEquipmentVisual(equipmentVisualId);
+            }
+        }
+
+        private static int ToNetworkSeconds(long seconds)
+        {
+            if (seconds <= 0)
+            {
+                return 0;
+            }
+
+            return seconds >= int.MaxValue ? int.MaxValue : (int)seconds;
         }
 
         private static bool IsLocalAuthoritativePlayer(NetworkPlayer player)
@@ -158,6 +209,16 @@ namespace SecondSpawn.AI
             if (player.Object == null || player.Runner == null)
             {
                 return true;
+            }
+
+            if (player.Runner.IsServer)
+            {
+                return true;
+            }
+
+            if (!player.Runner.IsSharedModeMasterClient)
+            {
+                return false;
             }
 
             return player.Object.InputAuthority == PlayerRef.None ||

@@ -19,8 +19,15 @@ This document defines the first durable character data model for SECOND SPAWN:
 - soul/personality profile for the LLM agent
 - compact memory records for agent context
 - player-owned offline-agent policy
+- NPC-like body profiles that can later receive a player consciousness
 
-The goal is to make the AI agent feel like the player's character, without giving the LLM authority over game state.
+The goal is to make every active character body feel like a real world actor, without giving the LLM authority over game state.
+
+Important spawn rule: a player does not spawn as an empty account shell. The
+player enters a current body, which may be implemented as an NPC-like synthetic
+body with its own stats, characteristics, soul profile, memory, BodyTime, and
+activity history. Player identity survives across bodies. Body-specific state
+can be replaced on reincarnation or consciousness transfer.
 
 ---
 
@@ -50,6 +57,12 @@ This preserves:
 | `MemoryRecord` | Yes, with decay | Backend | Small curated memory facts for LLM context |
 | `AgentRuntime` | Yes, across bodies until reset policy exists | Backend | Counters for profile bootstrap, activity, decisions, fallback decisions, and offline time |
 | `AgentActivity` | Yes, bounded recent history | Backend | Compact audit trail for offline-agent sessions and Unity/Nakama bootstrap events |
+
+NPCs and player-controlled bodies use the same body profile shape. The
+difference is authority and ownership: a player-controlled body receives human
+input or offline-agent intent for that player, while an NPC body receives NPC
+brain intent. Both still pass through server validation before gameplay state
+changes.
 
 ---
 
@@ -144,6 +157,26 @@ Fields:
 | `reincarnation_lore` | What the character remembers about prior bodies |
 
 The LLM may use these fields to choose between valid intents, not to invent new abilities.
+
+### NPC and Body Profile Rule
+
+Every NPC-like actor that can think, speak, fight, or receive a player
+consciousness needs its own profile bundle:
+
+- `BodyProfile`
+- `CharacterStats`
+- `CharacterTraits`
+- `SoulProfile`
+- `MemoryRecord`
+- `AgentPolicy` or NPC policy equivalent
+- `AgentRuntime`
+- `AgentActivity`
+
+The vertical slice can store prototype NPC profiles using the same agent context
+shape as player bodies. Later production work may split durable account data,
+body templates, NPC definitions, and live body instances into separate storage
+records, but the runtime contract should stay consistent: the agent always sees
+the specific body it is currently controlling.
 
 ---
 

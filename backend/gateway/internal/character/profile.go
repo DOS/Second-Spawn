@@ -194,6 +194,18 @@ func BuildAgentContextPrompt(ctx AgentContext, maxMemories int) string {
 	writeKV(&b, "archetype_id", ctx.Body.ArchetypeID)
 	writeKV(&b, "visual_prefab_key", ctx.Body.VisualPrefabKey)
 	writeKV(&b, "primary_weapon", ctx.Body.Equipment.PrimaryWeapon)
+	writeKV(&b, "stats", fmt.Sprintf("level=%d vitality=%d force=%d agility=%d focus=%d resilience=%d max_health=%d max_energy=%d attack_power=%d defense_power=%d",
+		ctx.Body.Stats.Level,
+		ctx.Body.Stats.Vitality,
+		ctx.Body.Stats.Force,
+		ctx.Body.Stats.Agility,
+		ctx.Body.Stats.Focus,
+		ctx.Body.Stats.Resilience,
+		ctx.Body.Stats.MaxHealth,
+		ctx.Body.Stats.MaxEnergy,
+		ctx.Body.Stats.AttackPower,
+		ctx.Body.Stats.DefensePower,
+	))
 	writeKV(&b, "body_lifecycle", string(ctx.Body.Lifecycle))
 	writeKV(&b, "cultivation_tier", ctx.Body.Cultivation.Tier)
 	writeKV(&b, "body_time_seconds", fmt.Sprintf("%d/%d", ctx.Body.Time.RemainingSeconds, ctx.Body.Time.MaxSeconds))

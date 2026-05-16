@@ -23,6 +23,7 @@ namespace SecondSpawn.AI
         public string archetype_id;
         public string visual_prefab_key;
         public EquipmentLoadoutDto equipment;
+        public CharacterStatsDto stats;
         public CharacterTraitsDto characteristics;
         public BodyTimeDto time;
         public CultivationDto cultivation;
@@ -49,6 +50,21 @@ namespace SecondSpawn.AI
         public int discipline = 5;
         public int aggression = 3;
         public int sociability = 5;
+    }
+
+    [Serializable]
+    public sealed class CharacterStatsDto
+    {
+        public int level = 1;
+        public int vitality = 10;
+        public int force = 8;
+        public int agility = 8;
+        public int focus = 8;
+        public int resilience = 8;
+        public int max_health = 100;
+        public int max_energy = 50;
+        public int attack_power = 10;
+        public int defense_power = 5;
     }
 
     [Serializable]

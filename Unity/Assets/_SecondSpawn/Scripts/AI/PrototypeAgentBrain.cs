@@ -57,6 +57,7 @@ namespace SecondSpawn.AI
         private Coroutine _brainLoop;
         private Vector3 _homePosition;
         private Vector3 _moveTarget;
+        private float _baseMoveSpeed;
         private bool _hasMoveTarget;
         private float _nextTalkAt;
         private int _pendingFootAlignFrames;
@@ -67,6 +68,7 @@ namespace SecondSpawn.AI
         private void Awake()
         {
             _homePosition = transform.position;
+            _baseMoveSpeed = _moveSpeed;
             _speechBubble = GetOrAdd<PrototypeSpeechBubble>();
             _voiceCue = GetOrAdd<PrototypeVoiceCue>();
             _gateway = FindAnyObjectByType<SecondSpawnGatewayClient>();
@@ -185,6 +187,7 @@ namespace SecondSpawn.AI
             LogPhase(BrainPhase.Bootstrap, _context == null
                 ? "context unavailable after bootstrap"
                 : "context loaded");
+            ApplyContextToPrototypeBody();
         }
 
         private UpdateSoulRequestDto BuildSoulSeed()
@@ -351,6 +354,31 @@ namespace SecondSpawn.AI
 
             _hasMoveTarget = false;
             ApplyLocomotion(0f);
+        }
+
+        private void ApplyContextToPrototypeBody()
+        {
+            var body = _context?.body;
+            if (body == null)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(body.soul?.name))
+            {
+                _displayName = body.soul.name.Trim();
+            }
+
+            var stats = body.stats;
+            if (stats != null)
+            {
+                _moveSpeed = Mathf.Max(0.1f, _baseMoveSpeed * CalculateAgilitySpeedMultiplier(stats.agility));
+            }
+        }
+
+        private static float CalculateAgilitySpeedMultiplier(int agility)
+        {
+            return Mathf.Clamp(agility / 8f, 0.75f, 1.4f);
         }
 
         private void LogPhase(BrainPhase phase, string detail)

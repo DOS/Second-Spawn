@@ -544,6 +544,7 @@ namespace SecondSpawn.AI
             public string archetype_id;
             public string visual_prefab_key;
             public EquipmentLoadoutDto equipment;
+            public CharacterStatsDto stats;
             public CharacterTraitsDto characteristics;
             public BodyTimeDto time;
             public CultivationDto cultivation;
@@ -564,6 +565,7 @@ namespace SecondSpawn.AI
                     archetype_id = body.archetype_id,
                     visual_prefab_key = body.visual_prefab_key,
                     equipment = body.equipment,
+                    stats = body.stats,
                     characteristics = body.characteristics,
                     time = body.time,
                     cultivation = body.cultivation,
