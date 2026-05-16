@@ -112,6 +112,7 @@ function rpcAgentDecide(
   var request = parseJson(payload || "{}", "agent decision payload");
   var world = request.world_snapshot || {};
   var allowed = request.allowed || ["move", "interact", "say", "stop"];
+  var interactTargetId = selectInteractTargetId(world);
   var bodyTime = Number(world.body_time_seconds !== undefined && world.body_time_seconds !== null
     ? world.body_time_seconds
     : context.body.time.remaining_seconds || 0);
@@ -137,6 +138,15 @@ function rpcAgentDecide(
       confidence: 0.55,
       source: "fallback",
       source_reason: "nakama_prototype_patrol"
+    };
+  } else if (arrayContains(allowed, "interact") && interactTargetId) {
+    decision = {
+      action: "interact",
+      target_id: interactTargetId,
+      reason: "prototype_interact_fallback",
+      confidence: 0.55,
+      source: "fallback",
+      source_reason: "nakama_interact_fallback"
     };
   } else if (arrayContains(allowed, "say")) {
     decision = {
@@ -421,14 +431,44 @@ function recordAgentDecision(context: any, decision: any): void {
   }
 
   incrementDecisionAction(runtime, decision.action);
-  addAgentActivity(context, {
-    kind: "agent_decision",
-    summary: "Agent chose " + trimString(decision.action || "unknown") + ": " + trimString(decision.reason || "no reason provided"),
-    source: "nakama",
-    metrics: {
-      decisions_made: 1
+  var summary = "Agent chose " + trimString(decision.action || "unknown") + ": " + trimString(decision.reason || "no reason provided");
+  if (shouldRecordDecisionActivity(context, summary)) {
+    addAgentActivity(context, {
+      kind: "agent_decision",
+      summary: summary,
+      source: "nakama",
+      metrics: {
+        decisions_made: 1
+      }
+    });
+  }
+}
+
+function shouldRecordDecisionActivity(context: any, summary: string): boolean {
+  var activities = context.body.agent_activity || [];
+  if (activities.length === 0) {
+    return true;
+  }
+
+  var latest = activities[0];
+  return latest.kind !== "agent_decision" || trimString(latest.summary) !== summary;
+}
+
+function selectInteractTargetId(world: any): string {
+  var targetId = trimString(world.focus_target_id || world.target_id || world.interact_target_id);
+  if (targetId) {
+    return targetId;
+  }
+
+  var nearbyObjects = world.nearby_objects || [];
+  for (var index = 0; index < nearbyObjects.length; index += 1) {
+    var nearbyId = trimString(nearbyObjects[index] && nearbyObjects[index].id);
+    if (nearbyId) {
+      return nearbyId;
     }
-  });
+  }
+
+  return "";
 }
 
 function incrementDecisionAction(runtime: any, action: string): void {

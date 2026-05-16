@@ -282,6 +282,87 @@ assert.equal(normalizedActivityContext.body.agent_runtime.decision_count, 100000
 assert.equal(normalizedActivityContext.body.agent_runtime.fallback_decision_count, 5);
 assert.equal(normalizedActivityContext.body.agent_runtime.say_intent_count, 3);
 
+const interactHarness = createRuntimeHarness(module);
+interactHarness.registeredRpcs.get("secondspawn_profile_get")(
+  { userId: "interact-user", env: {} },
+  interactHarness.logger,
+  interactHarness.nk,
+  ""
+);
+const interactDecision = JSON.parse(interactHarness.registeredRpcs.get("secondspawn_agent_decide")(
+  { userId: "interact-user", env: {} },
+  interactHarness.logger,
+  interactHarness.nk,
+  JSON.stringify({
+    world_snapshot: {
+      position: { x: 2, z: 3 },
+      body_time_seconds: 3600,
+      nearby_objects: [{ id: "cache-1", kind: "supply_cache", distance: 1.2 }]
+    },
+    allowed: ["interact"]
+  })
+));
+assert.equal(interactDecision.action, "interact");
+assert.equal(interactDecision.target_id, "cache-1");
+const afterInteractDecision = JSON.parse(interactHarness.registeredRpcs.get("secondspawn_profile_get")(
+  { userId: "interact-user", env: {} },
+  interactHarness.logger,
+  interactHarness.nk,
+  ""
+));
+assert.equal(afterInteractDecision.body.agent_runtime.decision_count, 1);
+assert.equal(afterInteractDecision.body.agent_runtime.interact_intent_count, 1);
+assert.match(afterInteractDecision.body.agent_activity[0].summary, /Agent chose interact/);
+
+const missingInteractTargetDecision = JSON.parse(interactHarness.registeredRpcs.get("secondspawn_agent_decide")(
+  { userId: "interact-user", env: {} },
+  interactHarness.logger,
+  interactHarness.nk,
+  JSON.stringify({
+    world_snapshot: {
+      position: { x: 2, z: 3 },
+      body_time_seconds: 3600,
+      nearby_objects: []
+    },
+    allowed: ["interact"]
+  })
+));
+assert.equal(missingInteractTargetDecision.action, "stop");
+assert.equal(missingInteractTargetDecision.source_reason, "nakama_no_allowed_action");
+
+const dedupeHarness = createRuntimeHarness(module);
+dedupeHarness.registeredRpcs.get("secondspawn_profile_get")(
+  { userId: "dedupe-user", env: {} },
+  dedupeHarness.logger,
+  dedupeHarness.nk,
+  ""
+);
+const repeatedMovePayload = JSON.stringify({
+  world_snapshot: { position: { x: 2, z: 3 }, body_time_seconds: 3600 },
+  allowed: ["move", "stop"]
+});
+dedupeHarness.registeredRpcs.get("secondspawn_agent_decide")(
+  { userId: "dedupe-user", env: {} },
+  dedupeHarness.logger,
+  dedupeHarness.nk,
+  repeatedMovePayload
+);
+dedupeHarness.registeredRpcs.get("secondspawn_agent_decide")(
+  { userId: "dedupe-user", env: {} },
+  dedupeHarness.logger,
+  dedupeHarness.nk,
+  repeatedMovePayload
+);
+const afterRepeatedMove = JSON.parse(dedupeHarness.registeredRpcs.get("secondspawn_profile_get")(
+  { userId: "dedupe-user", env: {} },
+  dedupeHarness.logger,
+  dedupeHarness.nk,
+  ""
+));
+assert.equal(afterRepeatedMove.body.agent_runtime.decision_count, 2);
+assert.equal(afterRepeatedMove.body.agent_runtime.move_intent_count, 2);
+assert.equal(afterRepeatedMove.body.agent_activity.filter((activity) => activity.kind === "agent_decision").length, 1);
+
 const conflictHarness = createRuntimeHarness(module);
 conflictHarness.registeredRpcs.get("secondspawn_profile_get")(
   { userId: "conflict-user", env: {} },
