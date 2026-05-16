@@ -118,20 +118,20 @@ You are a Hunter in a 2050 post-apocalyptic world where consciousness can be tra
 
 **Target Aesthetics Served**: Fellowship (NPCs feel social), Discovery (NPCs reveal lore conditionally), Narrative (NPCs participate in story arcs)
 
-**Design Test**: If we are debating any LLM feature, this pillar says: the LLM must be (a) grounded in retrievable world state, (b) constrained by per-NPC memory budget, (c) routed through Go gateway with server-side intent validation, and (d) rate-limited per player.
+**Design Test**: If we are debating any LLM feature, this pillar says: the LLM must be (a) grounded in retrievable world state, (b) constrained by per-NPC memory budget, (c) routed through `api.dos.ai` / Go LLM Gateway with server-side intent validation, and (d) rate-limited per player.
 
 #### What This Means for Each Department
 
 | Department | This Pillar Says... | Example |
 | ---- | ---- | ---- |
 | **Game Design** | NPC interactions are gameplay-affecting (quest, faction reputation) not flavor-only | Boss NPC dialogue can affect fight phase via in-world state, not LLM directly setting HP. |
-| **Engineering** | All LLM calls go through Go gateway. Never API key in Unity client. | Server validates "NPC says 'I will give you sword'" -> intent: grant_item -> server checks quest state -> applies. |
+| **Engineering** | All LLM calls go through `api.dos.ai` / Go LLM Gateway. Never API key in Unity client. | Server validates "NPC says 'I will give you sword'" -> intent: grant_item -> server checks quest state -> applies. |
 | **Narrative** | Per-NPC memory budget cap forces concise, world-relevant memory | NPC remembers last 10 player interactions + permanent flags (faction standing, quest done). |
 | **Security** | Prompt injection defense, capability cap, per-player rate limit | Reuse DOSafe prompt-injection patterns. |
 
 #### Serving This Pillar
 - Convai phase 1 NPC dialogue grounded in player state
-- Phase 2 Go gateway with Haiku 4.5 (NPC chat) + Sonnet 4.6 (boss / cultivation master)
+- Phase 2 `api.dos.ai` / Go LLM Gateway with Haiku 4.5 (NPC chat) + Sonnet 4.6 (boss / cultivation master)
 - Per-NPC memory in Supabase pgvector
 - LLM intent validation server-side, never trust raw output
 
@@ -162,7 +162,7 @@ You are a Hunter in a 2050 post-apocalyptic world where consciousness can be tra
 
 #### Serving This Pillar
 - Photon Fusion 2 Server Mode dedicated headless Unity build
-- All LLM calls server-side via Go gateway
+- All LLM calls server-side via `api.dos.ai` / Go LLM Gateway
 - Critical invariant: ALL gameplay logic must be server-authoritative
 
 #### Violating This Pillar

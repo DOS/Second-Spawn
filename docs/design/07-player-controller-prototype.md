@@ -3,7 +3,7 @@
 *Status: In progress*
 *Created: 2026-05-14*
 *Author: Codex*
-*Last Verified: 2026-05-15 against local Photon Pirate Adventure 2.0.12 sample review and Simple KCC 2.0.15 package metadata*
+*Last Verified: 2026-05-16 against local Photon Pirate Adventure 2.0.12 sample review, Simple KCC 2.0.15 package metadata, and Photon Fusion Animations technical sample docs*
 
 > **Quick reference** - Layer: `Core` - Priority: `MVP` - Key deps: `Photon Fusion 2`, `Unity Input System`, `ZoneTest_Hub`, `SecondSpawnConfig`
 
@@ -97,6 +97,30 @@ Camera-relative movement can be added after the first pass if the camera angle m
 
 ---
 
+## Animation Networking Direction
+
+Photon's Fusion Animations technical sample documents six approaches:
+
+- networked state with Animator
+- interpolated networked state with Animator
+- Animator state synchronization
+- Network Mecanim Animator
+- network FSM with Animancer
+- Fusion Animation Controller for tick-accurate animation
+
+The prototype should stay on a simple project-owned bridge for now:
+
+1. Movement remains Fusion / KCC authoritative.
+2. The visual child Animator reads replicated movement and action intent.
+3. Only compact values are networked: planar speed, movement direction, action
+   trigger counters, and later combat state IDs.
+4. Network Mecanim Animator is acceptable for quick experiments but is not the
+   production default.
+5. Tick-accurate animation should be revisited when combat hitboxes, lag
+   compensation, and PvP fairness become active scope.
+
+---
+
 ## Components
 
 | Component | Responsibility | Existing or New |
@@ -104,8 +128,9 @@ Camera-relative movement can be added after the first pass if the camera angle m
 | `NetworkRunnerSetup` | Starts Fusion dev session and owns runner lifecycle. | Existing Phase B |
 | `NetworkInputProvider` | Collects movement input per Fusion tick. | Existing Phase B, may extend |
 | `NetworkPlayer` | Applies Fusion input to Simple KCC and owns session player state. | Existing Phase B, extended |
+| `NetworkAnimatorBridge` | Reads replicated root movement and drives child Animator parameters without animation owning movement authority. | New Simple KCC bridge |
 | `PlayerSpawner` | Spawns one player object per joined player. | Existing Phase B |
-| `PlayerCameraFollow` | Keeps camera pointed at local player. | New if no suitable existing component |
+| `TopDownCameraFollow` | Keeps the prototype camera pointed at the local input-authority player. | New Simple KCC bridge |
 | `Player_NetworkCube.prefab` | Placeholder networked player prefab with Simple KCC. | Existing Phase B, evolved |
 
 ---
@@ -152,7 +177,8 @@ These are prototype values, not final game balance.
 
 - [x] Import the official Fusion Simple KCC addon in a separate branch/commit only after baseline passes.
 - [x] Convert movement from raw networked position updates to KCC-backed movement.
-- [ ] Validate with Unity 6.5 beta and current Fusion 2.1.1 release candidate.
+- [x] Add a project-owned Animator bridge so the RPG Character Mecanim pack can be used as a visual layer without taking movement authority.
+- [x] Validate with Unity 6.5 beta and current Fusion 2.1.1 release candidate.
 - [ ] Compare movement feel and authority clarity against the baseline.
 - [ ] Decide whether Simple KCC becomes the MVP controller.
 
@@ -208,6 +234,7 @@ These are prototype values, not final game balance.
 | ---- | ---- | ---- | ---- |
 | Prototype shape | `06-overview-design.md` | Minimal controller first, Simple KCC spike second, Opsive evaluation third | Scope dependency |
 | Reference sample | `09-pirate-adventure-reference-review.md` | Pirate Adventure controller and FSM patterns | Pattern dependency |
+| Photon sample | [Fusion Animations technical sample](https://doc.photonengine.com/fusion/current/technical-samples/animations) | Render-accurate vs tick-accurate animation networking options | Technical reference |
 | Networking rules | `05-networking-architecture.md` | Network input and server authority | Rule dependency |
 | Pillar priority | `01-pillars.md` | Server-authoritative gameplay | Rule dependency |
 | Unity conventions | `../setup/unity-conventions.md` | Prefab, scene, and asmdef organization | Ownership handoff |

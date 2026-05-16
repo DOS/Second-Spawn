@@ -24,14 +24,24 @@ namespace SecondSpawn.Networking
         [Networked] public int CultivationTier { get; set; }
         [Networked] public float Hp { get; set; }
         [Networked] public float Stamina { get; set; }
+        [Networked] public int VisualVariant { get; set; }
+        [Networked] public int EquipmentVisualId { get; set; }
 
         /// <summary>True when the offline AI agent is driving this character (Pillar 1).</summary>
         [Networked] public NetworkBool IsAgentControlled { get; set; }
 
-        [SerializeField, Tooltip("Movement speed in units/second. Simple KCC owns authoritative movement for this spike.")]
+        [SerializeField, Tooltip("Run speed in units/second. Simple KCC owns authoritative movement for this spike.")]
         private float _moveSpeed = 5f;
 
+        [SerializeField, Tooltip("Walk speed in units/second. Shift toggles between walk and run during the prototype.")]
+        private float _walkSpeed = 2.2f;
+
+        [SerializeField, Tooltip("Authoritative jump impulse applied by Fusion Simple KCC.")]
+        private float _jumpImpulse = 7.5f;
+
         private SimpleKCC _kcc;
+        private NetworkInputData _prototypeAgentInput;
+        private bool _hasPrototypeAgentInput;
 
         private void Awake()
         {
@@ -47,6 +57,11 @@ namespace SecondSpawn.Networking
                 CultivationTier = 1; // Awakening - starting tier per docs/design/04-cultivation-system.md
                 Hp = 100f;
                 Stamina = 100f;
+                if (EquipmentVisualId == EquipmentVisualCatalog.None)
+                {
+                    EquipmentVisualId = EquipmentVisualCatalog.GetDefaultForVisualVariant(VisualVariant);
+                }
+
                 IsAgentControlled = false;
             }
         }
@@ -59,11 +74,12 @@ namespace SecondSpawn.Networking
             }
 
             var moveVelocity = Vector3.zero;
+            var jumpImpulse = 0f;
 
             // Server-authoritative input application. The client sends
             // INetworkInput suggestions; Simple KCC owns predicted and
             // replicated movement state for the character body.
-            if (GetInput(out NetworkInputData input))
+            if (TryGetAuthoritativeInput(out NetworkInputData input))
             {
                 var move = new Vector3(input.HorizontalAxis, 0f, input.VerticalAxis);
                 move = Vector3.ClampMagnitude(move, 1f);
@@ -71,11 +87,48 @@ namespace SecondSpawn.Networking
                 if (move.sqrMagnitude > 0.0001f)
                 {
                     _kcc.SetLookRotation(Quaternion.LookRotation(move), preservePitch: false, preserveYaw: false);
-                    moveVelocity = move * _moveSpeed;
+                    var speed = input.Run ? _moveSpeed : _walkSpeed;
+                    moveVelocity = move * speed;
+                }
+
+                if (input.Jump)
+                {
+                    jumpImpulse = _jumpImpulse;
                 }
             }
 
-            _kcc.Move(moveVelocity, jumpImpulse: 0f);
+            _kcc.Move(moveVelocity, jumpImpulse);
+        }
+
+        public void SetPrototypeAgentInput(NetworkInputData input)
+        {
+            _prototypeAgentInput = input;
+            _hasPrototypeAgentInput = true;
+            if (HasStateAuthority)
+            {
+                IsAgentControlled = true;
+            }
+        }
+
+        public void ClearPrototypeAgentInput()
+        {
+            _prototypeAgentInput = default;
+            _hasPrototypeAgentInput = false;
+            if (HasStateAuthority)
+            {
+                IsAgentControlled = false;
+            }
+        }
+
+        private bool TryGetAuthoritativeInput(out NetworkInputData input)
+        {
+            if (_hasPrototypeAgentInput && IsAgentControlled)
+            {
+                input = _prototypeAgentInput;
+                return true;
+            }
+
+            return GetInput(out input);
         }
     }
 }

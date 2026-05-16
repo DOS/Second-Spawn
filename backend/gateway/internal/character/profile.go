@@ -1,0 +1,198 @@
+// Package character defines the durable player-character profile contract used
+// by the LLM gateway and the authoritative game server.
+package character
+
+import (
+	"fmt"
+	"sort"
+	"strings"
+	"time"
+)
+
+// PlayerProfile is durable account-level identity. It survives body death.
+type PlayerProfile struct {
+	PlayerID    string    `json:"player_id"`
+	DisplayName string    `json:"display_name"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+// BodyProfile is the current synthetic body. It is replaced on reincarnation.
+type BodyProfile struct {
+	BodyID          string          `json:"body_id"`
+	ArchetypeID     string          `json:"archetype_id"`
+	VisualPrefabKey string          `json:"visual_prefab_key"`
+	Equipment       EquipmentLoadout `json:"equipment"`
+	Stats           CharacterStats  `json:"stats"`
+	Characteristics CharacterTraits `json:"characteristics"`
+	Time            BodyTimeState   `json:"time"`
+	Cultivation     Cultivation     `json:"cultivation"`
+	Lifecycle       BodyLifecycle   `json:"lifecycle"`
+	AgentPolicy     AgentPolicy     `json:"agent_policy"`
+	Soul            SoulProfile     `json:"soul"`
+	Memory          []MemoryRecord  `json:"memory"`
+	CreatedAt       time.Time       `json:"created_at"`
+}
+
+type EquipmentLoadout struct {
+	PrimaryWeapon     string `json:"primary_weapon"`
+	EquipmentVisualID int    `json:"equipment_visual_id"`
+}
+
+type CharacterStats struct {
+	Level        int `json:"level"`
+	Vitality     int `json:"vitality"`
+	Force        int `json:"force"`
+	Agility      int `json:"agility"`
+	Focus        int `json:"focus"`
+	Resilience   int `json:"resilience"`
+	MaxHealth    int `json:"max_health"`
+	MaxEnergy    int `json:"max_energy"`
+	AttackPower  int `json:"attack_power"`
+	DefensePower int `json:"defense_power"`
+}
+
+// CharacterTraits are stable personality/action tendencies for the LLM agent.
+// They guide behavior only. They are not gameplay modifiers and never bypass
+// server-side intent validation.
+type CharacterTraits struct {
+	Curiosity   int `json:"curiosity"`
+	Courage     int `json:"courage"`
+	Empathy     int `json:"empathy"`
+	Discipline  int `json:"discipline"`
+	Aggression  int `json:"aggression"`
+	Sociability int `json:"sociability"`
+}
+
+type BodyTimeState struct {
+	RemainingSeconds int64 `json:"remaining_seconds"`
+	MaxSeconds       int64 `json:"max_seconds"`
+	DangerDrainRate  int64 `json:"danger_drain_rate"`
+}
+
+type Cultivation struct {
+	Tier       string `json:"tier"`
+	ProgressXP int64  `json:"progress_xp"`
+}
+
+type BodyLifecycle string
+
+const (
+	BodyLifecycleAlive         BodyLifecycle = "alive"
+	BodyLifecycleDying         BodyLifecycle = "dying"
+	BodyLifecycleReincarnating BodyLifecycle = "reincarnating"
+	BodyLifecycleDead          BodyLifecycle = "dead"
+)
+
+// AgentPolicy is player-controlled. The offline agent must not exceed it.
+type AgentPolicy struct {
+	Enabled               bool     `json:"enabled"`
+	Mode                  string   `json:"mode"`
+	MaxSessionSeconds     int64    `json:"max_session_seconds"`
+	AllowBodyTimeSpend    bool     `json:"allow_body_time_spend"`
+	AllowRiskyCombat      bool     `json:"allow_risky_combat"`
+	PreferredActivities   []string `json:"preferred_activities"`
+	ForbiddenActivities   []string `json:"forbidden_activities"`
+	StopWhenBodyTimeBelow int64    `json:"stop_when_body_time_below"`
+}
+
+// SoulProfile is the stable identity layer read by the LLM agent.
+// It is not a stat buff container. Gameplay bonuses stay in server-owned state.
+type SoulProfile struct {
+	Name              string   `json:"name"`
+	CoreDrive         string   `json:"core_drive"`
+	Temperament       string   `json:"temperament"`
+	CombatStyle       string   `json:"combat_style"`
+	SocialStyle       string   `json:"social_style"`
+	MoralBoundaries   []string `json:"moral_boundaries"`
+	LongTermGoals     []string `json:"long_term_goals"`
+	PlayerNotes       string   `json:"player_notes"`
+	ReincarnationLore string   `json:"reincarnation_lore"`
+}
+
+type MemoryKind string
+
+const (
+	MemoryKindPreference   MemoryKind = "preference"
+	MemoryKindQuest        MemoryKind = "quest"
+	MemoryKindRelationship MemoryKind = "relationship"
+	MemoryKindCombat       MemoryKind = "combat"
+	MemoryKindSystem       MemoryKind = "system"
+)
+
+// MemoryRecord is compact RAG input for the offline agent.
+type MemoryRecord struct {
+	ID         string     `json:"id"`
+	Kind       MemoryKind `json:"kind"`
+	Summary    string     `json:"summary"`
+	Importance int        `json:"importance"`
+	CreatedAt  time.Time  `json:"created_at"`
+	UpdatedAt  time.Time  `json:"updated_at"`
+}
+
+// AgentContext is the prompt-safe snapshot passed to an LLM provider.
+type AgentContext struct {
+	Player PlayerProfile `json:"player"`
+	Body   BodyProfile   `json:"body"`
+}
+
+// BuildAgentContextPrompt returns a stable, bounded text block for an LLM.
+func BuildAgentContextPrompt(ctx AgentContext, maxMemories int) string {
+	memories := append([]MemoryRecord(nil), ctx.Body.Memory...)
+	sort.SliceStable(memories, func(i, j int) bool {
+		if memories[i].Importance == memories[j].Importance {
+			return memories[i].UpdatedAt.After(memories[j].UpdatedAt)
+		}
+		return memories[i].Importance > memories[j].Importance
+	})
+	if maxMemories >= 0 && len(memories) > maxMemories {
+		memories = memories[:maxMemories]
+	}
+
+	var b strings.Builder
+	writeKV(&b, "player_id", ctx.Player.PlayerID)
+	writeKV(&b, "display_name", ctx.Player.DisplayName)
+	writeKV(&b, "body_id", ctx.Body.BodyID)
+	writeKV(&b, "archetype_id", ctx.Body.ArchetypeID)
+	writeKV(&b, "visual_prefab_key", ctx.Body.VisualPrefabKey)
+	writeKV(&b, "primary_weapon", ctx.Body.Equipment.PrimaryWeapon)
+	writeKV(&b, "body_lifecycle", string(ctx.Body.Lifecycle))
+	writeKV(&b, "cultivation_tier", ctx.Body.Cultivation.Tier)
+	writeKV(&b, "body_time_seconds", fmt.Sprintf("%d/%d", ctx.Body.Time.RemainingSeconds, ctx.Body.Time.MaxSeconds))
+	writeKV(&b, "traits", fmt.Sprintf("curiosity=%d courage=%d empathy=%d discipline=%d aggression=%d sociability=%d",
+		ctx.Body.Characteristics.Curiosity,
+		ctx.Body.Characteristics.Courage,
+		ctx.Body.Characteristics.Empathy,
+		ctx.Body.Characteristics.Discipline,
+		ctx.Body.Characteristics.Aggression,
+		ctx.Body.Characteristics.Sociability,
+	))
+	writeKV(&b, "agent_enabled", fmt.Sprintf("%t", ctx.Body.AgentPolicy.Enabled))
+	writeKV(&b, "agent_mode", ctx.Body.AgentPolicy.Mode)
+	writeKV(&b, "agent_stop_time_threshold", fmt.Sprintf("%d", ctx.Body.AgentPolicy.StopWhenBodyTimeBelow))
+	writeKV(&b, "soul_name", ctx.Body.Soul.Name)
+	writeKV(&b, "core_drive", ctx.Body.Soul.CoreDrive)
+	writeKV(&b, "temperament", ctx.Body.Soul.Temperament)
+	writeKV(&b, "combat_style", ctx.Body.Soul.CombatStyle)
+	writeKV(&b, "social_style", ctx.Body.Soul.SocialStyle)
+	writeKV(&b, "long_term_goals", strings.Join(ctx.Body.Soul.LongTermGoals, "; "))
+	writeKV(&b, "moral_boundaries", strings.Join(ctx.Body.Soul.MoralBoundaries, "; "))
+	writeKV(&b, "player_notes", ctx.Body.Soul.PlayerNotes)
+	writeKV(&b, "memory_count", fmt.Sprintf("%d", len(memories)))
+
+	for i, memory := range memories {
+		writeKV(&b, fmt.Sprintf("memory_%02d_kind", i+1), string(memory.Kind))
+		writeKV(&b, fmt.Sprintf("memory_%02d_summary", i+1), memory.Summary)
+	}
+
+	return strings.TrimSpace(b.String())
+}
+
+func writeKV(b *strings.Builder, key string, value string) {
+	if strings.TrimSpace(value) == "" {
+		return
+	}
+	b.WriteString(key)
+	b.WriteString(": ")
+	b.WriteString(strings.TrimSpace(value))
+	b.WriteByte('\n')
+}

@@ -15,6 +15,10 @@ GameObject:
   - component: {fileID: 8357749372956170795}
   - component: {fileID: 8359936860818564255}
   - component: {fileID: 7123456789012345678}
+  - component: {fileID: 6129384756102938475}
+  - component: {fileID: 3400762132235786765}
+  - component: {fileID: 1778901195370216267}
+  - component: {fileID: 586566440311235492}
   m_Layer: 0
   m_Name: Player_NetworkCube
   m_TagString: Untagged
@@ -140,6 +144,7 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 7123456789012345678}
   - {fileID: 8359936860818564255}
+  - {fileID: 6129384756102938475}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &8359936860818564255
 MonoBehaviour:
@@ -156,9 +161,12 @@ MonoBehaviour:
   _CultivationTier: 0
   _Hp: 0
   _Stamina: 0
+  _VisualVariant: 0
   _IsAgentControlled:
     RawValue: 0
   _moveSpeed: 5
+  _walkSpeed: 2.2
+  _jumpImpulse: 7.5
 --- !u!114 &7123456789012345678
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -196,3 +204,79 @@ MonoBehaviour:
     StepRequireGroundTarget: 0
     SnapDistance: 0.4
     SnapSpeed: 4
+--- !u!114 &6129384756102938475
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5762444949739102863}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f51f6baf6b447e4b8fd7e7f7fdd3df8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: SecondSpawn.Networking::SecondSpawn.Networking.NetworkAnimatorBridge
+  _NetSpeed: 0
+  _NetVelocityX: 0
+  _NetVelocityZ: 0
+  _NetJumping: 0
+  _animator: {fileID: 0}
+  _referenceMoveSpeed: 5
+  _movingParameter: Moving
+  _velocityXParameter: Velocity X
+  _velocityZParameter: Velocity Z
+  _velocityParameter: Velocity
+  _animationSpeedParameter: AnimationSpeed
+  _animationSpeedSpacedParameter: Animation Speed
+  _weaponParameter: Weapon
+  _defaultWeaponValue: -1
+  _jumpingParameter: Jumping
+  _triggerNumberParameter: TriggerNumber
+  _triggerNumberSpacedParameter: Trigger Number
+  _triggerParameter: Trigger
+  _fallVelocityThreshold: 0.8
+--- !u!114 &3400762132235786765
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5762444949739102863}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 778cc9b36fce47cfb206fdaf99bb5b71, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: SecondSpawn.Networking::SecondSpawn.Networking.LocalVisualPrefabLoader
+  _resourcePath: SecondSpawn/RPGCharacterVisual
+  _localPosition: {x: 0, y: 0, z: 0}
+  _localEulerAngles: {x: 0, y: 0, z: 0}
+  _localScale: {x: 1, y: 1, z: 1}
+  _hideRootRenderers: 1
+--- !u!114 &1778901195370216267
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5762444949739102863}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55a4c759766b46d9a6d9c8085b86fe6c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: SecondSpawn.Networking::SecondSpawn.Networking.PrototypeVisualActionHotkeys
+--- !u!114 &586566440311235492
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5762444949739102863}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c82a1923923545c408fda6f62a7bde81, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.PrototypeLLMAgentDriver
+  _enableOnStart: 0
+  _decisionIntervalSeconds: 1.25
+  _moveHoldSeconds: 0.9
+  _zoneId: prototype-hub

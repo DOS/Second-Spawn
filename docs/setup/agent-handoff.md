@@ -72,11 +72,9 @@ Do not touch:
 
 ## Current manual JOY actions
 
-1. Create `Assets/_SecondSpawn/Settings/SecondSpawnConfig.asset` via Unity:
-   `Assets > Create > Second Spawn > Project Config`.
-2. Add Unity Linux Dedicated Server Build Support for Unity `6000.5.0b7` via
+1. Add Unity Linux Dedicated Server Build Support for Unity `6000.5.0b7` via
    Unity Hub before dedicated server build work.
-3. Import asset store packages in separate passes: Opsive UCC, then Behavior
+2. Import asset store packages in separate passes: Opsive UCC, then Behavior
    Designer, then Convai.
 
 ## Current Unity decisions
@@ -91,3 +89,46 @@ Do not touch:
   Local Fusion 2.1.1 source also moves spawned prefabs through the runner scene
   via the object provider, so root-level runtime `NetworkObject` instances are
   accepted for Phase B.
+
+## Current gateway and AI prototype state
+
+- Cloud Run staging gateway URL:
+  `https://second-spawn-gateway-535583621422.asia-southeast1.run.app`
+- Unity `SecondSpawnConfig.asset`, `SecondSpawnConfig.cs`, and scene
+  `_AgentGateway` point to the Cloud Run URL so JOY does not need to run a local
+  gateway executable for prototype playtesting.
+- Local fallback remains `backend/gateway` Docker image
+  `second-spawn-gateway:local`.
+- Prototype controls:
+  - `P`: toggle prototype LLM-agent movement loop on the spawned player
+  - `O`: send prototype NPC text chat
+  - `V`: check voice-session contract
+- Voice is a local prototype cue plus text bubble in Unity. Real TTS still
+  requires server-side ephemeral token minting.
+- On 2026-05-16, Cloud Run revision `second-spawn-gateway-00003-779` served
+  100 percent of traffic. Smoke tests passed for `/readyz`,
+  `/v1/characters/dev-player/context`, and duplicate memory POST dedupe.
+- On 2026-05-16, CoplayDev MCP Play Mode verification spawned a generated
+  Hammer Warrior visual with a clean console. Prototype agent input moved the
+  spawned player from `x=1.50` to `x=14.03`, then cleared control.
+- On 2026-05-16, `_AgentNPC_Prototype` was added to `ZoneTest_Hub` with a
+  local prototype brain. MCP Play Mode verification confirmed the NPC patrols,
+  speaks through the prototype text/voice cue path, and the console had no
+  warnings or errors after the verification run.
+
+## Current visual prototype state
+
+- Random visual variants use generated prefabs under
+  `Unity/Assets/_SecondSpawn/Art/Characters/GeneratedVisualsV2/`.
+- Regenerate them from Unity with
+  `Second Spawn > Art > Rebuild Generated Visual Prefabs`.
+- Generated visual prefabs are standalone cleaned copies with local URP
+  material copies under
+  `Unity/Assets/_SecondSpawn/Art/Characters/GeneratedVisualsV2/Materials/`.
+- Runtime visual loaders align renderer bounds to the actor ground plane after
+  Animator pose application. The 2026-05-16 MCP check verified all 13 generated
+  variants align to `minY=0.000` after the shared bounds alignment pass.
+- The runtime pool currently includes RPG Character plus Warrior Pack Bundle
+  1-3 variants, including Sorceress and Mage after URP material conversion.
+  `Fighter Pack Bundle FREE` variants are excluded because Unity 6.5 logs
+  pre-2019 serialized-file errors when loading their old controllers/materials.

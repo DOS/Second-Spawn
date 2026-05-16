@@ -65,7 +65,7 @@ The ScriptableObject definition was scaffolded in commit `f04aa3b` but the `.ass
 3. Save the new asset at `Assets/_SecondSpawn/Settings/SecondSpawnConfig.asset`.
 4. Set the fields in Inspector:
    - **Environment**: Development
-   - **GatewayBaseUrl**: `http://localhost:8080` (for now)
+   - **GatewayBaseUrl**: `https://second-spawn-gateway-535583621422.asia-southeast1.run.app` (Cloud Run staging)
    - **SupabaseUrl**: from Step 7 in NEXT_STEPS.md (once Supabase project exists)
    - **SupabaseAnonKey**: same
    - **PhotonAppId**: from Step 1

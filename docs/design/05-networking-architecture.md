@@ -4,13 +4,13 @@
 *Created: 2026-05-14*
 *Implements Pillar*: AI agent 24/7, LLM as world citizen, Server-authoritative gameplay
 
-> **Quick reference** - Layer: `Core` (foundation - everything else depends on this) - Priority: `MVP` - Key deps: `Supabase Auth (for JWT), Go gateway (for LLM intent)`
+> **Quick reference** - Layer: `Core` (foundation - everything else depends on this) - Priority: `MVP` - Key deps: `Nakama auth/session, api.dos.ai / Go LLM Gateway (for LLM intent)`
 
 ---
 
 ## Summary
 
-Photon Fusion 2 in **Server Mode dedicated** is the canonical multiplayer runtime for SECOND SPAWN. The Unity client is a thin input + render surface; the dedicated Unity headless server is the authority for all gameplay state. The Go gateway (`backend/gateway/`) handles LLM and NFT intents; the Fusion server consumes validated intents and mutates `[Networked]` state.
+Photon Fusion 2 in **Server Mode dedicated** is the canonical multiplayer runtime for SECOND SPAWN. The Unity client is a thin input + render surface; the dedicated Unity headless server is the authority for all gameplay state. Nakama owns game backend sessions and durable game APIs. `api.dos.ai` / Go LLM Gateway handles AI and LLM calls only; the Fusion server consumes validated intents and mutates `[Networked]` state.
 
 The integration is built from scratch per ADR 0006 (no template drop-in). Patterns are extracted from BR200, Tanknarok, and Fusion Starter samples (read locally, not copied).
 
@@ -21,7 +21,7 @@ The integration is built from scratch per ADR 0006 (no template drop-in). Patter
 The fantasy is "your character has a life that does not pause when yours does." This is the toughest networking requirement because:
 
 - The character continues to exist + play when the human is offline (offline AI agent runs on the server)
-- The world is persistent across player sessions (Supabase + Fusion state sync)
+- The world is persistent across player sessions (Nakama/Postgres + Fusion state sync)
 - Death is permanent for the body (server validates reincarnation flow + NFT escrow release)
 
 Anything less than server-authoritative breaks the fantasy on day one of public release.
@@ -39,19 +39,24 @@ Anything less than server-authoritative breaks the fantasy on day one of public 
 │  - prediction    │                    │  - Interest management      │
 └────────┬─────────┘                    │  - Tick-driven simulation   │
          │ HTTPS                        │  - Offline AI agent loop    │
-         │ + Supabase JWT               └──────────┬──────────────────┘
+         │ + backend token              └──────────┬──────────────────┘
          ▼                                         │ HTTPS
-┌──────────────────┐                               │ + Supabase JWT
-│  Go LLM Gateway  │ ◄─────────────────────────────┘
-│  (backend/       │
-│   gateway/)      │ ──────────► Anthropic / OpenAI / Convai
-│                  │ ──────────► thirdweb (DOS Chain)
-└──────────────────┘ ──────────► Supabase (persistence side-channel)
+┌──────────────────┐                               │ + backend token
+│ api.dos.ai /     │ ◄─────────────────────────────┘
+│ Go LLM Gateway   │ ──────────► Anthropic / OpenAI / Convai
+└──────────────────┘
+         │
+         ▼
+┌──────────────────┐
+│ Nakama/Postgres  │
+│ Game backend     │
+│ thirdweb/DOS     │ ──────────► DOS Chain
+└──────────────────┘
 ```
 
 The dedicated server NEVER trusts the client. Client predicts visually, server reconciles.
 
-The dedicated server NEVER trusts the LLM. All LLM responses parse into structured intents (`backend/gateway/internal/intent/intent.go`); the server validates against authoritative state before mutating anything.
+The dedicated server NEVER trusts the LLM. All LLM responses parse into structured intents; the server validates against authoritative state before mutating anything.
 
 ---
 
@@ -106,14 +111,14 @@ The actual implementations land in `Assets/_SecondSpawn/Scripts/Networking/` (as
 
 ### `IntentBridge` (MonoBehaviour, server-only)
 
-- Receives validated intents from the Go gateway over HTTP+JWT.
+- Receives AI intents from `api.dos.ai` / Go LLM Gateway over authenticated HTTP.
 - Translates intent into Fusion state mutation (e.g. `NPCGrantItem` -> add item to `NetworkPlayer.Inventory` after server-side checks).
 - Never trusts the intent blindly - re-validates against current authoritative state.
 
 ### `OfflineAgentRunner` (server-only)
 
 - Per offline player whose character is still in a zone, runs a server-side decision loop:
-  pull state -> call Go gateway with capability-cap + rate-limit headers -> receive intent -> validate -> apply.
+  pull state -> call `api.dos.ai` / Go LLM Gateway with capability-cap + rate-limit headers -> receive intent -> validate -> apply.
 - Inherits the player's rate limit + LLM token budget (no double-charging).
 - Death of agent = body death = reincarnation flow same as player (see [04-cultivation-system.md](04-cultivation-system.md)).
 
@@ -131,16 +136,16 @@ The actual implementations land in `Assets/_SecondSpawn/Scripts/Networking/` (as
 ## Persistence boundary
 
 Photon Fusion 2 manages **session state** (in-zone networked properties).
-Supabase Postgres manages **durable state** (profile, inventory snapshot, quest progress, NFT lock state, cultivation tier).
+Nakama OSS + Postgres manages **durable state** (profile, inventory snapshot, quest progress, NFT lock state, cultivation tier).
 
-The dedicated server flushes Supabase on:
+The dedicated server flushes Nakama/Postgres on:
 
 - Player disconnect (final state save)
 - Zone transition (player moves between zone instances)
 - Periodic interval (every N minutes, configurable)
 - On reincarnation transition (mandatory before despawn)
 
-Crash safety: the latest Supabase snapshot is the source of truth on next session. Some in-zone progress may be lost on a server crash; we accept this for vertical slice and design proper resilience later.
+Crash safety: the latest Nakama/Postgres snapshot is the source of truth on next session. Some in-zone progress may be lost on a server crash; we accept this for vertical slice and design proper resilience later.
 
 ---
 
@@ -150,11 +155,11 @@ These are non-negotiable per the AGPL-3.0 open-source threat model + Pillar 4 (S
 
 1. **No gameplay logic on the client.** Visual prediction OK; state changes NOT.
 2. **No API keys in the Unity client.** Period. The Unity client only holds:
-   - Supabase URL + anon key (public-safe)
+   - Nakama endpoint and public client key
    - Gateway base URL (public)
    - Photon App ID (semi-public, client-visible by design)
-3. **All LLM calls server-side via Go gateway.** The dedicated server is the only thing that hits Anthropic / OpenAI / Convai.
-4. **All NFT mutations server-side via Go gateway.** The dedicated server is the only thing that signs DOS Chain transactions.
+3. **All LLM calls server-side via `api.dos.ai` / Go LLM Gateway.** The dedicated server or Nakama backend is the only game-side caller that requests Anthropic / OpenAI / Convai work.
+4. **All NFT mutations server-side.** Use Nakama runtime modules or a dedicated wallet/blockchain service. Do not place game inventory or wallet mutation APIs in the LLM gateway.
 5. **Rate limit + capability cap apply to AI agent the same way they apply to the player.** No "agent gets unlimited LLM tokens" - it inherits the offline player's budget.
 6. **No `Host Mode` build in production.** CI staging build must use Server Mode dedicated; PR review checks this.
 
@@ -180,7 +185,7 @@ Numbers will be re-validated with Fusion bot load test (per `02-vertical-slice-s
 
 - Per-zone interest management AOI radius (50m default, but depends on zone size)
 - AI agent decision loop frequency (every 5s? 15s? adaptive based on activity?)
-- Server crash policy: roll back to last Supabase snapshot vs accept in-zone loss
+- Server crash policy: roll back to last Nakama/Postgres snapshot vs accept in-zone loss
 - Photon Fusion 2 license tier when scaling beyond Cloud free 20 CCU (also in CLAUDE.md Open Decision Points)
 - Dedicated server region selection (Hetzner Helsinki vs Falkenstein? US East? affects latency for non-VN players)
 
@@ -196,7 +201,7 @@ Numbers will be re-validated with Fusion bot load test (per `02-vertical-slice-s
 | `NetworkInputProvider` | Phase B keyboard input provider | `Unity/Assets/_SecondSpawn/Scripts/Networking/NetworkInputProvider.cs` |
 | `PlayerSpawner` | Phase B server-authoritative join spawn/despawn | `Unity/Assets/_SecondSpawn/Scripts/Networking/PlayerSpawner.cs` |
 | `NetworkZone` | Not started | TBD |
-| `IntentBridge` | Not started | will live next to `internal/intent` in backend/gateway concepts |
+| `IntentBridge` | Not started | server-only bridge from Fusion server to `api.dos.ai` / Go LLM Gateway |
 | `OfflineAgentRunner` | Not started | server-only, Phase 7 |
 | Test scene | `ZoneTest_Hub.unity` with scene-root `_NetworkBootstrap` | `Unity/Assets/_SecondSpawn/Scenes/ZoneTest_Hub.unity` |
 | Load test (Fusion bots) | Not started | Phase 8 |

@@ -5,7 +5,7 @@
 *Author: Codex*
 *Last Verified: 2026-05-14 against `AGENTS.md`, `00-game-concept.md`, `01-pillars.md`, `02-vertical-slice-spec.md`, and `05-networking-architecture.md`*
 
-> **Quick reference** - Layer: `Core` - Priority: `Vertical Slice` - Key deps: `Photon Fusion 2`, `Supabase`, `Go gateway`, `DOS Chain`, `Convai phase 1`
+> **Quick reference** - Layer: `Core` - Priority: `Vertical Slice` - Key deps: `Photon Fusion 2`, `Nakama OSS`, `api.dos.ai / Go LLM Gateway`, `DOS Chain`, `Convai phase 1`
 
 ---
 
@@ -87,7 +87,7 @@ The first prototype should create a small, project-owned movement contract. Simp
 | Camera | Top-down follow camera | Can be simple Cinemachine or custom follow. |
 | Zone | `ZoneTest_Hub` only | No dungeon, no multi-zone. |
 | Config | `SecondSpawnConfig.asset` exists with public-safe fields | No secrets in Unity. |
-| Persistence | Not in first playable | Supabase comes after movement baseline. |
+| Persistence | Not in first playable | Nakama OSS comes after movement baseline. |
 | AI/LLM | Not in first playable | Design must keep path open. |
 | Time-as-currency | Not in first playable | First implementation belongs with reincarnation/progression, not movement. |
 | NFT | Not in first playable | No chain dependency for movement prototype. |
@@ -101,7 +101,7 @@ The first prototype should create a small, project-owned movement contract. Simp
 - Convai
 - Synty / Quaternius environment art packs
 - Combat damage, loot, inventory, or item drops
-- Supabase auth or profile persistence
+- Nakama auth or profile persistence
 - NFT ownership and escrow
 - Offline AI agent behavior
 - Dungeon instance
@@ -122,7 +122,7 @@ These are still vertical slice systems. They are only excluded from the first pl
 | 4 | Simple KCC spike | Import official Fusion Simple KCC addon and compare it against the baseline. |
 | 5 | Opsive evaluation branch | Import Opsive in isolation and compare value/cost against the baseline and Simple KCC spike. |
 | 6 | Combat prototype | Add one basic attack only after movement is stable. |
-| 7 | Persistence/auth prototype | Supabase profile and login once local gameplay loop exists. |
+| 7 | Persistence/auth prototype | Nakama profile and login once local gameplay loop exists. |
 
 ---
 

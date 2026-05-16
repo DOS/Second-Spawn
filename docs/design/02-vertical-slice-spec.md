@@ -10,7 +10,7 @@
 
 ## Validation Question
 
-Can a solo player, in their first 30 minutes of unguided play in a single zone, experience the signature hooks (AI agent autoplay, reincarnation, time-as-currency, cultivation tier-up) AND can a 1-person team (JOY + AI agents) build this slice at representative quality in 3-6 months on the chosen tech stack (Unity 6.5 beta + Photon Fusion 2 + Supabase + Go gateway + thirdweb)?
+Can a solo player, in their first 30 minutes of unguided play in a single zone, experience the signature hooks (AI agent autoplay, reincarnation, time-as-currency, cultivation tier-up) AND can a 1-person team (JOY + AI agents) build this slice at representative quality in 3-6 months on the chosen tech stack (Unity 6.5 beta + Photon Fusion 2 + Nakama OSS + api.dos.ai / Go LLM Gateway + thirdweb)?
 
 This is two questions in one: **does the design loop fun?** AND **is the architecture buildable?**
 
@@ -31,7 +31,7 @@ This is two questions in one: **does the design loop fun?** AND **is the archite
 | **Cultivation tiers** | 2 of 6 playable (Awakening + Enhancement only) |
 | **NFT Hunter skin** | 1 skin equip flow + escrow contract (test net DOS Chain) |
 | **Multiplayer** | 4-20 players per zone instance via Photon Fusion 2 |
-| **Chat** | Basic global + zone via Supabase Realtime |
+| **Chat** | Basic global + zone via Nakama channels |
 | **Voice NPC** | NOT in slice (defer phase 2) |
 
 ---
@@ -65,11 +65,11 @@ The slice is considered "done" when ALL of the following are true and verified b
 
 ### Technical (verifiable in code + tests)
 - [ ] Server-authoritative invariant: no client-side damage, position, or item validation. Verified by `code-review` skill pass on combat + inventory + NFT modules.
-- [ ] LLM intent validation: every NPC action goes through Go gateway. No API key in Unity client. Verified by grep + security audit.
+- [ ] LLM intent validation: every NPC action goes through `api.dos.ai` / Go LLM Gateway. No API key in Unity client. Verified by grep + security audit.
 - [ ] AI agent inherits player rate limit + capability cap. Verified by integration test.
 - [ ] NFT escrow on equip; release on unequip. Verified on DOS Chain test net.
 - [ ] Photon Fusion 2 dedicated Server Mode build runs on Hetzner VPS, accepts 4-20 player connections in load test.
-- [ ] Supabase persists profile, inventory, quest progress, NFT lock state, cultivation tier across reincarnation cycles.
+- [ ] Nakama/Postgres persists profile, inventory, quest progress, NFT lock state, cultivation tier across reincarnation cycles.
 - [ ] Multiplayer 4-20 players per zone holds 60Hz tick under load test (Fusion bots simulating 50 players for stress).
 
 ### Process (verifiable in repo state)
@@ -84,7 +84,7 @@ The slice is considered "done" when ALL of the following are true and verified b
 
 | Phase | Target Weeks | Output |
 | ---- | ---- | ---- |
-| 1. Setup + first commit | T+0 to T+1 | Unity project + Photon SDK + Supabase + Go gateway scaffold + repo structure |
+| 1. Setup + first commit | T+0 to T+1 | Unity project + Photon SDK + Nakama OSS + api.dos.ai LLM contract + repo structure |
 | 2. Networked player + zone | T+1 to T+4 | 1 zone Photon Fusion 2 multiplayer, Hunter skin spawn, minimal ARPG controller first, Opsive UCC evaluated after baseline |
 | 3. NPC + LLM dialogue | T+4 to T+8 | Convai NPC in hub town, server-validated intent flow |
 | 4. Quest + dungeon | T+8 to T+12 | 1 quest line + 1 dungeon + 1 boss (LLM dialogue) |
