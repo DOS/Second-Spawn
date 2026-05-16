@@ -188,7 +188,10 @@ namespace SecondSpawn.AI
         public string display_name;
         public string archetype_id;
         public string visual_prefab_key;
+        public CharacterStatsDto stats;
         public CharacterTraitsDto characteristics;
+        public BodyTimeDto time;
+        public CultivationDto cultivation;
         public SoulProfileDto soul;
         public AgentPolicyDto agent_policy;
     }

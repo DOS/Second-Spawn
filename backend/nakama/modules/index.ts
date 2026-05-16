@@ -432,17 +432,10 @@ function defaultActorProfile(ownerId: string, actorId: string, request: any): an
       archetype_id: trimString(request.archetype_id) || "prototype-npc",
       visual_prefab_key: trimString(request.visual_prefab_key) || "prototype-npc",
       equipment: normalizeEquipment({}),
-      stats: defaultCharacterStats(),
+      stats: normalizeStats(request.stats || {}),
       characteristics: normalizeTraits(request.characteristics || {}),
-      time: {
-        remaining_seconds: 86400,
-        max_seconds: 86400,
-        danger_drain_rate: 1
-      },
-      cultivation: {
-        tier: "Awakening",
-        progress_xp: 0
-      },
+      time: normalizeBodyTime(request.time || {}),
+      cultivation: normalizeCultivation(request.cultivation || {}),
       lifecycle: "alive",
       agent_policy: normalizePolicy(request.agent_policy || {}),
       soul: normalizeSoul(request.soul || { name: displayName }, displayName)
@@ -480,7 +473,7 @@ function ensureActorProfile(profile: any, ownerId: string, actorId: string): any
   profile.body.stats = normalizeStats(profile.body.stats || {});
   profile.body.characteristics = normalizeTraits(profile.body.characteristics || {});
   profile.body.time = normalizeBodyTime(profile.body.time || {});
-  profile.body.cultivation = profile.body.cultivation || { tier: "Awakening", progress_xp: 0 };
+  profile.body.cultivation = normalizeCultivation(profile.body.cultivation || {});
   profile.body.lifecycle = trimString(profile.body.lifecycle) || "alive";
   profile.body.agent_policy = normalizePolicy(profile.body.agent_policy || {});
   profile.body.soul = normalizeSoul(profile.body.soul || { name: profile.display_name }, profile.display_name);
@@ -919,24 +912,31 @@ function defaultCharacterStats(): any {
 function normalizeStats(stats: any): any {
   var defaults = defaultCharacterStats();
   return {
-    level: clampNumber(stats.level || defaults.level, 1, 100),
-    vitality: clampNumber(stats.vitality || defaults.vitality, 1, 9999),
-    force: clampNumber(stats.force || defaults.force, 1, 9999),
-    agility: clampNumber(stats.agility || defaults.agility, 1, 9999),
-    focus: clampNumber(stats.focus || defaults.focus, 1, 9999),
-    resilience: clampNumber(stats.resilience || defaults.resilience, 1, 9999),
-    max_health: clampNumber(stats.max_health || defaults.max_health, 1, 999999),
-    max_energy: clampNumber(stats.max_energy || defaults.max_energy, 0, 999999),
-    attack_power: clampNumber(stats.attack_power || defaults.attack_power, 0, 999999),
-    defense_power: clampNumber(stats.defense_power || defaults.defense_power, 0, 999999)
+    level: clampNumber(numberOrDefault(stats.level, defaults.level), 1, 100),
+    vitality: clampNumber(numberOrDefault(stats.vitality, defaults.vitality), 1, 9999),
+    force: clampNumber(numberOrDefault(stats.force, defaults.force), 1, 9999),
+    agility: clampNumber(numberOrDefault(stats.agility, defaults.agility), 1, 9999),
+    focus: clampNumber(numberOrDefault(stats.focus, defaults.focus), 1, 9999),
+    resilience: clampNumber(numberOrDefault(stats.resilience, defaults.resilience), 1, 9999),
+    max_health: clampNumber(numberOrDefault(stats.max_health, defaults.max_health), 1, 999999),
+    max_energy: clampNumber(numberOrDefault(stats.max_energy, defaults.max_energy), 0, 999999),
+    attack_power: clampNumber(numberOrDefault(stats.attack_power, defaults.attack_power), 0, 999999),
+    defense_power: clampNumber(numberOrDefault(stats.defense_power, defaults.defense_power), 0, 999999)
   };
 }
 
 function normalizeBodyTime(time: any): any {
   return {
-    remaining_seconds: clampNumber(time.remaining_seconds || 86400, 0, 31536000),
-    max_seconds: clampNumber(time.max_seconds || 86400, 1, 31536000),
-    danger_drain_rate: clampNumber(time.danger_drain_rate || 1, 0, 1000)
+    remaining_seconds: clampNumber(numberOrDefault(time.remaining_seconds, 86400), 0, 31536000),
+    max_seconds: clampNumber(numberOrDefault(time.max_seconds, 86400), 1, 31536000),
+    danger_drain_rate: clampNumber(numberOrDefault(time.danger_drain_rate, 1), 0, 1000)
+  };
+}
+
+function normalizeCultivation(cultivation: any): any {
+  return {
+    tier: trimString(cultivation.tier) || "Awakening",
+    progress_xp: clampNumber(numberOrDefault(cultivation.progress_xp, 0), 0, agentRuntimeMetricMax)
   };
 }
 

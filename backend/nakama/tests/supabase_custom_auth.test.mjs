@@ -203,7 +203,10 @@ const npcProfile = JSON.parse(harness.registeredRpcs.get("secondspawn_actor_prof
     actor_id: "npc-guide",
     actor_type: "npc",
     display_name: "Mira Guide",
+    stats: { level: 0, max_health: 0, max_energy: 0, attack_power: 0 },
     characteristics: { curiosity: 8, sociability: 9 },
+    time: { remaining_seconds: 0, max_seconds: 0, danger_drain_rate: 0 },
+    cultivation: { tier: "", progress_xp: 0 },
     soul: { core_drive: "help new bodies survive the hub" }
   })
 ));
@@ -214,7 +217,15 @@ assert.equal(npcProfile.display_name, "Mira Guide");
 assert.equal(npcProfile.body.soul.name, "Mira Guide");
 assert.equal(npcProfile.body.soul.core_drive, "help new bodies survive the hub");
 assert.equal(npcProfile.body.stats.level, 1);
+assert.equal(npcProfile.body.stats.max_health, 1);
+assert.equal(npcProfile.body.stats.max_energy, 0);
+assert.equal(npcProfile.body.stats.attack_power, 0);
 assert.equal(npcProfile.body.characteristics.sociability, 9);
+assert.equal(npcProfile.body.time.remaining_seconds, 0);
+assert.equal(npcProfile.body.time.max_seconds, 1);
+assert.equal(npcProfile.body.time.danger_drain_rate, 0);
+assert.equal(npcProfile.body.cultivation.tier, "Awakening");
+assert.equal(npcProfile.body.cultivation.progress_xp, 0);
 assert.equal(npcProfile.memory.length, 1);
 
 const npcMemory = JSON.parse(harness.registeredRpcs.get("secondspawn_actor_memory_add")(
