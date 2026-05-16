@@ -213,37 +213,14 @@ func (s *Server) resolveTrustedPlayerID(r *http.Request) (string, error) {
 }
 
 func estimateAgentDecisionTokens(req agent.DecisionRequest) int {
-	chars := len(req.Context.Player.PlayerID) +
-		len(req.Context.Player.DisplayName) +
-		len(req.Context.Body.BodyID) +
-		len(req.Context.Body.ArchetypeID) +
-		len(req.Context.Body.VisualPrefabKey) +
-		len(req.Context.Body.Equipment.PrimaryWeapon) +
-		len(req.Context.Body.Cultivation.Tier) +
-		len(req.Context.Body.AgentPolicy.Mode) +
-		len(req.Context.Body.Soul.Name) +
-		len(req.Context.Body.Soul.CoreDrive) +
-		len(req.Context.Body.Soul.Temperament) +
-		len(req.Context.Body.Soul.CombatStyle) +
-		len(req.Context.Body.Soul.SocialStyle) +
-		len(req.Context.Body.Soul.PlayerNotes) +
-		len(req.WorldSnapshot.ZoneID)
-	for _, goal := range req.Context.Body.Soul.LongTermGoals {
-		chars += len(goal)
+	payload, err := json.Marshal(req)
+	if err != nil {
+		return agentDecisionOutputTokenReserve
 	}
-	for _, boundary := range req.Context.Body.Soul.MoralBoundaries {
-		chars += len(boundary)
-	}
-	for _, memory := range req.Context.Body.Memory {
-		chars += len(memory.ID) + len(memory.Kind) + len(memory.Summary) + 16
-	}
-	chars += len(req.Allowed) * 12
-	chars += len(req.WorldSnapshot.NearbyTargets) * 48
-	chars += len(req.WorldSnapshot.NearbyObjects) * 40
 
-	// Rough English/JSON estimate: four characters per token plus the
-	// completion reserve used by the model-backed decision path.
-	return max(chars/4+agentDecisionOutputTokenReserve, agentDecisionOutputTokenReserve)
+	// Rough JSON estimate: four bytes per token plus the completion reserve
+	// used by the model-backed decision path.
+	return max(len(payload)/4+agentDecisionOutputTokenReserve, agentDecisionOutputTokenReserve)
 }
 
 type npcChatRequest struct {

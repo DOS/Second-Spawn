@@ -38,6 +38,7 @@ type agentDecisionLimitState struct {
 }
 
 const agentDecisionLimitStateTTL = 25 * time.Hour
+const agentDecisionLimitPruneScanLimit = 64
 
 func newAgentDecisionLimiter(cfg *config.Config, now func() time.Time) *agentDecisionLimiter {
 	if cfg == nil {
@@ -104,9 +105,14 @@ func (l *agentDecisionLimiter) pruneExpiredIfDue(now time.Time) {
 	l.lastPruned = now
 
 	cutoff := now.Add(-agentDecisionLimitStateTTL)
+	scanned := 0
 	for playerID, state := range l.players {
 		if !state.lastSeen.IsZero() && state.lastSeen.Before(cutoff) {
 			delete(l.players, playerID)
+		}
+		scanned++
+		if scanned >= agentDecisionLimitPruneScanLimit {
+			return
 		}
 	}
 }
