@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/DOS/Second-Spawn/backend/gateway/internal/agent"
+	"github.com/DOS/Second-Spawn/backend/gateway/internal/auth"
 	"github.com/DOS/Second-Spawn/backend/gateway/internal/character"
 	"github.com/DOS/Second-Spawn/backend/gateway/internal/config"
 	"github.com/DOS/Second-Spawn/backend/gateway/internal/llm"
@@ -22,6 +24,9 @@ type Server struct {
 	cfg     *config.Config
 	store   character.Store
 	decider agent.Decider
+	limiter *agentDecisionLimiter
+	auth    auth.Verifier
+	now     func() time.Time
 }
 
 func New(cfg *config.Config) *Server {
@@ -46,7 +51,15 @@ func NewWithDependencies(cfg *config.Config, store character.Store, decider agen
 	if decider == nil {
 		decider = agent.PrototypeDecider{}
 	}
-	return &Server{cfg: cfg, store: store, decider: decider}
+	srv := &Server{
+		cfg:     cfg,
+		store:   store,
+		decider: decider,
+		auth:    auth.NewHS256Verifier(cfg.SupabaseJWTSecret),
+		now:     func() time.Time { return time.Now().UTC() },
+	}
+	srv.limiter = newAgentDecisionLimiter(cfg, srv.now)
+	return srv
 }
 
 // Routes registers all HTTP handlers. Keep this file small - real handler
@@ -135,8 +148,18 @@ func (s *Server) handleAgentDecide(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	trustedPlayerID, err := s.resolveTrustedPlayerID(r)
+	if err != nil {
+		writeJSON(w, http.StatusUnauthorized, map[string]any{"error": err.Error()})
+		return
+	}
+
 	if strings.TrimSpace(req.Context.Player.PlayerID) == "" {
-		ctx, err := s.store.GetOrCreateContext(r.Context(), "dev-player")
+		playerID := "dev-player"
+		if trustedPlayerID != "" {
+			playerID = trustedPlayerID
+		}
+		ctx, err := s.store.GetOrCreateContext(r.Context(), playerID)
 		if err != nil {
 			writeError(w, err)
 			return
@@ -144,7 +167,17 @@ func (s *Server) handleAgentDecide(w http.ResponseWriter, r *http.Request) {
 		req.Context = ctx
 	}
 	req.Allowed = ensureStopAllowed(req.Allowed)
-	// TODO(#6): enforce per-player decision rate limits and daily token budgets here.
+	limitPlayerID := req.Context.Player.PlayerID
+	if trustedPlayerID != "" {
+		limitPlayerID = trustedPlayerID
+	}
+	if allowed, result := s.limiter.Allow(limitPlayerID, estimateAgentDecisionTokens(req)); !allowed {
+		if result.RetryAfterSeconds > 0 {
+			w.Header().Set("Retry-After", strconv.FormatInt(result.RetryAfterSeconds, 10))
+		}
+		writeJSON(w, http.StatusTooManyRequests, result)
+		return
+	}
 	decision, err := s.decider.Decide(r.Context(), req)
 	if err != nil {
 		writeJSON(w, http.StatusBadGateway, map[string]any{"error": err.Error()})
@@ -156,6 +189,38 @@ func (s *Server) handleAgentDecide(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, decision)
+}
+
+const agentDecisionOutputTokenReserve = 400
+
+func (s *Server) resolveTrustedPlayerID(r *http.Request) (string, error) {
+	if s.auth == nil {
+		return "", nil
+	}
+	token, err := auth.FromRequest(r)
+	if err != nil {
+		return "", err
+	}
+	identity, err := s.auth.Verify(r.Context(), token)
+	if err != nil {
+		return "", err
+	}
+	playerID := strings.TrimSpace(string(identity.PlayerID))
+	if playerID == "" {
+		return "", auth.ErrInvalidJWT
+	}
+	return playerID, nil
+}
+
+func estimateAgentDecisionTokens(req agent.DecisionRequest) int {
+	payload, err := json.Marshal(req)
+	if err != nil {
+		return agentDecisionOutputTokenReserve
+	}
+
+	// Rough JSON estimate: four bytes per token plus the completion reserve
+	// used by the model-backed decision path.
+	return max(len(payload)/4+agentDecisionOutputTokenReserve, agentDecisionOutputTokenReserve)
 }
 
 type npcChatRequest struct {
