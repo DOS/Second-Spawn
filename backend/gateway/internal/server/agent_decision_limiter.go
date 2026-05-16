@@ -20,10 +20,11 @@ type agentDecisionLimitResult struct {
 }
 
 type agentDecisionLimiter struct {
-	mu      sync.Mutex
-	cfg     *config.Config
-	now     func() time.Time
-	players map[string]*agentDecisionLimitState
+	mu         sync.Mutex
+	cfg        *config.Config
+	now        func() time.Time
+	lastPruned time.Time
+	players    map[string]*agentDecisionLimitState
 }
 
 type agentDecisionLimitState struct {
@@ -64,7 +65,7 @@ func (l *agentDecisionLimiter) Allow(playerID string, tokenEstimate int) (bool, 
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	l.pruneExpired(now)
+	l.pruneExpiredIfDue(now)
 	state := l.playerState(playerID, minuteStart, day)
 	state.resetWindows(minuteStart, day)
 	state.lastSeen = now
@@ -94,7 +95,12 @@ func (l *agentDecisionLimiter) playerState(playerID string, minuteStart time.Tim
 	return state
 }
 
-func (l *agentDecisionLimiter) pruneExpired(now time.Time) {
+func (l *agentDecisionLimiter) pruneExpiredIfDue(now time.Time) {
+	if !l.lastPruned.IsZero() && now.Sub(l.lastPruned) < time.Minute {
+		return
+	}
+	l.lastPruned = now
+
 	cutoff := now.Add(-agentDecisionLimitStateTTL)
 	for playerID, state := range l.players {
 		if !state.lastSeen.IsZero() && state.lastSeen.Before(cutoff) {
