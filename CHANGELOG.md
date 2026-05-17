@@ -46,6 +46,8 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 - Server-owned prototype body archetype pool for new player bodies and NPC-like
   actor profiles, including story hooks, stat bias, traits, soul defaults,
   equipment visuals, visual variants, and animation capability flags.
+- Nakama now persists the source NPC-like Frame actor profile when a player
+  first receives a body or reincarnates into a new body.
 
 ### Changed
 

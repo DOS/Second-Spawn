@@ -492,6 +492,7 @@ function rpcReincarnate(
 
   reincarnateBody(context, request, nk);
   writeAgentContext(nk, context, state.version);
+  ensureSourceBodyActorProfile(nk, context);
   return JSON.stringify(context);
 }
 
@@ -562,6 +563,7 @@ function getOrCreateAgentContextState(ctx: nkruntime.Context, nk: nkruntime.Naka
 
   var context = defaultAgentContext(userId);
   writeAgentContext(nk, context, "*");
+  ensureSourceBodyActorProfile(nk, context);
   var created = readAgentContext(nk, userId);
   if (created) {
     return {
@@ -582,6 +584,7 @@ function normalizeExistingAgentContextState(nk: nkruntime.Nakama, userId: string
   if (JSON.stringify(context) !== before) {
     try {
       writeAgentContext(nk, context, existing.version);
+      ensureSourceBodyActorProfile(nk, context);
     } catch (err) {
       var raced = readAgentContext(nk, userId);
       if (raced) {
@@ -597,6 +600,8 @@ function normalizeExistingAgentContextState(nk: nkruntime.Nakama, userId: string
       };
     }
   }
+
+  ensureSourceBodyActorProfile(nk, context);
 
   return {
     context: context,
@@ -634,6 +639,60 @@ function writeAgentContext(nk: nkruntime.Nakama, context: any, version: string):
     write.version = version;
   }
   nk.storageWrite([write]);
+}
+
+function ensureSourceBodyActorProfile(nk: nkruntime.Nakama, context: any): void {
+  var playerId = trimString(context && context.player && context.player.player_id);
+  var sourceActorId = trimString(context && context.body && context.body.inhabitation && context.body.inhabitation.source_actor_id);
+  if (!playerId || !sourceActorId) {
+    return;
+  }
+
+  if (readActorProfile(nk, playerId, sourceActorId)) {
+    return;
+  }
+
+  var profile = sourceBodyActorProfileFromContext(context, sourceActorId);
+  try {
+    writeActorProfile(nk, profile, "*");
+  } catch (err) {
+    if (readActorProfile(nk, playerId, sourceActorId)) {
+      return;
+    }
+    throw err;
+  }
+}
+
+function sourceBodyActorProfileFromContext(context: any, sourceActorId: string): any {
+  var timestamp = new Date().toISOString();
+  var playerId = context.player.player_id;
+  var body = cloneJson(context.body || {});
+  var archetype = selectBodyArchetype(body.archetype_id || playerId + ":initial");
+  body.inhabitation = normalizeBodyInhabitation({
+    source_actor_id: sourceActorId,
+    previous_role: body.inhabitation && body.inhabitation.previous_role,
+    inhabited_by_player: true,
+    assigned_at: body.inhabitation && body.inhabitation.assigned_at
+  }, archetype, true, playerId + ":initial");
+
+  return ensureActorProfile({
+    actor_id: sourceActorId,
+    actor_type: "player_body",
+    owner_player_id: playerId,
+    display_name: body.inhabitation.previous_role || actorDisplayName(sourceActorId),
+    body: body,
+    memory: sortAndBoundMemories(body.memory || []),
+    agent_runtime: defaultAgentRuntime(timestamp),
+    agent_activity: [{
+      id: "activity-bootstrap",
+      kind: "profile_bootstrap",
+      summary: "Source body actor profile was assigned to a player consciousness.",
+      occurred_at: timestamp,
+      source: "nakama"
+    }],
+    created_at: body.created_at || timestamp,
+    updated_at: timestamp
+  }, playerId, sourceActorId);
 }
 
 function isStorageVersionConflict(err: any): boolean {
@@ -1842,6 +1901,10 @@ function actorStorageKey(actorId: string): string {
 function actorDisplayName(actorId: string): string {
   var normalized = normalizeActorId(actorId).replace(/-/g, " ");
   return normalized || "Unnamed Actor";
+}
+
+function cloneJson(value: any): any {
+  return JSON.parse(JSON.stringify(value || {}));
 }
 
 function parseJson(payload: string, label: string): any {
