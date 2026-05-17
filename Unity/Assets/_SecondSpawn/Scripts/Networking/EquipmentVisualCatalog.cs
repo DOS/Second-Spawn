@@ -51,6 +51,24 @@ namespace SecondSpawn.Networking
             };
         }
 
+        public static int GetVisualIdForKey(string weaponVisualKey)
+        {
+            var key = NormalizeName(weaponVisualKey);
+            return key switch
+            {
+                "unarmed" => Unarmed,
+                "sword" or "one_hand_sword" => OneHandSword,
+                "two_hand_sword" => TwoHandSword,
+                "spear" or "two_hand_spear" => TwoHandSpear,
+                "axe" or "two_hand_axe" => TwoHandAxe,
+                "bow" or "two_hand_bow" => TwoHandBow,
+                "crossbow" or "two_hand_crossbow" => TwoHandCrossbow,
+                "staff" => Staff,
+                "hammer" => Hammer,
+                _ => None
+            };
+        }
+
         public static void ApplyEquipmentVisual(GameObject root, int equipmentVisualId)
         {
             var selectedRoot = FindSelectedWeaponPropRoot(root, equipmentVisualId);

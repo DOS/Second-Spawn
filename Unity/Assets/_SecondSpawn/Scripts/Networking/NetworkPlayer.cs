@@ -42,6 +42,7 @@ namespace SecondSpawn.Networking
         [Networked] public int VisualVariant { get; set; }
         [Networked] public int EquipmentVisualId { get; set; }
         [Networked] public NetworkBool SupportsJumpAnimation { get; set; }
+        [Networked] public NetworkBool SupportsRollAnimation { get; set; }
 
         /// <summary>True when the offline AI agent is driving this character (Pillar 1).</summary>
         [Networked] public NetworkBool IsAgentControlled { get; set; }
@@ -80,6 +81,11 @@ namespace SecondSpawn.Networking
                 if (!SupportsJumpAnimation)
                 {
                     SupportsJumpAnimation = true;
+                }
+
+                if (!SupportsRollAnimation)
+                {
+                    SupportsRollAnimation = true;
                 }
 
                 IsAgentControlled = false;
@@ -173,7 +179,7 @@ namespace SecondSpawn.Networking
             EquipmentVisualId = Mathf.Max(EquipmentVisualCatalog.None, equipmentVisualId);
         }
 
-        public void ApplyProfileVisual(int visualVariant, int equipmentVisualId, bool supportsJumpAnimation)
+        public void ApplyProfileVisual(int visualVariant, int equipmentVisualId, bool supportsJumpAnimation, bool supportsRollAnimation)
         {
             if (!HasStateAuthority)
             {
@@ -188,6 +194,7 @@ namespace SecondSpawn.Networking
                     ? equipmentVisualId
                     : EquipmentVisualCatalog.GetDefaultForVisualVariant(VisualVariant));
             SupportsJumpAnimation = supportsJumpAnimation;
+            SupportsRollAnimation = supportsRollAnimation;
         }
 
         public void ApplyProfileStats(
@@ -269,6 +276,7 @@ namespace SecondSpawn.Networking
             BodyTimeDangerDrainRate = 1;
             VisualVariant = 12;
             SupportsJumpAnimation = true;
+            SupportsRollAnimation = true;
             IsBodyDead = false;
             SecondBalanceSeconds = 7 * 24 * 60 * 60;
             ReincarnationCount = 0;

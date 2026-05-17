@@ -129,9 +129,31 @@ func TestAgentDecidePrototype(t *testing.T) {
 				"archetype_id": "prototype-hunter",
 				"visual_prefab_key": "prototype-random",
 				"visual_variant": 9,
+				"appearance": {
+					"body_type": "synthetic_hunter",
+					"body_parts": {
+						"head": "crossline-optic-head",
+						"face": "masked-rangefinder-face",
+						"torso": "ranged-survey-torso",
+						"arms": "steady-ranged-arms",
+						"legs": "survey-runner-legs"
+					},
+					"skin": "graphite",
+					"material": "matte-carbon",
+					"marks": ["signal-burn", "survey-chevron"]
+				},
+				"inhabitation": {
+					"source_actor_id": "npc-crossline-hunter-4445",
+					"previous_role": "Ranged survey body",
+					"inhabited_by_player": true
+				},
 				"equipment": {
 					"primary_weapon": "none",
-					"equipment_visual_id": 0
+					"equipment_visual_id": 0,
+					"weapon_visual_key": "crossbow",
+					"weapon_family": "ranged",
+					"combat_stance": "ranged_crossbow",
+					"socket": "hands"
 				},
 				"stats": {
 					"level": 1,
@@ -160,7 +182,11 @@ func TestAgentDecidePrototype(t *testing.T) {
 					"rumor": "Its optics still receive a signal from a silent district."
 				},
 				"animation_capabilities": {
-					"supports_jump": false
+					"supports_jump": false,
+					"supports_roll": true,
+					"supports_melee": false,
+					"supports_ranged": true,
+					"weapon_stance": "ranged_crossbow"
 				},
 				"time": {
 					"remaining_seconds": 3600,

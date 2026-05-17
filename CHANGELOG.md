@@ -49,17 +49,18 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 
 ### Changed
 
-- GDD and concept docs now anchor SECOND SPAWN to the MetaDOS timeline, DOS
-  Labs history, Nibirium as lore material, manga/manhwa system-story
-  progression tone, and vertical-slice story hooks for the first hub, first
-  body, BodyTime pressure, NPC knowledge, and faction tension.
+- GDD and system docs now anchor SECOND SPAWN to the MetaDOS technology stack:
+  AMB cocoons, bio-synthetic Frames, Hunter Frames, TIME as the life medium,
+  SECOND as the unit/currency, manga/manhwa system-story progression tone, and
+  vertical-slice story hooks for the first hub, first Frame, NPC knowledge, and
+  faction tension.
 - Local Unity prototype can show a player with persisted profile stats after
   joining the hub scene.
 - Unity profile sync now reloads the local visual model from the Nakama body
   profile, applies the server-selected weapon visual, and skips jump animation
   triggers for models marked as missing jump support.
 - Current visible progression baseline is level and body-bound stats. Advanced
-  body progression, cultivation tiers, and Nibirium XP remain deferred.
+  body progression, cultivation tiers, and Nibiru-derived XP remain deferred.
 - Gateway config now supports `AGENT_DECISION_MODEL`.
 - Gateway docs and Cloud Run env examples now describe the model-backed decision
   path.

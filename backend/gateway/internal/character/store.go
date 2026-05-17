@@ -169,9 +169,33 @@ func NewDefaultAgentContext(playerID string, now time.Time) AgentContext {
 			ArchetypeID:     "prototype-hunter",
 			VisualPrefabKey: "prototype-random",
 			VisualVariant:   12,
+			Appearance: BodyAppearance{
+				BodyType: "synthetic_hunter",
+				BodyParts: BodyParts{
+					Head:  "prototype-head",
+					Face:  "prototype-face",
+					Torso: "prototype-torso",
+					Arms:  "prototype-arms",
+					Legs:  "prototype-legs",
+				},
+				Skin:     "neutral",
+				Hair:     "none",
+				Material: "prototype-polymer",
+				Marks:    []string{"prototype"},
+			},
+			Inhabitation: BodyInhabitation{
+				SourceActorID:     "npc-prototype-hunter",
+				PreviousRole:      "Prototype hunter body",
+				InhabitedByPlayer: true,
+				AssignedAt:        now.Format(time.RFC3339),
+			},
 			Equipment: EquipmentLoadout{
 				PrimaryWeapon:     "none",
 				EquipmentVisualID: 0,
+				WeaponVisualKey:   "none",
+				WeaponFamily:      "none",
+				CombatStance:      "relaxed",
+				Socket:            "none",
 			},
 			Stats: CharacterStats{
 				Level:        1,
@@ -200,7 +224,10 @@ func NewDefaultAgentContext(playerID string, now time.Time) AgentContext {
 				Rumor:    "Early bodies are tuned for safety while the backend contract settles.",
 			},
 			AnimationCapabilities: AnimationCapabilities{
-				SupportsJump: true,
+				SupportsJump:  true,
+				SupportsRoll:  true,
+				SupportsMelee: true,
+				WeaponStance:  "one_hand_melee",
 			},
 			Time: BodyTimeState{
 				RemainingSeconds: 24 * 60 * 60,

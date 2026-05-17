@@ -80,7 +80,7 @@ Player and enemy behavior are separated into small states:
 - `EnemyChaseState`
 - `EnemyAttackState`
 
-This is useful for SECOND SPAWN because reincarnation, AI-agent control, BodyTime, and combat can plug into state transitions without one large controller script.
+This is useful for SECOND SPAWN because reincarnation, AI-agent control, TIME / SECOND, and combat can plug into state transitions without one large controller script.
 
 ### 4. Runner Physics Scene Queries
 
@@ -125,8 +125,8 @@ Do not import the whole Pirate Adventure project. It targets an older Unity vers
 
 Pirate Adventure uses money and level as sample progression. SECOND SPAWN uses:
 
-- `BodyTime`
-- `SECOND token`
+- TIME measured in SECOND
+- SECOND as the economy unit/currency
 - level and stats
 - reincarnation state
 - durable inventory and quest state in Supabase

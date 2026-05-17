@@ -11,7 +11,7 @@
 
 This Game Design Document defines the current pre-alpha product shape for SECOND SPAWN. It is intended for future contributors, reviewers, agents, and technical implementers who need a single readable summary before opening the deeper per-system documents.
 
-This is not marketing copy and it does not lock balance numbers. Economy costs, token sources, BodyTime tuning, carryover percentages, and similar values remain open unless explicitly decided in an ADR or per-system design document.
+This is not marketing copy and it does not lock balance numbers. Economy costs, SECOND sources, TIME tuning, carryover percentages, and similar values remain open unless explicitly decided in an ADR or per-system design document.
 
 When this GDD conflicts with a newer ADR or per-system design doc, prefer the newer, more specific document and update this GDD afterward.
 
@@ -23,13 +23,13 @@ This document follows a modern living-GDD shape rather than a static monolithic 
 
 ## 2. Game Overview
 
-SECOND SPAWN is a near-future, post-disaster top-down ARPG with MMO-style instanced zones. The player controls a Hunter whose consciousness can transfer between synthetic bodies. The game is set in the MetaDOS universe around 2050 and uses a bright sci-fi progression-fantasy tone built around systems, ranking, awakening, body limits, AI society, and time pressure.
+SECOND SPAWN is a near-future, post-disaster top-down ARPG with MMO-style instanced zones. The player controls a Hunter whose neural imprint can transfer between Frames. The game is set in the MetaDOS universe around 2050 and uses a bright sci-fi progression-fantasy tone built around systems, ranking, awakening, body limits, AI society, and TIME pressure.
 
 The core promise is:
 
 > Your character has a life that does not pause when yours does.
 
-When the player is offline, a bounded AI agent can continue controlling the character under server authority. Death permanently destroys the current body, but consciousness can transfer to a new body through the reincarnation flow. Time is both the body's remaining operating life and a spendable resource. Current-body level and stats are the vertical-slice progression baseline.
+When the player is offline, a bounded AI agent can continue controlling the character under server authority. Death permanently destroys the current Frame, but the surviving imprint can transfer to a new Frame through the reincarnation flow. TIME is the life medium that keeps Frames running, and SECOND is the unit used to measure, store, and trade it. Current-body level and stats are the vertical-slice progression baseline.
 
 ### Product Shape
 
@@ -44,7 +44,7 @@ When the player is offline, a bounded AI agent can continue controlling the char
 | Network runtime | Photon Fusion 2, Server Mode dedicated for production |
 | AI gateway | `api.dos.ai` / Go LLM Gateway for model calls and safety |
 | Phase 1 NPC dialogue | Convai SDK for MVP NPC dialogue |
-| Chain integration | DOS Chain via thirdweb for wallet, NFT, and SECOND token surfaces |
+| Chain integration | DOS Chain via thirdweb for wallet, NFT, and SECOND surfaces |
 
 ### Current Implementation Snapshot - 2026-05-17
 
@@ -54,10 +54,10 @@ promise that the same UI or tuning will ship.
 | Area | Current State |
 | ---- | ---- |
 | Unity scene | `ZoneTest_Hub` can enter Play Mode and spawn a Fusion local player. |
-| Player visible stats | The prototype HUD shows level, HP, energy, attack, defense, agility, BodyTime, lifecycle, SECOND balance, and reincarnation count. |
-| Player profile sync | Unity loads the Nakama profile and applies current-body stats, BodyTime, lifecycle, SECOND balance, reincarnation count, and visual key to the authoritative local `NetworkPlayer`. |
+| Player visible stats | The prototype HUD shows level, HP, energy, attack, defense, agility, prototype `BodyTime` / TIME, lifecycle, SECOND balance, and reincarnation count. |
+| Player profile sync | Unity loads the Nakama profile and applies current-body stats, prototype `BodyTime` / TIME, lifecycle, SECOND balance, reincarnation count, and visual key to the authoritative local `NetworkPlayer`. |
 | Default player body | New profiles start at level 1 with vitality 10, force 8, agility 8, focus 8, resilience 8, health 100, energy 50, attack 10, and defense 5. |
-| BodyTime loop | Nakama supports prototype earn, spend, drain, duplicate-earn cooldown, zero-time death, and activity logging. |
+| TIME loop | Nakama supports prototype earn, spend, drain, duplicate-earn cooldown, zero-time death, and activity logging. Current implementation field names still use `BodyTime`. |
 | Reincarnation loop | Nakama supports dead-body reincarnation into a fresh prototype body. The current test balance is 7 days of SECOND and the current test cost is 5 days. |
 | NPC/actor profiles | NPC-like actors can have their own body, stats, traits, soul, memory, policy, runtime, and activity records. |
 | Prototype NPC brain | `_AgentNPC_Prototype` can patrol, speak, and use the gateway decision path with deterministic fallback. |
@@ -68,17 +68,18 @@ promise that the same UI or tuning will ship.
 
 ## 3. Target Fantasy
 
-The player fantasy is to become a Hunter who survives inside a hostile synthetic-body economy where bodies are replaceable, consciousness is durable, and time itself is liquid.
+The player fantasy is to become a Hunter who survives inside a Frame economy where bodies are replaceable, identity imprints are durable, TIME is a life medium, and SECOND is the measurable unit of that life.
 
 The player should feel:
 
 - Their character continues to matter even when they log off.
 - Death has weight because the body is gone, not because the account is erased.
 - Level and stats give readable ARPG growth while deeper body progression is redesigned later.
-- Time is not just a timer. It is life, pressure, and a resource.
-- BodyTime and SECOND can become contested resources. Future combat or zone
-  rules may let players loot time from other users, but only through validated
-  server-authoritative outcomes.
+- TIME is not just a timer. It is the material form of life pressure and a
+  resource.
+- SECOND can become contested because it measures and transfers TIME. Future
+  combat or zone rules may let players loot measured TIME from other users, but
+  only through validated server-authoritative outcomes.
 - NPCs and agents are world citizens, not detached chatbots.
 - The world is dangerous because all gameplay state is server-authoritative and consequences persist.
 
@@ -86,7 +87,7 @@ The player should feel:
 
 ## 4. Target Audience
 
-SECOND SPAWN targets mid-core to hardcore PC players who enjoy ARPG combat, persistent progression, and social online worlds, but may not have time for traditional MMO grind schedules.
+SECOND SPAWN targets mid-core PC players who enjoy ARPG combat, visible system progression, and social online worlds, but may not have time for traditional MMO grind schedules.
 
 Primary audience traits:
 
@@ -109,10 +110,10 @@ Likely turn-offs:
 
 | Priority | Pillar | Meaning |
 | ---- | ---- | ---- |
-| 1 | Server-authoritative gameplay | The public open-source game assumes attackers can read the code. The server owns movement, combat, inventory, economy, BodyTime, reincarnation, and world state. |
+| 1 | Server-authoritative gameplay | The public open-source game assumes attackers can read the code. The server owns movement, combat, inventory, TIME / SECOND economy, reincarnation, and world state. |
 | 2 | AI agent 24/7 | When the player is offline, the character can keep acting through a bounded AI agent with the same capability and rate-limit constraints. |
-| 3 | Reincarnation, not respawn | Death destroys the body. Consciousness transfers to a new synthetic body with partial continuity and meaningful reset. |
-| 4 | Time is life, time is money | `BodyTime` is both survival pressure and a spendable gameplay resource tied to the current body. |
+| 3 | Reincarnation, not respawn | Death destroys the Frame. A surviving neural imprint transfers to a new Frame with partial continuity and meaningful reset. |
+| 4 | TIME is life, SECOND is money | TIME is the life medium bodies need to live. SECOND is the unit and currency used to measure, store, transfer, spend, and reward TIME. |
 | 5 | LLM as world citizen, not chatbot | LLM-driven NPCs and agents are grounded in world state, emit structured intent, and never mutate authoritative game state directly. |
 
 ### Anti-Pillars
@@ -134,8 +135,10 @@ SECOND SPAWN is not:
 SECOND SPAWN takes place in the MetaDOS universe around the 2050 era, after
 DOS Labs proved that human life-time, weapon testing, Hunters, and global
 spectacle could become one economy. This is not another MetaDOS battle royale.
-It explores the next layer of the same world: synthetic bodies, consciousness
-continuity, offline agents, NPC societies, and a contested time economy.
+MetaDOS is the tournament layer of the same technology stack: humans enter AMB
+cocoons, control Hunter Frames, and compete for SECOND. SECOND SPAWN
+is what happens when that cocoon, Frame, agent-brain, and TIME economy stops
+being only spectacle and becomes the survival infrastructure of the real world.
 
 The world should feel readable, energetic, and progression-driven rather than
 overly bleak. The core audience is closer to fans of system, ranking,
@@ -152,7 +155,7 @@ Tone requirements:
 
 - Bright near-future sci-fi with high-stakes progression, not bleak dystopian
   survival.
-- System-story readability: ranks, gates, quests, BodyTime, reincarnation,
+- System-story readability: ranks, gates, quests, TIME, SECOND, reincarnation,
   offline-agent policy, and NPC knowledge should feel like legible rules the
   player can learn and exploit.
 - Manga, manhwa, and manhua progression fantasy references are useful for
@@ -163,8 +166,9 @@ Tone requirements:
 - Death and reincarnation should feel costly and dramatic, but not oppressive.
 - AI NPC society should feel socially alive, colorful, and system-aware while
   still bounded by game rules.
-- Nibirium may appear as a lore material, energy source, and historical cause,
-  but not as XP, cultivation tiers, rituals, or vertical-slice progression.
+- Nibiru may appear as the historical event and source material behind TIME,
+  but TIME is the player-facing life medium. Do not add Nibiru-derived XP,
+  cultivation tiers, rituals, or vertical-slice progression.
 
 ### MetaDOS Continuity / Timeline
 
@@ -172,33 +176,44 @@ This timeline is inherited from the MetaDOS GDD and adapted for SECOND SPAWN:
 
 | Year | Anchor | SECOND SPAWN Relevance |
 | ---- | ---- | ---- |
-| 2030 | A meteorite called Nibiru explodes in an airburst over Canada, changing the environment in the affected region. | Nibirium enters the world as a rare element tied to disaster, extraction, and corporate control. |
-| 2030s | DOS Labs becomes the only legitimate company able to manage and exploit Nibirium. | DOS Labs gains the leverage to reshape energy, biotech, warfare, and public policy. |
-| 2040 | DOS Labs discovers that Nibirium can prolong human life through AMB technology, using CT-like body scanning and an under-arm biological monitor that displays remaining life time. | Life-time becomes measurable, visible, tradable, and socially weaponized. |
+| 2030 | A meteorite called Nibiru explodes in an airburst over Canada, changing the environment in the affected region. | The Nibiru event becomes the origin point for TIME research, disaster recovery, extraction, and corporate control. |
+| 2030s | DOS Labs becomes the only legitimate company able to manage and exploit Nibiru-derived material. | DOS Labs gains the leverage to reshape energy, biotech, warfare, and public policy. |
+| 2040 | DOS Labs discovers that Nibiru-derived material can sustain human life through AMB technology, using CT-like body scanning and an under-arm biological monitor that displays remaining life time. | TIME becomes a measurable life medium, and SECOND becomes the unit used to count it. |
 | 2040s | Avax wants the life-extension technology to broadly benefit humanity. Dr.J betrays him, monopolizes DOS Labs, and turns the corporation toward profit and influence. Avax survives and escapes with core technologies. | The world inherits a fracture between open survival technology and corporate life-time control. |
-| 2050 | DOS Labs creates MetaDOS, the Tournament of the Century, held every 4 years and watched globally. Winners can receive prolonged life time, money, fame, or other resources. DOS Labs uses the spectacle to test weapons and technology, profit, expand influence, and recruit exceptional fighters. | MetaDOS normalizes time-as-prize, Hunters, weapon trials, public combat entertainment, and SECOND as the final time-linked ticker. |
-| After MetaDOS | SECOND SPAWN begins from the consequences of that system rather than repeating the tournament format. | The focus moves from arena survival to persistent bodies, reincarnation, AI agents, NPC societies, and contested zones. |
+| 2050 | DOS Labs creates MetaDOS, the Tournament of the Century, held every 4 years and watched globally. Players enter AMB cocoons and control Hunter Frames in a tournament layer where winners can receive prolonged life time, money, fame, or other resources. | MetaDOS normalizes SECOND as prize, currency, and measured life-time, while training Hunter Frames and agent brains through spectacle. |
+| After MetaDOS | SECOND SPAWN begins from the consequences of that system rather than repeating the tournament format. | The focus moves from cocoon-controlled tournament Frames to real-world Frames, reincarnation, AI agents, NPC societies, and contested zones. |
 
 ### Key Lore Anchors
 
-- Synthetic bodies: Replaceable vessels with finite operating life.
-- Consciousness transfer: The sci-fi basis of reincarnation.
-- Hunters: Player-controlled or agent-controlled characters who fight and survive.
-- Nibirium: The meteorite-derived element behind clean nuclear-scale energy and
-  life-extension breakthroughs. In SECOND SPAWN it is lore and infrastructure,
-  not the current progression currency.
-- DOS Labs: The corporate power that industrialized Nibirium, AMB life-time
+- Frames: Bio-synthetic human bodies grown to hold TIME, host an agent brain,
+  and accept a neural imprint. Frames are not pure robots.
+- Actor bodies: Any Frame or biological vessel represented as a world actor,
+  including NPC bodies, player-inhabited bodies, offline-agent bodies, and
+  OpenClaw-connected social actors.
+- Hunter Frames: Combat-focused Frames registered, trained, or derived from the
+  MetaDOS tournament system. Not every Frame is a Hunter.
+- Neural imprint transfer: The sci-fi basis of reincarnation.
+- Nibiru-derived material: The hidden source behind clean nuclear-scale energy,
+  TIME extraction, and life-extension breakthroughs. Public-facing docs should
+  prefer Nibiru, TIME, and SECOND instead of adding a separate mineral name.
+  This material is lore and infrastructure, not the current progression
+  currency.
+- DOS Labs: The corporate power that industrialized TIME extraction, AMB life-time
   monitoring, MetaDOS spectacle, weapons testing, and Hunter recruitment.
 - Avax and Dr.J: A founding fracture in DOS Labs. Their conflict frames the
   larger question of whether life-extension and consciousness technologies are
   public survival tools or corporate control mechanisms.
-- AMB life-time monitor: The MetaDOS-era technology that made remaining life
-  visible and governable, adapted into SECOND SPAWN's BodyTime pressure.
-- SECOND token: Account-level time reserve denominated in seconds. The token is used for reincarnation costs and must stay distinct from current-body `BodyTime` unless a future ADR explicitly merges them.
-- Time loot: A future PvP or contested-zone rule can allow BodyTime or SECOND
-  to be taken from another user after server-validated combat, escrow, or zone
-  events. Clients, LLMs, and connected agents must never self-report or grant
-  this loot.
+- AMB cocoon and life-time monitor: The MetaDOS-era technology that let humans
+  remain in controlled pods while operating Hunter Frames and seeing remaining
+  life-time as a countable system value.
+- TIME: The life medium humans and Frames need to operate. TIME is treated
+  like matter or fuel in this universe, not just an abstract clock.
+- SECOND: The unit, currency, and tokenized measure of TIME. Reincarnation,
+  rewards, costs, and loaded body life should be expressed in SECOND.
+- Time loot: A future PvP or contested-zone rule can allow measured TIME,
+  denominated in SECOND, to be taken from another user after server-validated
+  combat, escrow, or zone events. Clients, LLMs, and connected agents must never
+  self-report or grant this loot.
 - Hunter cosmetics, cards, badges, weapons, and pets: MetaDOS inheritance
   candidates for account, NFT, cosmetic, and collection layers. They should not
   bypass server authority or current economy rules.
@@ -206,16 +221,21 @@ This timeline is inherited from the MetaDOS GDD and adapted for SECOND SPAWN:
 ### SECOND SPAWN Story Premise
 
 After MetaDOS, DOS Labs no longer only sells spectacle. It has shown the world
-that life-time can be measured, wagered, rewarded, and used to recruit the
-strongest survivors. SECOND SPAWN asks what happens when the same world pushes
-beyond human bodies.
+that TIME can be measured, wagered, rewarded, and used to recruit the strongest
+survivors. SECOND SPAWN asks what happens when the same world pushes beyond
+cocoon play and lets Frames, including Hunter-derived combat Frames,
+become real-world survival infrastructure.
 
-The player is a durable consciousness placed into an NPC-like synthetic body.
-The body has finite `BodyTime`, combat stats, possible traits, and partial
-world context. The player can act directly while online, then leave a bounded
-offline agent to continue operating under policy while away. Death destroys the
-body, not the account. Reincarnation creates a new body through a SECOND-gated
-flow, with only explicitly designed identity layers carrying forward.
+A Frame is not a character slot. It is a TIME-powered bio-synthetic human body
+with its own agent brain and capacity for a neural imprint. A human in an AMB
+cocoon can override and train a compatible Frame. When the human disconnects,
+the Frame can continue through bounded agent behavior. A Hunter Frame is the
+combat/tournament subset registered or derived from MetaDOS. Outside the
+tournament layer, many other Frames exist as civilians, workers, companions,
+merchants, or social citizens. When a Frame dies, the Second Spawn Protocol
+transfers the surviving neural imprint, agent memory, policy, and identity
+signature into a new compatible Frame. Reincarnation is data transfer, not
+spiritual resurrection.
 
 The narrative tension is practical, not mystical: if bodies can be manufactured,
 inhabited, retired, and replaced, then every faction wants to decide who gets a
@@ -228,28 +248,54 @@ Initial slice framing should remain flexible, but the first playable arc can
 use these hooks:
 
 - First hub: A guarded settlement or converted body facility near a contested
-  Nibirium-influenced zone, where surviving humans, synthetic citizens, Hunters,
+  TIME-rich Nibiru-influenced zone, where surviving humans, Frame citizens, Hunters,
   technicians, and agent-run NPCs trade quests, rankings, rumors, and survival
   services.
-- First body: The player wakes inside a synthetic body that was prepared,
+- First Frame: The player wakes inside a Frame that was prepared,
   recovered, or reassigned by the hub. The exact source remains open, but it
-  should make the player feel they inherited a vessel with limits rather than
-  creating a blank hero.
-- Why BodyTime matters: The body's operating life is visible, limited, and
-  spendable. It is both a survival clock and a tactical resource for services,
-  recovery, access, or risk decisions.
+  should make the player feel they inherited a vessel with an agent brain,
+  limits, and possible history rather than creating a blank hero. It may be
+  Hunter-derived for combat readability, but not every Frame in the world should
+  be called a Hunter.
+- Why TIME matters: The body's operating life is visible, limited, and measured
+  in SECOND. TIME is both a survival medium and a tactical resource for
+  services, recovery, access, or risk decisions.
 - What NPCs know: Hub NPCs understand that MetaDOS made life-time public and
-  valuable. Some remember DOS Labs propaganda, some distrust synthetic bodies,
+  valuable. Some remember DOS Labs propaganda, some distrust Frames,
   some treat offline agents as workers, and some fear consciousness transfer as
   identity theft.
 - Faction tension: DOS Labs loyalists, Avax-aligned technologists, independent
   Hunters, local settlement authorities, black-market body brokers, and
   self-directed AI/NPC communities can all want different rules for bodies,
-  memory, SECOND, and BodyTime.
+  memory, TIME, and SECOND.
 - First questline: The player proves the new body can survive, recovers
-  BodyTime or body records from a danger area, meets an NPC who questions the
+  TIME or body records from a danger area, meets an NPC who questions the
   player's identity, and sees evidence that offline agents can help or make
   costly mistakes.
+
+### First 30 Minutes Narrative
+
+The first playable experience should teach the premise through action, not a
+lore wall:
+
+1. The player wakes in a hub clinic, body facility, or settlement as a Frame
+   that has just accepted a neural imprint.
+2. A hub NPC confirms the player is not in a normal MetaDOS match. MetaDOS was
+   the tournament layer. This is the real-world layer using the same AMB, Frame,
+   TIME, SECOND, and agent-brain stack.
+3. The UI shows TIME measured in SECOND. The player learns that the Frame is
+   alive, limited, and running on loaded TIME.
+4. The player enters a nearby danger zone, fights one simple enemy, and earns
+   SECOND or restores a small amount of TIME.
+5. The player spends TIME once on a useful service, shortcut, repair,
+   stabilization, or objective interaction.
+6. The player meets an NPC or agent-run Frame who hints that some Frames had
+   lives, policies, or agent memories before a player ever entered them.
+7. A controlled death or near-death moment introduces the Second Spawn Protocol:
+   the Frame is lost, but the surviving imprint and agent memory can move into a
+   new compatible Frame through a SECOND-gated flow.
+8. Before logout, the player sets a basic offline-agent policy so the Frame can
+   continue under bounded server-validated behavior.
 
 ---
 
@@ -260,13 +306,13 @@ use these hooks:
 1. Move through a top-down ARPG space.
 2. Read enemy threats and positioning.
 3. Attack, dodge, reposition, and use abilities.
-4. Earn combat rewards such as loot, level/stat progress, BodyTime, or quest progress.
-5. Make tactical spend decisions around health, BodyTime, supplies, and objectives.
+4. Earn combat rewards such as loot, level/stat progress, SECOND, TIME recovery, or quest progress.
+5. Make tactical spend decisions around health, TIME, supplies, and objectives.
 
 ### Session Loop
 
 1. Enter a hub, zone, or dungeon.
-2. Pick a goal: quest step, dungeon room, level/stat progress, BodyTime recovery, NPC interaction, or agent policy adjustment.
+2. Pick a goal: quest step, dungeon room, level/stat progress, TIME recovery, NPC interaction, or agent policy adjustment.
 3. Fight and interact inside a server-authoritative zone.
 4. Return to the hub, upgrade, adjust policy, or reincarnate if needed.
 5. Log out with an offline-agent policy that controls what the AI may attempt.
@@ -302,7 +348,7 @@ Open feel decisions:
 
 ## 8. Player Lifecycle
 
-The player is not a blank avatar shell. The player is a durable consciousness profile that enters a current NPC-like synthetic body at spawn. That body can already have its own body-level constraints, stat bias, characteristics, memory hooks, soul imprint, BodyTime, lifecycle state, and agent runtime state.
+The player is not a blank avatar shell. The player is a durable consciousness profile that enters a current NPC-like Frame at spawn. That Frame can already have its own body-level constraints, stat bias, characteristics, memory hooks, neural imprint, loaded TIME measured in SECOND, lifecycle state, and agent runtime state. If the Frame is combat-registered or derived from the MetaDOS tournament system, it can be treated as a Hunter Frame; otherwise it remains a broader actor body.
 
 The design must support many NPCs and many player-controlled bodies using the same broad actor-profile shape. The difference is ownership and authority: a player may inhabit and control one current body, while world NPCs, offline agents, and OpenClaw-connected actors are governed by their own policy and validation paths.
 
@@ -315,7 +361,7 @@ The character is split into durable identity and current-body state.
 | Agent policy | Player-approved offline behavior limits | Yes |
 | Memory records | Compact curated memories for LLM context | Yes, with decay rules later |
 | Agent runtime | Bounded operational counters, recent activity, fallback tracking | Yes, bounded |
-| Body profile | Current synthetic body, visual archetype, BodyTime, lifecycle | No |
+| Body profile | Current Frame or biological body, visual archetype, loaded TIME, lifecycle | No |
 | Body characteristics | Current-body tendencies such as curiosity, courage, discipline, aggression, and sociability | Mostly no |
 | Character stats | Current body combat and movement stats | Mostly no |
 | Equipment and local inventory | Body-bound owned or equipped state | Reset or reconciled through escrow rules |
@@ -328,7 +374,7 @@ Every important NPC-like actor should eventually resolve to a bundle with clear 
 
 | Bundle Piece | Purpose |
 | ---- | ---- |
-| `BodyProfile` | Current vessel, archetype, visual key, lifecycle, BodyTime, and body-bound state |
+| `BodyProfile` | Current vessel, archetype, visual key, lifecycle, loaded TIME, and body-bound state |
 | `CharacterStats` | Combat, movement, health, energy, attack, defense, and level values |
 | `CharacterTraits` | Personality and behavior tendencies for agent decisions |
 | `BodyStory` | Short origin, role, conflict, and rumor hooks for the specific body |
@@ -342,7 +388,7 @@ Server-side systems decide which parts are editable, inherited, generated, or re
 
 Prototype body-model decisions:
 
-- A new account spawns into a server-selected NPC-like synthetic body from the
+- A new account spawns into a server-selected NPC-like Frame from the
   approved body archetype pool.
 - Each body can carry pre-existing story hooks, traits, stat bias, weapon
   visual, soul defaults, and a seed memory before the player enters it.
@@ -362,13 +408,13 @@ Open body-model decisions:
 
 Death is not a respawn penalty. It is the loss of the current body.
 
-Death can be caused by combat failure, BodyTime reaching zero, or offline-agent failure. When the body dies, the player enters a reincarnation flow:
+Death can be caused by combat failure, loaded TIME reaching zero, or offline-agent failure. When the body dies, the player enters a reincarnation flow:
 
 1. The current body becomes dead or reincarnating.
 2. The server persists required final state.
-3. Reincarnation cost is checked through the SECOND token or a special item path.
-4. A new synthetic body is created.
-5. Carryover rules are applied.
+3. Reincarnation cost is checked through SECOND or a special item path.
+4. A new compatible Frame is created or assigned.
+5. The surviving neural imprint, agent memory, policy, and selected identity layers are transferred under carryover rules.
 6. The player returns to a valid hub or start location.
 
 ### Known Rules
@@ -376,8 +422,8 @@ Death can be caused by combat failure, BodyTime reaching zero, or offline-agent 
 - Body death must be server-authoritative.
 - LLMs and clients cannot trigger successful reincarnation directly.
 - Equipment, quest state, location, and current body stats reset or reconcile according to future system rules.
-- SECOND token is denominated in seconds and is distinct from current-body `BodyTime` unless a future ADR explicitly merges them.
-- Reincarnation should consume enough SECOND to create a new playable body-time package.
+- TIME is the life medium. SECOND is the unit and currency used to measure, store, and transfer TIME.
+- Reincarnation should consume enough SECOND to create a new playable TIME package.
 - Candidate reincarnation package is 5-7 days of playable body lifetime. The vertical-slice recommendation is 7 days by default, then tune toward 5 days only if early testing shows the loop is too forgiving.
 - Current prototype values are intentionally test-only: 7 days starting SECOND
   balance and 5 days reincarnation cost.
@@ -385,32 +431,39 @@ Death can be caused by combat failure, BodyTime reaching zero, or offline-agent 
 ### Open Reincarnation Decisions
 
 - Default reincarnation package: 5 days or 7 days: [TODO: JOY input]
-- Whether the SECOND cost directly seeds the new body's `BodyTime`, or only gates body creation while `BodyTime` is assigned separately: [TODO: JOY input]
-- SECOND token source and sink design beyond reincarnation: [TODO: JOY input]
+- Whether the SECOND cost directly seeds the new body's TIME, or only gates body creation while TIME is assigned separately: [TODO: JOY input]
+- SECOND source and sink design beyond reincarnation: [TODO: JOY input]
 - Faction reputation carryover: [TODO: JOY input]
 - Body selection and candidate reroll rules: [TODO: JOY input]
 - Memory decay across bodies: [TODO: JOY input]
-- Reincarnation grace period after zero `BodyTime`: [TODO: JOY input]
+- Reincarnation grace period after zero TIME: [TODO: JOY input]
 
 ---
 
-## 10. BodyTime
+## 10. TIME and SECOND
 
-`BodyTime` is the current body's remaining operating life and a spendable tactical resource.
+TIME is the life medium that humans and Frames need to live. SECOND is
+the unit, currency, and tokenized measure used to store, transfer, reward, and
+spend TIME. The current prototype still uses `BodyTime` in code and debug UI,
+but player-facing docs should treat TIME and SECOND as the canon terms.
+
+Canonical relationship:
+
+> TIME is the medium. SECOND is how the world counts it.
 
 Core rules:
 
-1. Each active body has a `BodyTime` value.
-2. `BodyTime` changes are server-authoritative.
-3. `BodyTime` can decrease in danger states or other approved contexts.
-4. `BodyTime` can be earned from approved combat, objective, or world sources.
-5. `BodyTime` can be spent on selected services or survival actions.
-6. Reaching zero `BodyTime` triggers body death and reincarnation flow.
-7. Offline agents interact with `BodyTime` only through player policy and validated intents.
+1. Each active Frame has loaded TIME measured in SECOND.
+2. TIME / SECOND changes are server-authoritative.
+3. Loaded TIME can decrease in danger states or other approved contexts.
+4. SECOND can be earned from approved combat, objective, or world sources.
+5. Loaded TIME can be spent on selected services or survival actions.
+6. Reaching zero loaded TIME triggers body death and reincarnation flow.
+7. Offline agents interact with TIME only through player policy and validated intents.
 
 Vertical slice direction:
 
-- Show one BodyTime meter.
+- Show one TIME meter measured in SECOND.
 - Drain time only in a designated danger area or dungeon room first.
 - Grant time from one small objective or enemy source.
 - Spend time through one useful service.
@@ -425,13 +478,13 @@ Current prototype status:
 - Real enemy rewards and player time-loot are still future server-authoritative
   rules, not client-side grants.
 
-Open BodyTime decisions:
+Open TIME / SECOND decisions:
 
 - Drain contexts beyond danger zones: [TODO: JOY input]
 - Earn sources and relative rates: [TODO: JOY input]
 - Spend catalog and costs: [TODO: JOY input]
 - Transfer rules between players: [TODO: JOY input]
-- Whether `BodyTime` can ever convert to or from SECOND token: [TODO: JOY input]
+- Whether wallet SECOND can directly top up loaded TIME, and under what anti-abuse limits: [TODO: JOY input]
 
 ---
 
@@ -448,7 +501,7 @@ Design rules:
 - Stats should support readable ARPG combat first: health, energy, attack,
   defense, speed, and survivability.
 - Advanced body or soul progression is deferred until a fresh design pass.
-- Do not implement cultivation tiers, Nibirium XP, tier-up rituals, or
+- Do not implement cultivation tiers, Nibiru-derived XP, tier-up rituals, or
   Cultivation Master progression in the current slice.
 
 Open progression decisions:
@@ -542,7 +595,7 @@ Allowed first intent types:
 Design constraints:
 
 - The agent inherits the player's capability cap and rate limits.
-- The agent cannot spend BodyTime on irreversible actions unless policy allows it.
+- The agent cannot spend TIME on irreversible actions unless policy allows it.
 - Agent death is body death and triggers reincarnation like player death.
 - The return activity log is essential. If the player cannot understand what happened offline, the feature will feel invisible or unsafe.
 
@@ -550,7 +603,7 @@ Open offline-agent decisions:
 
 - Default agent policy values: [TODO: JOY input]
 - Agent decision frequency and budget: [TODO: JOY input]
-- Safety threshold for stopping when BodyTime is low: [TODO: JOY input]
+- Safety threshold for stopping when loaded TIME is low: [TODO: JOY input]
 - How much offline progress is acceptable before it feels exploitative: [TODO: JOY input]
 
 ---
@@ -562,7 +615,7 @@ LLM-driven NPCs are world citizens with memory and intent, not authority.
 Hard boundaries:
 
 - LLM output is intent, not state.
-- LLMs cannot grant items, gold, XP, BodyTime, level/stat progress, quest completion, or token rewards directly.
+- LLMs cannot grant items, gold, XP, TIME, SECOND, level/stat progress, quest completion, or token rewards directly.
 - Unity client never stores provider API keys.
 - All provider calls go through server-owned paths.
 - Prompt injection defense, rate limits, memory budget caps, and moderation checks are required.
@@ -608,7 +661,7 @@ Disallowed until later:
 
 - Inventory mutation.
 - Economy mutation.
-- BodyTime spending.
+- TIME spending.
 - Combat authority.
 - Quest completion authority.
 
@@ -634,7 +687,7 @@ Durable progression:
 Body-bound progression:
 
 - Current body level and stats.
-- Current BodyTime.
+- Current loaded TIME.
 - Current local equipment state.
 - Current zone and dungeon run.
 - Current short-term quest state where reset is intended.
@@ -642,7 +695,7 @@ Body-bound progression:
 Progression should serve three player motivations:
 
 - Autonomy: choose active play, delegation, risk, and reincarnation timing.
-- Competence: master combat, level/stat growth, and BodyTime tradeoffs.
+- Competence: master combat, level/stat growth, and TIME tradeoffs.
 - Relatedness: build relationships with players, NPCs, and agents.
 
 ---
@@ -653,35 +706,35 @@ The economy is not fully designed. This GDD only defines resource roles and boun
 
 | Resource | Meaning | Current Design Boundary |
 | ---- | ---- | ---- |
-| `BodyTime` | Current body's remaining operating life and spendable tactical resource | Body-bound, lost on body death unless future rules say otherwise |
-| SECOND token | Account-level time reserve denominated in seconds, used for reincarnation | Account or wallet-level, exact source and sink design undecided |
+| TIME | Life medium loaded into humans and Frames, measured in SECOND | Body-bound once loaded, lost on body death unless future rules say otherwise |
+| SECOND | Unit, currency, and tokenized measure of TIME, used for rewards and reincarnation | Account or wallet-level, exact source and sink design undecided |
 | Loot and supplies | Tactical power and run support | Server-owned, no client-granted drops |
 | NFT assets | Ownership-linked skins, weapons, pets | Bound through DOS Chain and escrow rules |
 
 Design constraints:
 
-- Do not merge `BodyTime` and SECOND token without a future ADR.
+- Do not let clients, LLMs, or connected agents mutate TIME or SECOND directly.
 - Do not create direct pay-to-win power loops.
 - Do not let LLMs mutate economy state.
 - Do not place chain or wallet mutation authority in the Unity client.
-- Keep vertical slice economy small: one BodyTime earn source, one BodyTime spend sink, and test-token reincarnation.
+- Keep vertical slice economy small: one SECOND earn source, one TIME spend sink, and test-token reincarnation.
 
-### SECOND and BodyTime Relationship
+### TIME and SECOND Relationship
 
-`SECOND` and `BodyTime` both use the fantasy of time, but they operate at different layers:
+TIME and SECOND are two views of the same life economy:
 
-- `SECOND` is account-level reserve and reincarnation fuel.
-- `BodyTime` is current-body operating life and tactical pressure.
-- Reincarnation consumes SECOND and results in a new body with a playable `BodyTime` package.
+- TIME is the life medium that keeps a body operating.
+- SECOND is the unit and currency used to count, transfer, reward, and spend TIME.
+- Reincarnation consumes SECOND and results in a new body with a playable TIME package.
 - The working package range is 5-7 days. Seven days is the recommended vertical-slice default because it gives new players and offline-agent behavior enough room for testing.
-- Direct conversion between `SECOND` and `BodyTime` should not exist until the anti-abuse and economy model is explicit.
+- Direct wallet-to-body TIME top-up should not exist until the anti-abuse and economy model is explicit.
 
 Open economy decisions:
 
 - Default reincarnation package: 5 days or 7 days of playable lifetime: [TODO: JOY input]
-- Whether SECOND directly seeds BodyTime or only gates body creation: [TODO: JOY input]
-- SECOND token earning and sink design beyond reincarnation: [TODO: JOY input]
-- BodyTime earn and spend values: [TODO: JOY input]
+- Whether SECOND directly seeds body TIME or only gates body creation: [TODO: JOY input]
+- SECOND earning and sink design beyond reincarnation: [TODO: JOY input]
+- TIME earn, spend, drain, and transfer values: [TODO: JOY input]
 - Marketplace design: [TODO: JOY input]
 
 ### Loot, Items, and Cosmetics
@@ -718,7 +771,7 @@ UI must make the signature systems legible before adding cosmetic depth.
 Required vertical-slice UX flows:
 
 - First login and character/profile bootstrap.
-- BodyTime HUD and low-time warning.
+- TIME HUD measured in SECOND and low-time warning.
 - Death and reincarnation screen.
 - SECOND cost confirmation for reincarnation.
 - Offline-agent policy setup.
@@ -728,18 +781,18 @@ Required vertical-slice UX flows:
 
 First-time player experience:
 
-1. Spawn in a safe hub by entering a current NPC-like synthetic body.
+1. Spawn in a safe hub by entering a current NPC-like Frame.
 2. Learn movement and camera.
-3. See BodyTime but do not immediately panic.
-4. Enter one danger area where BodyTime matters.
-5. Fight one enemy, earn or spend time once.
+3. See TIME measured in SECOND but do not immediately panic.
+4. Enter one danger area where TIME matters.
+5. Fight one enemy, earn SECOND or spend TIME once.
 6. Meet one NPC or boss dialogue moment.
 7. Experience a controlled death or reincarnation tutorial.
 8. Set a basic offline-agent policy before logging out.
 
 Accessibility requirements for future passes:
 
-- Readable BodyTime warnings beyond color alone.
+- Readable TIME warnings beyond color alone.
 - Remappable controls.
 - Subtitle support for NPC dialogue and voice.
 - UI scale options.
@@ -753,7 +806,7 @@ Current direction:
   post-disaster environments, and stylized readability for production speed.
 - Environment: ruined high-tech zones, synthetic-body facilities, biotech decay, hub town contrast.
 - Character readability: silhouettes and ability effects must stay readable from top-down camera distance.
-- Audio: tense biotech/sci-fi ambience, clear combat hits, distinct BodyTime warning sounds, restrained AI/NPC voice use.
+- Audio: tense biotech/sci-fi ambience, clear combat hits, distinct TIME warning sounds, restrained AI/NPC voice use.
 
 Open art/audio decisions:
 
@@ -769,7 +822,7 @@ The first slice should list content volume explicitly so scope cannot silently i
 | Content Type | Target Count | Notes |
 | ---- | ---- | ---- |
 | Hub area | 1 | Small safe zone with NPC, vendor or shrine, reincarnation entry point |
-| Danger zone | 1 | BodyTime drain is visible here |
+| Danger zone | 1 | TIME drain is visible here |
 | Dungeon | 1 | Short instance with one readable objective |
 | Player class | 1 | One playable body archetype set, server-selected from the prototype pool |
 | Basic enemies | 1-2 | Enough to test combat and rewards |
@@ -820,8 +873,8 @@ In scope:
 - One dungeon instance.
 - One boss with LLM dialogue.
 - One linear questline of 3-5 quests.
-- Reincarnation MVP: die, spend test SECOND token, new body, reset selected state.
-- BodyTime MVP: meter, one earn loop, one spend loop, zero-time death.
+- Reincarnation MVP: die, spend test SECOND, new body, reset selected state.
+- TIME MVP: meter measured in SECOND, one earn loop, one spend loop, zero-time death.
 - Offline AI agent MVP: farm one designated area and show activity log.
 - Basic level and stat progression for the current body.
 - NFT Hunter skin equip plus escrow on test net.
@@ -836,16 +889,16 @@ Already proven in prototype:
 
 - Fusion player spawn and movement in `ZoneTest_Hub`.
 - Profile-backed player stats visible on the prototype HUD.
-- Nakama profile, body, soul, memory, policy, runtime, activity, BodyTime, and
-  reincarnation storage paths.
+- Nakama profile, body, soul, memory, policy, runtime, activity, prototype
+  `BodyTime` / TIME, and reincarnation storage paths.
 - Prototype NPC/agent brain loop with gateway model decision and deterministic
   fallback.
-- BodyTime and reincarnation smoke path through debug controls.
+- TIME and reincarnation smoke path through debug controls.
 
 Still required before this feels like a game:
 
 - First server-authoritative combat damage path.
-- First enemy or objective that grants BodyTime.
+- First enemy or objective that grants SECOND or restores TIME.
 - First spend sink that is part of normal play instead of debug UI.
 - First death/reincarnation presentation flow.
 - First questline, dungeon, boss, and grounded dialogue beat.
@@ -890,7 +943,7 @@ Before designing or implementing a feature, contributors should ask:
 
 1. Does this preserve server authority?
 2. Can the offline AI agent interact with it through bounded validated intent?
-3. Does it strengthen reincarnation, BodyTime, level/stat progression, or meaningful ARPG combat?
+3. Does it strengthen reincarnation, TIME / SECOND tradeoffs, level/stat progression, or meaningful ARPG combat?
 4. Does it avoid pay-to-win and direct LLM authority?
 5. Does it fit the one-zone vertical slice before generalizing?
 6. Is the unknown a real design decision that needs `[TODO: JOY input]` instead of invented numbers?
@@ -917,7 +970,7 @@ Useful source documents:
 - Offline AI may feel unsafe if policy controls are too broad or unclear.
 - Reincarnation may feel too punitive if carryover is too low.
 - Reincarnation may feel weightless if carryover is too high.
-- BodyTime may become a nuisance timer if it drains everywhere without interesting spend decisions.
+- TIME may become a nuisance timer if it drains everywhere without interesting spend decisions.
 - Level/stat progression may feel generic if combat and reincarnation do not create meaningful decisions.
 - LLM NPCs may feel like chatbots if they ignore world state, quest state, or memory.
 
@@ -941,9 +994,9 @@ Useful source documents:
 | ---- | ---- |
 | Final public game name | Public launch planning |
 | Default reincarnation package: 5 days or 7 days of playable lifetime | Reincarnation MVP |
-| Whether SECOND directly seeds BodyTime or only gates body creation | Reincarnation MVP |
-| SECOND token sources and sinks beyond reincarnation | Reincarnation MVP |
-| BodyTime drain, earn, spend, transfer, and conversion rules | BodyTime MVP |
+| Whether SECOND directly seeds body TIME or only gates body creation | Reincarnation MVP |
+| SECOND sources and sinks beyond reincarnation | Reincarnation MVP |
+| TIME drain, earn, spend, transfer, and conversion rules | TIME MVP |
 | Future advanced body progression direction | Post-slice brainstorm |
 | Offline-agent default policy and risk threshold | Offline-agent MVP |
 | Hunter NFT integration approach | NFT equip MVP |

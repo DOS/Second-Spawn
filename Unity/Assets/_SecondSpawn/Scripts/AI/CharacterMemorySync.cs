@@ -231,11 +231,12 @@ namespace SecondSpawn.AI
 
         private static void ApplyVisual(NetworkPlayer player, BodyProfileDto body)
         {
-            var equipmentVisualId = body.equipment?.equipment_visual_id ?? EquipmentVisualCatalog.None;
+            var equipmentVisualId = ResolveEquipmentVisualId(body.equipment);
             var visualVariant = ResolveVisualVariant(body, player.VisualVariant);
             var supportsJump = body.animation_capabilities == null || body.animation_capabilities.supports_jump;
+            var supportsRoll = body.animation_capabilities == null || body.animation_capabilities.supports_roll;
 
-            player.ApplyProfileVisual(visualVariant, equipmentVisualId, supportsJump);
+            player.ApplyProfileVisual(visualVariant, equipmentVisualId, supportsJump, supportsRoll);
             var loaders = player.GetComponentsInChildren<LocalVisualPrefabLoader>(includeInactive: true);
             foreach (var loader in loaders)
             {
@@ -250,7 +251,7 @@ namespace SecondSpawn.AI
 
         private static void ApplyEquipment(NetworkPlayer player, BodyProfileDto body)
         {
-            var equipmentVisualId = body.equipment?.equipment_visual_id ?? EquipmentVisualCatalog.None;
+            var equipmentVisualId = ResolveEquipmentVisualId(body.equipment);
             if (equipmentVisualId == EquipmentVisualCatalog.None)
             {
                 return;
@@ -262,6 +263,21 @@ namespace SecondSpawn.AI
             {
                 loader.ApplyEquipmentVisual(equipmentVisualId);
             }
+        }
+
+        private static int ResolveEquipmentVisualId(EquipmentLoadoutDto equipment)
+        {
+            if (equipment == null)
+            {
+                return EquipmentVisualCatalog.None;
+            }
+
+            if (equipment.equipment_visual_id != EquipmentVisualCatalog.None)
+            {
+                return equipment.equipment_visual_id;
+            }
+
+            return EquipmentVisualCatalog.GetVisualIdForKey(equipment.weapon_visual_key);
         }
 
         private static int ResolveVisualVariant(BodyProfileDto body, int fallback)

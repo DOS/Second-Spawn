@@ -5,7 +5,7 @@
 *Author: Codex*
 *Last Verified: 2026-05-17 against `AGENTS.md`, ADR 0003, ADR 0004, `08-time-as-currency.md`, Cloud Run staging gateway, Nakama runtime smoke, and Unity Play Mode profile sync*
 
-> **Quick reference** - Layer: `Persistence / AI Agent` - Priority: `MVP foundation` - Key deps: `Auth`, `Fusion server authority`, `LLM gateway`, `Time-as-Currency`, `Reincarnation`
+> **Quick reference** - Layer: `Persistence / AI Agent` - Priority: `MVP foundation` - Key deps: `Auth`, `Fusion server authority`, `LLM gateway`, `TIME / SECOND economy`, `Reincarnation`
 
 ---
 
@@ -14,7 +14,7 @@
 This document defines the first durable character data model for SECOND SPAWN:
 
 - account-level player profile
-- current synthetic body profile
+- current Frame / body profile
 - gameplay stats
 - soul/personality profile for the LLM agent
 - compact memory records for agent context
@@ -24,10 +24,11 @@ This document defines the first durable character data model for SECOND SPAWN:
 The goal is to make every active character body feel like a real world actor, without giving the LLM authority over game state.
 
 Important spawn rule: a player does not spawn as an empty account shell. The
-player enters a current body, which may be implemented as an NPC-like synthetic
-body with its own stats, characteristics, soul profile, memory, BodyTime, and
-activity history. Player identity survives across bodies. Body-specific state
-can be replaced on reincarnation or consciousness transfer.
+player enters a current Frame, which may be implemented as an NPC-like
+bio-synthetic human body with its own stats, characteristics, soul profile,
+memory, loaded TIME measured in SECOND, and activity history. Player identity
+survives across Frames. Body-specific state can be replaced on reincarnation or
+neural-imprint transfer.
 
 ---
 
@@ -51,15 +52,15 @@ This preserves:
 | `PlayerProfile` | Yes | Auth / backend | Account identity, display name, wallet link, moderation handles |
 | `SoulProfile` | Yes | Player + backend validation | Personality, long-term goals, behavior style for offline AI |
 | `AgentPolicy` | Yes | Player | What the offline agent is allowed to do while player is away |
-| `BodyProfile` | No | Game server | Current synthetic body, visual archetype, BodyTime, lifecycle |
+| `BodyProfile` | No | Game server | Current Frame or body, visual archetype, loaded TIME, lifecycle |
 | `CharacterStats` | Mostly no | Game server | Combat and movement-affecting numbers for current body |
 | `MemoryRecord` | Yes, with decay | Backend | Small curated memory facts for LLM context |
 | `AgentRuntime` | Yes, across bodies until reset policy exists | Backend | Counters for profile bootstrap, activity, decisions, fallback decisions, and offline time |
 | `AgentActivity` | Yes, bounded recent history | Backend | Compact audit trail for offline-agent sessions and Unity/Nakama bootstrap events |
 
-NPCs and player-controlled bodies use the same body profile shape. The
-difference is authority and ownership: a player-controlled body receives human
-input or offline-agent intent for that player, while an NPC body receives NPC
+NPCs and player-controlled Frames use the same body profile shape. The
+difference is authority and ownership: a player-controlled Frame receives human
+input or offline-agent intent for that player, while an NPC Frame receives NPC
 brain intent. Both still pass through server validation before gameplay state
 changes.
 
@@ -95,7 +96,9 @@ Unity must not send a plain `supabase_user_id` as a trusted account selector.
 
 ## Body Profile
 
-`BodyProfile` represents the current synthetic vessel.
+`BodyProfile` represents the current Frame or body. A Frame is a bio-synthetic
+human body grown to hold TIME, host an agent brain, and accept a neural imprint.
+Hunter Frames are the MetaDOS combat subset; not every Frame is a Hunter.
 
 Required fields:
 
@@ -108,7 +111,7 @@ Required fields:
 | `equipment` | Body-bound starting weapon and local equipment visual ID |
 | `story` | Short body-origin hook used by NPC/player onboarding and agent context |
 | `animation_capabilities` | Visual capability flags such as whether the current model has jump animation |
-| `body_time` | Current BodyTime state |
+| `body_time` | Prototype current TIME state measured in SECOND |
 | `stats` | Current level and combat stats |
 | `lifecycle` | `alive`, `dying`, `reincarnating`, or `dead` |
 | `created_at` | Body creation timestamp |
@@ -193,11 +196,11 @@ Vertical slice minimum:
 | `enabled` | Offline agent on/off |
 | `mode` | `idle`, `farm_safe_area`, `socialize`, or `quest_assist` |
 | `max_session_seconds` | Maximum autonomous session length |
-| `allow_body_time_spend` | Whether the agent may spend BodyTime |
+| `allow_body_time_spend` | Whether the agent may spend TIME |
 | `allow_risky_combat` | Whether the agent may attack high-risk targets |
 | `preferred_activities` | Player-prioritized actions |
 | `forbidden_activities` | Explicitly disallowed actions |
-| `stop_when_body_time_below` | BodyTime safety threshold |
+| `stop_when_body_time_below` | Loaded TIME safety threshold |
 
 The agent must stop or downgrade behavior when policy and world risk conflict.
 
@@ -230,7 +233,7 @@ Minimum data contract:
 Safety rules:
 
 - OpenClaw agents are untrusted external actors from the game server's point of view.
-- They never mutate inventory, currency, quest, BodyTime, level/stats, combat, or world state directly.
+- They never mutate inventory, currency, quest, TIME, SECOND, level/stats, combat, or world state directly.
 - They may produce dialogue, social memory, and structured intent.
 - Nakama owns identity binding, consent, moderation, rate limit, and activity logging.
 - `api.dos.ai` / Go LLM Gateway owns prompt safety and model routing.
@@ -264,7 +267,7 @@ Vertical slice rule: the LLM receives only the top N memories by importance and 
 
 `AgentRuntime` is the compact operational counter block for the offline-agent
 prototype. It is not authoritative gameplay state and must not be used to grant
-items, XP, currency, BodyTime, or level/stat progress without a separate
+items, XP, TIME, SECOND, or level/stat progress without a separate
 server-side rule.
 
 Tracked counters:
@@ -313,7 +316,7 @@ The context includes:
 - visual/archetype key
 - lifecycle
 - level and stats
-- BodyTime budget
+- TIME budget measured in SECOND
 - agent policy
 - soul fields
 - top memory summaries
@@ -362,7 +365,7 @@ This does not replace authoritative game-server validation. It is only the first
 Implemented surfaces:
 
 - `backend/nakama/modules/index.ts` is the current game-backend source for
-  player profile, current body, soul, agent policy, BodyTime, level/stats, and
+  player profile, current body, soul, agent policy, TIME, level/stats, and
   compact memories. It also stores `agent_runtime` counters and a bounded
   `agent_activity` log. It exposes `secondspawn_profile_get`,
   `secondspawn_memory_add`, `secondspawn_soul_update`,
@@ -378,7 +381,7 @@ Implemented surfaces:
   when Supabase anonymous auth is not configured yet. Production account binding
   must use Supabase custom auth or a later approved identity ADR.
 - `backend/gateway/internal/character` stores prototype `AgentContext` with
-  profile, body, stats, characteristics, soul, policy, BodyTime,
+  profile, body, stats, characteristics, soul, policy, prototype `BodyTime` / TIME,
   and compact memories for LLM-gateway fallback and standalone cloud smoke
   tests.
 - Prototype memory writes deduplicate by memory kind and summary. Repeated
@@ -394,12 +397,12 @@ Implemented surfaces:
   Nakama profile memory when a Nakama session exists, and calls the cloud
   gateway for NPC text chat, voice-session contract, and prototype LLM decision.
 - Unity `CharacterMemorySync` loads the Nakama profile and applies the current
-  body stats, BodyTime, lifecycle, visual variant, weapon visual, and animation
+  body stats, prototype `BodyTime` / TIME, lifecycle, visual variant, weapon visual, and animation
   capability flags onto the authoritative local `NetworkPlayer`.
 - The current player prototype starts at level 1 with stats selected from the
   server-owned body archetype pool instead of one fixed stat line.
 - The prototype HUD shows level, HP, energy, attack, defense, agility,
-  BodyTime, lifecycle, SECOND balance, and reincarnation count.
+  prototype `BodyTime` / TIME, lifecycle, SECOND balance, and reincarnation count.
 - The current prototype account reserve starts with 604800 SECOND seconds and
   reincarnation costs 432000 SECOND seconds.
 - Unity `PrototypeLLMAgentDriver` can toggle prototype agent control with `P`.
@@ -494,4 +497,4 @@ The first playable version should support only a small intent set: move within s
 | Systems map | `03-systems-index.md` | Profile persistence and AI agent systems | Build dependency |
 | LLM safety | `../adr/0003-llm-safety-architecture.md` | Intent validation | Security dependency |
 | Offline agent | `../adr/0004-ai-agent-offline-control.md` | Server-side agent control | Architecture dependency |
-| Time economy | `08-time-as-currency.md` | BodyTime policy and risk | Economy dependency |
+| TIME / SECOND economy | `08-time-as-currency.md` | TIME policy and risk | Economy dependency |

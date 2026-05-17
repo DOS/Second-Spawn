@@ -18,9 +18,31 @@ func TestBuildAgentContextPromptSortsAndBoundsMemories(t *testing.T) {
 			ArchetypeID:     "hunter-default",
 			VisualPrefabKey: "rpg-character",
 			VisualVariant:   9,
+			Appearance: BodyAppearance{
+				BodyType: "synthetic_hunter",
+				BodyParts: BodyParts{
+					Head:  "crossline-optic-head",
+					Face:  "masked-rangefinder-face",
+					Torso: "ranged-survey-torso",
+					Arms:  "steady-ranged-arms",
+					Legs:  "survey-runner-legs",
+				},
+				Skin:     "graphite",
+				Material: "matte-carbon",
+				Marks:    []string{"signal-burn", "survey-chevron"},
+			},
+			Inhabitation: BodyInhabitation{
+				SourceActorID:     "npc-crossline-hunter-4445",
+				PreviousRole:      "Ranged survey body",
+				InhabitedByPlayer: true,
+			},
 			Equipment: EquipmentLoadout{
 				PrimaryWeapon:     "one_hand_sword",
 				EquipmentVisualID: 2,
+				WeaponVisualKey:   "sword",
+				WeaponFamily:      "melee",
+				CombatStance:      "one_hand_melee",
+				Socket:            "right_hand",
 			},
 			Stats: CharacterStats{
 				Level:        2,
@@ -40,8 +62,14 @@ func TestBuildAgentContextPromptSortsAndBoundsMemories(t *testing.T) {
 				Conflict: "It trusts patterns more than people.",
 				Rumor:    "Its optics still receive a signal from a silent district.",
 			},
-			AnimationCapabilities: AnimationCapabilities{SupportsJump: false},
-			Lifecycle:             BodyLifecycleAlive,
+			AnimationCapabilities: AnimationCapabilities{
+				SupportsJump:   false,
+				SupportsRoll:   true,
+				SupportsMelee:  true,
+				SupportsRanged: false,
+				WeaponStance:   "one_hand_melee",
+			},
+			Lifecycle: BodyLifecycleAlive,
 			Time: BodyTimeState{
 				RemainingSeconds: 3600,
 				MaxSeconds:       7200,
@@ -86,8 +114,20 @@ func TestBuildAgentContextPromptSortsAndBoundsMemories(t *testing.T) {
 	if !strings.Contains(prompt, "role=Ranged survey body") {
 		t.Fatalf("expected body story in prompt, got %s", prompt)
 	}
+	if !strings.Contains(prompt, "appearance: type=synthetic_hunter; head=crossline-optic-head; face=masked-rangefinder-face; torso=ranged-survey-torso; arms=steady-ranged-arms; legs=survey-runner-legs; skin=graphite; material=matte-carbon; marks=signal-burn, survey-chevron") {
+		t.Fatalf("expected modular appearance in prompt, got %s", prompt)
+	}
+	if !strings.Contains(prompt, "inhabitation: source_actor_id=npc-crossline-hunter-4445; previous_role=Ranged survey body; inhabited_by_player=true") {
+		t.Fatalf("expected body inhabitation in prompt, got %s", prompt)
+	}
+	if !strings.Contains(prompt, "equipment: primary_weapon=one_hand_sword; visual_id=2; visual_key=sword; family=melee; stance=one_hand_melee; socket=right_hand") {
+		t.Fatalf("expected equipment metadata in prompt, got %s", prompt)
+	}
 	if !strings.Contains(prompt, "supports_jump_animation: false") {
 		t.Fatalf("expected animation capability in prompt, got %s", prompt)
+	}
+	if !strings.Contains(prompt, "animation_capabilities: jump=false; roll=true; melee=true; ranged=false; stance=one_hand_melee") {
+		t.Fatalf("expected expanded animation capabilities in prompt, got %s", prompt)
 	}
 	if !strings.Contains(prompt, "stats: level=2 vitality=12 force=9 agility=11 focus=8 resilience=10 max_health=140 max_energy=60 attack_power=15 defense_power=7") {
 		t.Fatalf("expected body stats in prompt, got %s", prompt)
