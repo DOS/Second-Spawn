@@ -819,9 +819,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: SecondSpawn.UI::SecondSpawn.UI.HUDController
   _showPrototypeStats: 1
   _showFrameIdentity: 1
+  _showAgentActivity: 1
   _panelPosition: {x: 16, y: 16}
-  _panelSize: {x: 440, y: 420}
+  _panelSize: {x: 520, y: 580}
   _maxStoryCharacters: 110
+  _maxActivityRows: 4
+  _maxActivitySummaryCharacters: 92
 --- !u!4 &769241725
 Transform:
   m_ObjectHideFlags: 0

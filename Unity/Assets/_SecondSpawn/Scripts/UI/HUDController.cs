@@ -5,14 +5,13 @@ using UnityEngine;
 namespace SecondSpawn.UI
 {
     /// <summary>
-    /// Prototype HUD for combat stats, BodyTime, and future activity surfaces.
+    /// Prototype HUD for combat stats, BodyTime, and agent activity surfaces.
     /// The data is read from networked player state that was seeded by the
     /// backend profile. It does not own gameplay authority.
     ///
     /// TODO (slice throughout phases 2-7):
     /// - Replace IMGUI with the production HUD stack.
     /// - Reincarnation flow UI (death -> SECOND token cost -> respawn).
-    /// - AI agent activity log overlay (visible on player return).
     /// - See deferred templates .claude/templates/_deferred/hud-design.md
     ///   when this work starts.
     /// </summary>
@@ -20,9 +19,12 @@ namespace SecondSpawn.UI
     {
         [SerializeField] private bool _showPrototypeStats = true;
         [SerializeField] private bool _showFrameIdentity = true;
+        [SerializeField] private bool _showAgentActivity = true;
         [SerializeField] private Vector2 _panelPosition = new Vector2(16f, 16f);
-        [SerializeField] private Vector2 _panelSize = new Vector2(440f, 420f);
+        [SerializeField] private Vector2 _panelSize = new Vector2(520f, 580f);
         [SerializeField] private int _maxStoryCharacters = 110;
+        [SerializeField] private int _maxActivityRows = 4;
+        [SerializeField] private int _maxActivitySummaryCharacters = 92;
 
         private NetworkPlayer _cachedPlayer;
         private CharacterMemorySync _cachedMemorySync;
@@ -32,6 +34,7 @@ namespace SecondSpawn.UI
         private GUIStyle _wrapStyle;
         private float _nextPlayerRefreshAt;
         private float _nextMemorySyncRefreshAt;
+        private Vector2 _scrollPosition;
 
         private void OnGUI()
         {
@@ -46,11 +49,19 @@ namespace SecondSpawn.UI
             var rect = new Rect(_panelPosition.x, _panelPosition.y, _panelSize.x, _panelSize.y);
             GUI.Box(rect, "SECOND SPAWN");
             GUILayout.BeginArea(new Rect(rect.x + 12f, rect.y + 24f, rect.width - 24f, rect.height - 32f));
+            _scrollPosition = GUILayout.BeginScrollView(_scrollPosition, false, false);
             DrawStats(player);
             if (_showFrameIdentity)
             {
                 DrawFrameIdentity();
             }
+
+            if (_showAgentActivity)
+            {
+                DrawAgentActivity();
+            }
+
+            GUILayout.EndScrollView();
             GUILayout.EndArea();
         }
 
@@ -104,6 +115,52 @@ namespace SecondSpawn.UI
             if (!string.IsNullOrWhiteSpace(storyText))
             {
                 GUILayout.Label(storyText, _wrapStyle);
+            }
+        }
+
+        private void DrawAgentActivity()
+        {
+            GUILayout.Space(8f);
+            GUILayout.Label("Agent Runtime", _headingStyle);
+
+            var body = ResolveMemoryContext()?.body;
+            if (body == null)
+            {
+                GUILayout.Label("Waiting for Nakama profile sync...", _mutedStyle);
+                return;
+            }
+
+            var runtime = body.agent_runtime;
+            if (runtime == null)
+            {
+                GUILayout.Label("No runtime counters recorded yet.", _mutedStyle);
+                return;
+            }
+
+            GUILayout.Label($"Decisions {runtime.decision_count} | Fallback {runtime.fallback_decision_count} | Activities {runtime.activity_count}", _labelStyle);
+            GUILayout.Label($"Intents move:{runtime.move_intent_count} say:{runtime.say_intent_count} stop:{runtime.stop_intent_count} interact:{runtime.interact_intent_count}", _labelStyle);
+            GUILayout.Label($"Offline {FormatSeconds(runtime.offline_seconds)} | Last {FormatTimestamp(runtime.last_activity_at)}", _labelStyle);
+
+            var activities = body.agent_activity;
+            if (activities == null || activities.Length == 0)
+            {
+                GUILayout.Label("No recent activity.", _mutedStyle);
+                return;
+            }
+
+            GUILayout.Label("Recent Activity", _headingStyle);
+            var count = Mathf.Min(Mathf.Max(1, _maxActivityRows), activities.Length);
+            for (var i = 0; i < count; i++)
+            {
+                var activity = activities[i];
+                if (activity == null)
+                {
+                    continue;
+                }
+
+                var summary = TrimForHud(Fallback(activity.summary, "activity"), _maxActivitySummaryCharacters);
+                GUILayout.Label($"{FormatTimestamp(activity.occurred_at)} [{Fallback(activity.kind, "activity")}/{Fallback(activity.source, "unknown")}]", _mutedStyle);
+                GUILayout.Label(summary, _wrapStyle);
             }
         }
 
@@ -179,6 +236,11 @@ namespace SecondSpawn.UI
 
         private static string FormatSeconds(int seconds)
         {
+            return FormatSeconds((long)seconds);
+        }
+
+        private static string FormatSeconds(long seconds)
+        {
             if (seconds <= 0)
             {
                 return "0s";
@@ -198,6 +260,17 @@ namespace SecondSpawn.UI
             }
 
             return hours > 0 ? $"{hours}h {minutes}m" : $"{minutes}m";
+        }
+
+        private static string FormatTimestamp(string timestamp)
+        {
+            if (string.IsNullOrWhiteSpace(timestamp))
+            {
+                return "never";
+            }
+
+            var trimmed = timestamp.Trim();
+            return trimmed.Length > 16 ? trimmed.Substring(0, 16).Replace('T', ' ') : trimmed.Replace('T', ' ');
         }
 
         private static string FormatCapabilities(AnimationCapabilitiesDto capabilities)
@@ -228,18 +301,23 @@ namespace SecondSpawn.UI
 
         private string TrimForHud(string value)
         {
+            return TrimForHud(value, _maxStoryCharacters);
+        }
+
+        private static string TrimForHud(string value, int maxCharacters)
+        {
             if (string.IsNullOrWhiteSpace(value))
             {
                 return "";
             }
 
             var trimmed = value.Trim();
-            if (_maxStoryCharacters <= 0 || trimmed.Length <= _maxStoryCharacters)
+            if (maxCharacters <= 0 || trimmed.Length <= maxCharacters)
             {
                 return trimmed;
             }
 
-            return trimmed.Substring(0, Mathf.Max(0, _maxStoryCharacters - 3)).TrimEnd() + "...";
+            return trimmed.Substring(0, Mathf.Max(0, maxCharacters - 3)).TrimEnd() + "...";
         }
 
         private static string Fallback(params string[] values)
