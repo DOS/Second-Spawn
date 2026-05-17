@@ -129,7 +129,7 @@ assert.equal(
 
 const harness = createRuntimeHarness(module);
 assert.equal(harness.registeredHooks.length, 1);
-assert.equal(harness.registeredRpcs.size, 16);
+assert.equal(harness.registeredRpcs.size, 17);
 assert.ok(harness.registeredRpcs.has("secondspawn_health"));
 assert.ok(harness.registeredRpcs.has("secondspawn_profile_get"));
 assert.ok(harness.registeredRpcs.has("secondspawn_memory_add"));
@@ -146,6 +146,7 @@ assert.ok(harness.registeredRpcs.has("secondspawn_openclaw_intent_submit"));
 assert.ok(harness.registeredRpcs.has("secondspawn_openclaw_heartbeat"));
 assert.ok(harness.registeredRpcs.has("secondspawn_chat_send"));
 assert.ok(harness.registeredRpcs.has("secondspawn_chat_list"));
+assert.ok(harness.registeredRpcs.has("secondspawn_reward_claim"));
 
 const createConflictHarness = createRuntimeHarness(module);
 createConflictHarness.conflictNextCreateOnlyWrite();
@@ -348,6 +349,41 @@ assert.throws(
     })
   ),
   /earn source is on cooldown/
+);
+
+const claimedReward = JSON.parse(harness.registeredRpcs.get("secondspawn_reward_claim")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  JSON.stringify({
+    id: "reward-training-1",
+    objective_id: "prototype-training-drone"
+  })
+));
+assert.equal(claimedReward.body.time.remaining_seconds, 86220);
+assert.equal(claimedReward.body.agent_activity[0].id, "reward-training-1");
+assert.equal(claimedReward.body.agent_activity[0].body_time_source, "prototype_reward_prototype-training-drone");
+assert.match(claimedReward.body.agent_activity[0].summary, /training drone/);
+
+const retriedReward = JSON.parse(harness.registeredRpcs.get("secondspawn_reward_claim")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  JSON.stringify({
+    id: "reward-training-1",
+    objective_id: "prototype-training-drone"
+  })
+));
+assert.equal(retriedReward.body.time.remaining_seconds, 86220);
+assert.equal(retriedReward.body.agent_activity.filter((activity) => activity.id === "reward-training-1").length, 1);
+assert.throws(
+  () => harness.registeredRpcs.get("secondspawn_reward_claim")(
+    { userId: "user-1", env: {} },
+    harness.logger,
+    harness.nk,
+    JSON.stringify({ objective_id: "client-invented-reward" })
+  ),
+  /unknown prototype reward objective/
 );
 
 const storedProfile = harness.storage.get(storageKey("user-1", "secondspawn_agent", "context"));

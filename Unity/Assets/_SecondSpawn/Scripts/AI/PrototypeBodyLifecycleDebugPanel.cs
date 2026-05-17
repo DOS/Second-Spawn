@@ -18,10 +18,11 @@ namespace SecondSpawn.AI
 
         [SerializeField] private bool _showPanel = true;
         [SerializeField] private Vector2 _panelPosition = new Vector2(16f, 212f);
-        [SerializeField] private Vector2 _panelSize = new Vector2(320f, 196f);
+        [SerializeField] private Vector2 _panelSize = new Vector2(320f, 224f);
         [SerializeField] private long _earnSeconds = 300;
         [SerializeField] private long _spendSeconds = 600;
         [SerializeField] private long _dangerDrainSeconds = 300;
+        [SerializeField] private string _rewardObjectiveId = "prototype-training-drone";
 
         private CharacterMemorySync _memorySync;
         private GUIStyle _labelStyle;
@@ -58,6 +59,14 @@ namespace SecondSpawn.AI
             {
                 StartOperation(_memorySync.Refresh(), "Refresh");
             }
+
+            GUILayout.BeginHorizontal();
+            _rewardObjectiveId = GUILayout.TextField(_rewardObjectiveId);
+            if (GUILayout.Button("Claim Reward", GUILayout.Width(112f)))
+            {
+                StartOperation(_memorySync.ClaimPrototypeReward(SafeRewardObjectiveId()), "Reward");
+            }
+            GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
             if (GUILayout.Button($"+{FormatSeconds(_earnSeconds)}"))
@@ -104,6 +113,11 @@ namespace SecondSpawn.AI
                 amount_seconds = seconds,
                 note = note
             }), $"BodyTime {kind}");
+        }
+
+        private string SafeRewardObjectiveId()
+        {
+            return string.IsNullOrWhiteSpace(_rewardObjectiveId) ? "prototype-training-drone" : _rewardObjectiveId.Trim();
         }
 
         private void StartOperation(IEnumerator operation, string label)

@@ -228,10 +228,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.PrototypeBodyLifecycleDebugPanel
   _showPanel: 1
   _panelPosition: {x: 16, y: 212}
-  _panelSize: {x: 320, y: 196}
+  _panelSize: {x: 320, y: 224}
   _earnSeconds: 300
   _spendSeconds: 600
   _dangerDrainSeconds: 300
+  _rewardObjectiveId: prototype-training-drone
 --- !u!114 &34500820
 MonoBehaviour:
   m_ObjectHideFlags: 0

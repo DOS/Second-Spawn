@@ -112,6 +112,9 @@ Recommended views:
   read, pending `say` intent, and heartbeat smoke testing.
 - [x] Nakama has bounded prototype hub chat RPCs, and Unity Play Mode has a
   debug panel for sending and refreshing hub chat messages.
+- [x] Nakama has a server-owned prototype reward claim path for allowlisted
+  enemy or objective rewards that grant BodyTime without client-supplied
+  amounts.
 - [x] `_AgentNPC_Prototype` can bind to an actor profile, patrol, speak, use the
   model-backed gateway decision path, and recover through Nakama deterministic
   fallback when the gateway is unavailable or rate-limited.
@@ -162,8 +165,10 @@ MVP, and a visible offline-agent prototype.
 - [ ] Design server-authoritative PvP or contested-zone loot rules where
   BodyTime and SECOND can be taken from other users after validated combat or
   zone events. Clients and LLMs must never self-report this loot.
-- [ ] Implement the first server-authoritative combat reward path that can grant
-  BodyTime after a validated enemy kill or objective completion.
+- [x] Implement the first server-owned prototype reward path that can grant
+  BodyTime from an allowlisted enemy or objective reward catalog.
+- [ ] Wire the prototype reward path to Fusion-validated enemy kill or objective
+  completion events instead of a debug claim RPC.
 - [ ] Implement the first server-authoritative contested loot rule for taking
   BodyTime or SECOND from another user after a validated PvP or zone event.
 - [ ] Add one dungeon instance with one boss and grounded dialogue.

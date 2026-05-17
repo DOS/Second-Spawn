@@ -122,6 +122,32 @@ namespace SecondSpawn.AI
             yield return ApplyProfileToLocalPlayerWhenAvailable();
         }
 
+        public IEnumerator ClaimPrototypeReward(string objectiveId)
+        {
+            if (!_preferNakama || !_gateway.HasNakamaSession)
+            {
+                Debug.LogWarning("[CharacterMemorySync] Reward claims require an authenticated Nakama session.");
+                yield break;
+            }
+
+            AgentContextDto context = null;
+            string error = null;
+            yield return _gateway.ClaimNakamaReward(new RewardClaimRequestDto
+            {
+                id = BuildClientEventId("reward"),
+                objective_id = string.IsNullOrWhiteSpace(objectiveId) ? "prototype-training-drone" : objectiveId.Trim()
+            }, value => context = value, value => error = value);
+
+            if (context == null)
+            {
+                Debug.LogWarning($"[CharacterMemorySync] Reward claim failed: {error}");
+                yield break;
+            }
+
+            _context = context;
+            yield return ApplyProfileToLocalPlayerWhenAvailable();
+        }
+
         private IEnumerator WaitForAuthAttempt()
         {
             const float maxWaitSeconds = 10f;

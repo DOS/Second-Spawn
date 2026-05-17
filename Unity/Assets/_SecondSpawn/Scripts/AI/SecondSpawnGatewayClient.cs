@@ -181,6 +181,11 @@ namespace SecondSpawn.AI
             yield return SendNakamaRpc("secondspawn_reincarnate", request, onSuccess, onError);
         }
 
+        public IEnumerator ClaimNakamaReward(RewardClaimRequestDto request, Action<AgentContextDto> onSuccess = null, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_reward_claim", request, onSuccess, onError);
+        }
+
         public IEnumerator UpdateNakamaSoul(UpdateSoulRequestDto request, Action<AgentContextDto> onSuccess = null, Action<string> onError = null)
         {
             yield return SendNakamaRpc("secondspawn_soul_update", request, onSuccess, onError);
