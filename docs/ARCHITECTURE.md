@@ -66,7 +66,7 @@ High-level architecture overview. For detailed component design see `docs/design
 - Subscribes to Fusion server state for offline characters
 - Decision loop: read state -> reason via LLM -> emit action intent
 - Subject to same server validation as a real player
-- Inherits player's character cultivation tier + persona + history
+- Inherits player's current body stats, persona, and history
 
 ### OpenClaw-Connected NPC
 
@@ -137,5 +137,5 @@ High-level architecture overview. For detailed component design see `docs/design
 - AI agent scheduling: 1 process per agent vs pooled worker?
 - Fusion server sharding: 1 process per zone vs multiple zones per process?
 - LLM cost cap per player per day (need to design)
-- Hot reload for cultivation balance changes (config in Postgres vs git)
+- Hot reload for progression balance changes (config in Postgres vs git)
 - Replay system for cheat investigation (record Fusion ticks)

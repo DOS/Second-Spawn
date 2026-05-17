@@ -28,7 +28,7 @@
 
 ## Core Fantasy
 
-You are a Hunter in a 2050 post-apocalyptic world where consciousness can be transferred to synthetic bodies via Nibirium-enhanced biotech. You explore, fight, and progress through a 6-tier cultivation system. When you log off, you don't disappear from the world - your character keeps playing through an AI agent shaped by your history. Death is meaningful (the body dies) but not final (you reincarnate, partially carrying cultivation tier across bodies).
+You are a Hunter in a 2050 post-apocalyptic world where consciousness can be transferred to synthetic bodies. You explore, fight, level up the current body, and manage a finite body-time budget. When you log off, you don't disappear from the world - your character keeps playing through an AI agent shaped by your history. Death is meaningful (the body dies) but not final (you reincarnate into a new body).
 
 The fantasy is "your character has a life that does not pause when yours does."
 
@@ -53,8 +53,8 @@ Ecosystem extension: a user's OpenClaw agent can also connect into SECOND SPAWN 
 
 | Rank | Aesthetic | How We Deliver It |
 | ---- | ---- | ---- |
-| 1 | **Challenge** | Cultivation tier-up gates, dungeon bosses with LLM-driven dialogue + adaptive behavior, permanent body death |
-| 2 | **Discovery** | Layered MetaDOS lore (Nibirium, consciousness transfer, faction history); LLM NPCs reveal world state through dialogue; emergent stories from agent behaviors |
+| 1 | **Challenge** | Level/stat growth, dungeon bosses with LLM-driven dialogue + adaptive behavior, permanent body death |
+| 2 | **Discovery** | Layered MetaDOS lore (consciousness transfer, faction history); LLM NPCs reveal world state through dialogue; emergent stories from agent behaviors |
 | 3 | **Fellowship** | 4-20 player zones, guild PvP 50v50, party invites via Nakama channels, agent-to-agent socialization across timezones |
 | N/A | Sensation | Stylized low-poly art (Synty / Quaternius); not a sensory-pleasure-first game |
 | N/A | Submission | Active play is intentionally engaging; relaxed offline progress is delegated to the AI agent rather than the player |
@@ -64,7 +64,7 @@ Ecosystem extension: a user's OpenClaw agent can also connect into SECOND SPAWN 
 1. Top-down ARPG action combat (minimal Fusion controller first; Opsive Ultimate Character Controller is an evaluation candidate)
 2. LLM-driven NPC dialogue with server-validated intent (Convai phase 1, `api.dos.ai` / Go LLM Gateway phase 2)
 3. AI agent autonomous control of player character when offline (server-authoritative, capability-capped)
-4. Reincarnation via SECOND token cost (consciousness transfer, partial cultivation tier carryover)
+4. Reincarnation via SECOND token cost (consciousness transfer and current-body reset)
 5. Time-as-currency body lifespan economy (earn/spend body time; zero time triggers body death)
 
 ---
@@ -73,13 +73,13 @@ Ecosystem extension: a user's OpenClaw agent can also connect into SECOND SPAWN 
 
 | Need | How This Game Satisfies It | Strength |
 | ---- | ---- | ---- |
-| **Autonomy** | Choose how to spend time online vs delegate to AI agent; choose reincarnation timing; choose cultivation path | Core |
-| **Competence** | Cultivation tier-up is the explicit mastery ladder; combat skill ceiling comes from the final movement/combat controller after prototype validation | Core |
+| **Autonomy** | Choose how to spend time online vs delegate to AI agent; choose reincarnation timing and risk | Core |
+| **Competence** | Level/stat growth gives a clear early ladder; combat skill ceiling comes from the final movement/combat controller after prototype validation | Core |
 | **Relatedness** | LLM NPCs remember you across sessions; guild + zone fellowship; agent-to-agent socialization | Supporting |
 
 ### Player Type Appeal (Bartle)
 
-- [x] **Achievers** - cultivation tier ladder + AI agent farming offline = constant progression
+- [x] **Achievers** - level/stat growth + AI agent activity = constant progression
 - [x] **Explorers** - MetaDOS lore depth + emergent NPC interactions to discover
 - [x] **Socializers** - guild + multi-instance zones + LLM NPCs as social actors
 - [ ] **Killers / Competitors** - 50v50 guild PvP exists but NOT primary loop in vertical slice
@@ -95,19 +95,19 @@ ARPG action combat: dodge, attack, ability, kite, kill. Top-down camera. Hunter 
 Quest segment or dungeon room: clear group of enemies, loot, advance to next encounter. LLM-driven NPC dialogue at quest checkpoints.
 
 ### Session-Level (30-120 min)
-Complete a quest line or dungeon clear; converse with hub-town NPCs (LLM-driven); cultivate (consume Nibirium / advance tier progress); plan offline agent behavior before logout.
+Complete a quest line or dungeon clear; converse with hub-town NPCs (LLM-driven); level the current body; plan offline agent behavior before logout.
 
 ### Long-Term Progression
-- Cultivation tier 1 -> 6 (Awakening, Enhancement, Core Formation, Evolution, Transcendence, Ascension)
+- Current-body level and stat growth
 - NFT Hunter skin collection
 - Guild + faction reputation
-- Reincarnation cycles - each death keeps partial cultivation but resets equipment / quest state
+- Reincarnation cycles - each death replaces the body and resets selected body-bound state
 
 ### Retention Hooks
 - **Curiosity**: AI agent activity log (what did your character do while you slept?)
-- **Investment**: cultivation tier progress + NFT-locked equipment
+- **Investment**: level/stat progress + NFT-locked equipment
 - **Social**: guild obligations, zone friend agent encounters
-- **Mastery**: tier-up gates that test combat + crafting
+- **Mastery**: combat, dungeon clears, BodyTime tradeoffs, and build choices
 
 ---
 
@@ -156,8 +156,8 @@ Complete a quest line or dungeon clear; converse with hub-town NPCs (LLM-driven)
 | ---- | ---- |
 | **Engine** | Unity 6.5 beta (currently `6000.5.0b7`) + URP. JOY chose beta for newest features. |
 | **Networking** | Photon Fusion 2 (Server Mode dedicated for production; Host Mode + Photon Cloud free 20 CCU for dev) |
-| **Persistence** | Nakama OSS + Postgres (profile, inventory, quest, NFT lock state, cultivation tier) |
-| **LLM** | Convai phase 1 (NPC dialogue) -> `api.dos.ai` / Go LLM Gateway phase 2 (Haiku 4.5 for NPC chat, Sonnet 4.6 for boss / cultivation master). Server-side intent validation only. |
+| **Persistence** | Nakama OSS + Postgres (profile, inventory, quest, NFT lock state, level/stats) |
+| **LLM** | Convai phase 1 (NPC dialogue) -> `api.dos.ai` / Go LLM Gateway phase 2 (Haiku 4.5 for NPC chat, Sonnet 4.6 for boss / quest-critical NPCs). Server-side intent validation only. |
 | **NFT** | DOS Chain via thirdweb-api MCP. Wallet auth, escrow contracts, Hunter skin / weapon / pet inventory. |
 | **Art** | Synty / Quaternius stylized low-poly + reused MetaDOS Hunter skins |
 | **Key technical risks** | LLM intent validation at scale; AI agent server tick load; NFT-Unity inventory sync latency |
@@ -170,7 +170,7 @@ See [docs/ARCHITECTURE.md](../ARCHITECTURE.md) for system diagram + critical inv
 
 ### Design Risks
 - AI agent offline play may feel either invisible (player doesn't notice progress) or invasive (agent does things player wouldn't choose)
-- Cultivation tier pacing: too slow = grind; too fast = no mastery feeling
+- Level/stat progression may feel generic if combat and reincarnation do not create meaningful decisions
 - Time-as-currency may feel oppressive if time drain is constant, or invisible if it only appears at death
 - LLM NPCs may feel chatbot-like if they don't ground in world state (location, quest progress, faction)
 
@@ -200,7 +200,7 @@ See [docs/ARCHITECTURE.md](../ARCHITECTURE.md) for system diagram + critical inv
 
 See [02-vertical-slice-spec.md](02-vertical-slice-spec.md).
 
-**Core hypothesis**: A solo player can experience the signature hooks (AI agent autoplay, reincarnation, time-as-currency, cultivation tier-up) inside a single zone within 30 minutes of first play, without requiring out-of-game tutorials.
+**Core hypothesis**: A solo player can experience the signature hooks (AI agent autoplay, reincarnation, and time-as-currency) plus basic level/stat progression inside a single zone within 30 minutes of first play, without requiring out-of-game tutorials.
 
 ---
 
@@ -209,4 +209,4 @@ See [02-vertical-slice-spec.md](02-vertical-slice-spec.md).
 - [ ] JOY review and refine this concept doc (especially monetization line + open questions)
 - [ ] Finalize [01-pillars.md](01-pillars.md) (preview pillars listed above need design tests added)
 - [ ] Build vertical slice per [02-vertical-slice-spec.md](02-vertical-slice-spec.md)
-- [ ] Per-system GDDs as systems are designed (cultivation started in [04-cultivation-system.md](04-cultivation-system.md); time-as-currency started in [08-time-as-currency.md](08-time-as-currency.md); combat, AI agent, reincarnation, NFT escrow, LLM NPC pending)
+- [ ] Per-system GDDs as systems are designed (advanced body progression deferred in [04-cultivation-system.md](04-cultivation-system.md); time-as-currency started in [08-time-as-currency.md](08-time-as-currency.md); combat, AI agent, reincarnation, NFT escrow, LLM NPC pending)

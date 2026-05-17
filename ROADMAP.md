@@ -24,7 +24,7 @@ especially `docs/design/02-vertical-slice-spec.md` and
 - [x] Go LLM gateway scaffold with health/readiness, character context, memory,
   soul update, NPC chat, voice-session contract, and agent decision routes.
 - [x] Agent context contract covering player profile, body state, soul,
-  traits, cultivation, BodyTime, agent policy, and compact memory.
+  traits, level/stats, BodyTime, agent policy, and compact memory.
 - [x] Prototype Unity gateway client with Nakama fallback, profile/memory sync,
   NPC chat, local voice cue, and speech bubble.
 - [x] Local player agent prototype toggle for bounded movement intent.
@@ -70,7 +70,6 @@ MVP, and a visible offline-agent prototype.
 - [ ] Add BodyTime meter MVP with one earn source and one spend sink.
 - [ ] Add reincarnation placeholder flow: death -> SECOND token check ->
   respawn with current-body reset.
-- [ ] Add cultivation tiers 1-2: Awakening and Enhancement.
 - [ ] Add one dungeon instance with one boss and grounded dialogue.
 - [ ] Add one Hunter NFT skin equip placeholder with DOS Chain escrow design
   still server-authoritative.
@@ -84,7 +83,6 @@ MVP, and a visible offline-agent prototype.
 - [ ] Add RAG memory for NPCs with Supabase pgvector or Qdrant.
 - [ ] Expand quest system beyond the first vertical slice questline.
 - [ ] Add multiple zones with travel.
-- [ ] Add cultivation tiers 3-4.
 - [ ] Add marketplace and NFT trade.
 - [ ] Add guild system before PvP.
 - [ ] Add voice NPC if ephemeral-token cost and reliability are acceptable.
@@ -93,7 +91,6 @@ MVP, and a visible offline-agent prototype.
 
 - [ ] Guild PvP up to 50v50.
 - [ ] Pet breeding system.
-- [ ] Cultivation tiers 5-6.
 - [ ] Movement-only mount system.
 - [ ] Economy balancing.
 - [ ] Live ops infrastructure.
@@ -104,7 +101,7 @@ MVP, and a visible offline-agent prototype.
 - [ ] Seasons and content updates.
 - [ ] Modding support.
 - [ ] Sentis on-device AI for client perception.
-- [ ] More cultivation paths.
+- [ ] Redesign advanced body or soul progression after the vertical slice.
 
 ## Deliberately Out of Scope
 

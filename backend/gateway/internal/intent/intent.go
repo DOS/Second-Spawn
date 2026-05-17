@@ -38,7 +38,7 @@ const (
 
 	// IntentNPCOfferQuest proposes that an NPC offers a quest to a player.
 	// Validated against: NPC has authority for this quest; player meets
-	// prerequisites (cultivation tier, prior quests done, faction standing).
+	// prerequisites (level, prior quests done, faction standing).
 	IntentNPCOfferQuest IntentType = "npc_offer_quest"
 
 	// IntentNPCGrantItem proposes that an NPC grants an item.

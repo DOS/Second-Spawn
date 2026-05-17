@@ -7,7 +7,7 @@
 
 ## Core Fantasy
 
-You are a Hunter in a 2050 post-apocalyptic world where consciousness can be transferred to synthetic bodies. Your character has a life that does not pause when yours does, advances through a 6-tier cultivation ladder, spends time as a real resource, and meets death as a transition rather than an end.
+You are a Hunter in a 2050 post-apocalyptic world where consciousness can be transferred to synthetic bodies. Your character has a life that does not pause when yours does, grows through current-body level and stats, spends time as a real resource, and meets death as a transition rather than an end.
 
 ---
 
@@ -15,7 +15,7 @@ You are a Hunter in a 2050 post-apocalyptic world where consciousness can be tra
 
 | Rank | Aesthetic | How Our Game Delivers It |
 | ---- | ---- | ---- |
-| 1 | **Challenge** | Cultivation tier-up gates, time pressure, LLM-adaptive dungeon bosses, permanent body death |
+| 1 | **Challenge** | Level/stat growth, time pressure, LLM-adaptive dungeon bosses, permanent body death |
 | 2 | **Discovery** | MetaDOS lore depth + LLM NPCs revealing world state + emergent agent stories |
 | 3 | **Fellowship** | 4-20 player zones, guild PvP, agent-to-agent socialization across timezones |
 
@@ -54,7 +54,7 @@ You are a Hunter in a 2050 post-apocalyptic world where consciousness can be tra
 
 ### Pillar 2: Reincarnation, not respawn
 
-**One-Sentence Definition**: Death is permanent for the body; players transfer consciousness to a new synthetic body via SECOND token cost, with progression partially preserved (cultivation tier carries over) and partially reset (equipment, quest state, location).
+**One-Sentence Definition**: Death is permanent for the body; players transfer consciousness to a new synthetic body via SECOND token cost, with durable identity partially preserved and current-body progression reset.
 
 **Target Aesthetics Served**: Challenge (death has weight), Discovery (each new body sees a new starting state), Narrative (consciousness transfer is the world's central conceit)
 
@@ -65,13 +65,13 @@ You are a Hunter in a 2050 post-apocalyptic world where consciousness can be tra
 | Department | This Pillar Says... | Example |
 | ---- | ---- | ---- |
 | **Game Design** | No corpse-run, no equipment-loss, no XP-debt - those are the OLD MMO patterns | Death triggers reincarnation flow (in-game UI), not corpse retrieval. |
-| **Engineering** | Cultivation tier is on-chain or DB-persisted; equipment is escrow on death | NFT escrow contract releases on reincarnation per token rules. |
+| **Engineering** | Reincarnation state is DB-persisted; equipment is escrow on death | NFT escrow contract releases on reincarnation per token rules. |
 | **Narrative** | Every reincarnation is a story beat - new body, fragmented memory, lore reveal | Boss dialogue adapts: "Ah, you came back. Different face this time." |
 | **Economy** | SECOND token is a sink; reincarnation cost calibrates death frequency | Initial cost target: 1 average dungeon clear's worth of token income. |
 
 #### Serving This Pillar
 - Permanent body death triggers SECOND-token reincarnation flow
-- Cultivation tier carries forward (partial) across bodies
+- Durable soul/profile layers can carry forward across bodies
 - Equipment escrow + release is part of death flow
 
 #### Violating This Pillar
@@ -131,7 +131,7 @@ You are a Hunter in a 2050 post-apocalyptic world where consciousness can be tra
 
 #### Serving This Pillar
 - Convai phase 1 NPC dialogue grounded in player state
-- Phase 2 `api.dos.ai` / Go LLM Gateway with Haiku 4.5 (NPC chat) + Sonnet 4.6 (boss / cultivation master)
+- Phase 2 `api.dos.ai` / Go LLM Gateway with Haiku 4.5 (NPC chat) + Sonnet 4.6 (boss / quest-critical NPCs)
 - Per-NPC memory in Supabase pgvector
 - LLM intent validation server-side, never trust raw output
 
@@ -175,9 +175,9 @@ You are a Hunter in a 2050 post-apocalyptic world where consciousness can be tra
 ## Anti-Pillars (What This Game Is NOT)
 
 - **NOT a full open-world MMORPG** - we have instance-based zones (~20 players), not seamless single-shard. WoW/FFXIV-scale would blow scope and cost.
-- **NOT a Chinese cultivation novel game** - cultivation framing is sci-fi (Nibirium, biotech, consciousness transfer). International-friendly. No qi, no immortals, no sect politics as primary loop.
+- **NOT a Chinese cultivation novel game** - no qi, immortals, sect politics, or tier-up grind as the primary loop.
 - **NOT pay-to-win** - SECOND token gates reincarnation cost; `BodyTime` is a gameplay economy and must not become direct power-for-cash.
-- **NOT a passive countdown survival game** - time pressure supports ARPG decisions; it does not replace combat, cultivation, or AI agent play.
+- **NOT a passive countdown survival game** - time pressure supports ARPG decisions; it does not replace combat, level/stat progression, or AI agent play.
 - **NOT a chatbot game** - LLM NPCs are world citizens with grounded memory + rate limits. Dialogue is constrained by quest / faction / location, not free-form roleplay.
 - **NOT mobile-first** - PC Steam audience first. Mobile companion app is a possible future, not core.
 - **NOT host-mode multiplayer in production** - Photon Server Mode dedicated only. Host Mode is dev-only.
@@ -210,7 +210,7 @@ When pillars conflict, use this priority order. Higher-priority pillars win when
 | Need | Which Pillar Serves It | How |
 | ---- | ---- | ---- |
 | **Autonomy** | AI agent 24/7 | Player chooses what to delegate to agent vs play actively |
-| **Competence** | Reincarnation + Time-as-currency + Server-authoritative | Cultivation tier ladder is the explicit mastery measure; time tradeoffs and server-validated combat make skill-based wins real |
+| **Competence** | Reincarnation + Time-as-currency + Server-authoritative | Level/stat progression is the early mastery measure; time tradeoffs and server-validated combat make skill-based wins real |
 | **Relatedness** | LLM as world citizen + AI agent | NPCs remember player; agents bridge social distance across timezones |
 
 All three SDT needs covered.

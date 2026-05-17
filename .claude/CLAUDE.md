@@ -10,14 +10,14 @@ This file is the primary context for any AI coding agent working on this reposit
 - **Genre:** Hybrid MMO + Top-down ARPG (NOT full open-world MMORPG)
 - **References:** Diablo IV, Path of Exile 2, Lost Ark
 - **Setting:** Near-future ~2050, post-apocalyptic, MetaDOS universe
-- **Tone:** Dark sci-fi, cyberpunk, cultivation-progression, AI NPC society
+- **Tone:** Dark sci-fi, cyberpunk, body/soul survival, AI NPC society
 
 ## Four Signature Features (DO NOT LOSE TRACK)
 
 1. **AI Agent 24/7** - When the player is offline, an LLM-driven AI agent fully controls their character (farms, quests, socializes with NPCs and other players' agents). When the player returns, they take over control. This is a near-unique feature in MMO/ARPG space.
-2. **Reincarnation with progression reset** - Death is permanent for the body. Consciousness transfers to a new body via SECOND token or special item. Progression resets (roguelike-MMO hybrid). Cultivation tier may carry over partial.
+2. **Reincarnation with progression reset** - Death is permanent for the body. Consciousness transfers to a new body via SECOND token or special item. Current-body progression resets in a roguelike-MMO hybrid loop. Durable soul/profile carryover rules are deferred until the reincarnation design is sharper.
 3. **Time-as-Currency** - Time is both the current body's survival resource and a spendable economy resource, adapted from MetaDOS and the `In Time` inspiration. Running out of body time triggers death/reincarnation; spending time creates hard tactical tradeoffs.
-4. **Consciousness transfer to NPC/synthetic bodies** - Sci-fi explanation (mind upload, synthetic bodies, Nibirium-enhanced cloning). NOT spiritual reincarnation.
+4. **Consciousness transfer to NPC/synthetic bodies** - Sci-fi explanation (mind upload, synthetic bodies, cloning, and body imprinting). NOT spiritual reincarnation.
 
 ## Actor and Body Model (CORE)
 
@@ -27,18 +27,16 @@ This file is the primary context for any AI coding agent working on this reposit
 - Each important actor body should eventually resolve to a bundle: `BodyProfile`, `CharacterStats`, `CharacterTraits`, `SoulProfile`, `MemoryRecord`, `AgentPolicy` or NPC policy, `AgentRuntime`, and `AgentActivity`.
 - Reincarnation destroys or retires the current body. The durable player consciousness transfers into a new body, with only explicitly designed layers carrying over.
 
-## Cultivation System (sci-fi, not Chinese-style)
+## Advanced Body Progression (DEFERRED)
 
-6 tiers:
+The previous cultivation / Nibirium XP concept is explicitly deferred and must
+not be implemented in the current vertical slice. It felt too close to a
+traditional XP bar. The slice uses level and character stats as the progression
+baseline.
 
-1. Awakening - Activate Nibirium absorption
-2. Enhancement - Body strengthening
-3. Core Formation - Energy core formation
-4. Evolution - DNA / special ability evolution
-5. Transcendence - Beyond human limits
-6. Ascension - Near-divine
-
-International-friendly framing. Explained via science (Nibirium, biotech, consciousness transfer).
+Future advanced body or soul progression needs a fresh design pass before any
+implementation. Do not add cultivation tiers, Nibirium XP, tier-up rituals, or
+Cultivation Master mechanics without a new approved design update.
 
 ## Gameplay Architecture
 
@@ -96,7 +94,7 @@ International-friendly framing. Explained via science (Nibirium, biotech, consci
 
 - Migrate LLM calls to `api.dos.ai` / Go LLM Gateway, models:
   - Haiku 4.5 for NPC chat (fast, cheap)
-  - Sonnet 4.6 for boss / quest / cultivation master dialog
+  - Sonnet 4.6 for boss / quest-critical dialog
 - RAG memory: Supabase pgvector or Qdrant
 - Voice: OpenAI Realtime API via ephemeral token (NOT API key in client) OR ElevenLabs
 - Client AI: Unity Sentis for small perception (optional, phase 3)
@@ -126,7 +124,7 @@ International-friendly framing. Explained via science (Nibirium, biotech, consci
 - Agent operates within Fusion server tick (server-authoritative)
 - Agent decision loop: pull state from Fusion -> reason via LLM gateway -> emit action intent -> server validates -> apply
 - Anti-abuse: agent inherits player's rate limit + capability cap
-- Agent persona: derived from player history + character cultivation tier
+- Agent persona: derived from player history, current body stats, and player profile
 - Agent death = body death = reincarnation triggered (same as player death)
 
 ### NFT / Blockchain
@@ -233,7 +231,7 @@ International-friendly framing. Explained via science (Nibirium, biotech, consci
 - Guild / social (phase 2)
 - Reincarnation mechanic
 - AI agent for offline players
-- Cultivation tier progression
+- Advanced body progression beyond level/stats is deferred until redesigned
 
 ### Recommended Reading List
 
@@ -305,7 +303,6 @@ Scope:
 - Reincarnation MVP (die -> SECOND token -> respawn with reset)
 - Time-as-currency MVP (body time meter, earn/spend loop, zero time triggers reincarnation placeholder)
 - AI agent control (simple: agent farms one designated area when player offline)
-- 2 cultivation tiers playable (Awakening + Enhancement)
 - NFT Hunter skin equip + escrow
 - Multiplayer 4-20 players per zone
 - Basic chat (Nakama channels first, Supabase sidecar only if useful)
@@ -316,7 +313,7 @@ OUT of scope for vertical slice:
 - Marketplace
 - Pet breeding
 - Multiple zones
-- Tier 3-6 cultivation
+- Advanced body progression
 - Voice NPC
 - Full quest system
 
@@ -336,6 +333,7 @@ OUT of scope for vertical slice:
 - Final game name (SECOND SPAWN is codename, may rename after vertical slice playable)
 - SECOND token economy design (cost per reincarnation, source, sink)
 - BodyTime tuning (where time drains, how it is earned, how it can be spent, and whether it can convert to/from SECOND token)
+- Advanced body or soul progression replacing the deferred concept
 - Hunter NFT integration approach: Option 1 (preset hero) vs Hybrid 1+3 (modular pieces)
 - Phase 2 LLM model split (when to use Haiku vs Sonnet)
 - Voice NPC vendor (OpenAI Realtime vs ElevenLabs vs self-host)

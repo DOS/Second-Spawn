@@ -53,7 +53,7 @@ This preserves:
 | `AgentPolicy` | Yes | Player | What the offline agent is allowed to do while player is away |
 | `BodyProfile` | No | Game server | Current synthetic body, visual archetype, BodyTime, lifecycle |
 | `CharacterStats` | Mostly no | Game server | Combat and movement-affecting numbers for current body |
-| `Cultivation` | Partially | Game server | Consciousness progression that can carry over |
+| `CharacterStats` | Mostly no | Game server | Current-body level and combat stats |
 | `MemoryRecord` | Yes, with decay | Backend | Small curated memory facts for LLM context |
 | `AgentRuntime` | Yes, across bodies until reset policy exists | Backend | Counters for profile bootstrap, activity, decisions, fallback decisions, and offline time |
 | `AgentActivity` | Yes, bounded recent history | Backend | Compact audit trail for offline-agent sessions and Unity/Nakama bootstrap events |
@@ -107,7 +107,7 @@ Required fields:
 | `visual_prefab_key` | Local Unity visual prefab key, used for random spawn visuals later |
 | `stats` | Current body combat stats |
 | `body_time` | Current BodyTime state |
-| `cultivation` | Current tier and progress |
+| `stats` | Current level and combat stats |
 | `lifecycle` | `alive`, `dying`, `reincarnating`, or `dead` |
 | `created_at` | Body creation timestamp |
 
@@ -228,7 +228,7 @@ Minimum data contract:
 Safety rules:
 
 - OpenClaw agents are untrusted external actors from the game server's point of view.
-- They never mutate inventory, currency, quest, BodyTime, cultivation, combat, or world state directly.
+- They never mutate inventory, currency, quest, BodyTime, level/stats, combat, or world state directly.
 - They may produce dialogue, social memory, and structured intent.
 - Nakama owns identity binding, consent, moderation, rate limit, and activity logging.
 - `api.dos.ai` / Go LLM Gateway owns prompt safety and model routing.
@@ -262,7 +262,7 @@ Vertical slice rule: the LLM receives only the top N memories by importance and 
 
 `AgentRuntime` is the compact operational counter block for the offline-agent
 prototype. It is not authoritative gameplay state and must not be used to grant
-items, XP, currency, BodyTime, or cultivation progress without a separate
+items, XP, currency, BodyTime, or level/stat progress without a separate
 server-side rule.
 
 Tracked counters:
@@ -310,7 +310,7 @@ The context includes:
 - current body identity
 - visual/archetype key
 - lifecycle
-- cultivation tier
+- level and stats
 - BodyTime budget
 - agent policy
 - soul fields
@@ -360,7 +360,7 @@ This does not replace authoritative game-server validation. It is only the first
 Implemented surfaces:
 
 - `backend/nakama/modules/index.ts` is the current game-backend source for
-  player profile, current body, soul, agent policy, BodyTime, cultivation, and
+  player profile, current body, soul, agent policy, BodyTime, level/stats, and
   compact memories. It also stores `agent_runtime` counters and a bounded
   `agent_activity` log. It exposes `secondspawn_profile_get`,
   `secondspawn_memory_add`, `secondspawn_soul_update`,
@@ -372,7 +372,7 @@ Implemented surfaces:
   when Supabase anonymous auth is not configured yet. Production account binding
   must use Supabase custom auth or a later approved identity ADR.
 - `backend/gateway/internal/character` stores prototype `AgentContext` with
-  profile, body, stats, characteristics, soul, policy, BodyTime, cultivation,
+  profile, body, stats, characteristics, soul, policy, BodyTime,
   and compact memories for LLM-gateway fallback and standalone cloud smoke
   tests.
 - Prototype memory writes deduplicate by memory kind and summary. Repeated

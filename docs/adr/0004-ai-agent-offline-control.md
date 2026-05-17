@@ -13,7 +13,7 @@ Core USP: when a player is offline, an LLM-driven AI agent controls their charac
 1. **AI agent runs server-side**, not on player's client.
 2. **Agent operates within Fusion server tick** - it emits intents identical to player input.
 3. **Server validates agent intents the same as player intents** - no privilege escalation.
-4. **Agent persona derived from player history** (cultivation tier, quest progress, social graph) and configurable preferences.
+4. **Agent persona derived from player history** (level/stats, quest progress, social graph) and configurable preferences.
 5. **Agent death = body death = reincarnation triggered.** Player returns to find a reincarnated character if their old body died.
 6. **Anti-abuse:** agent inherits player rate limits + capability caps. Agent cannot farm more efficiently than the player.
 

@@ -25,7 +25,6 @@ type BodyProfile struct {
 	Stats           CharacterStats   `json:"stats"`
 	Characteristics CharacterTraits  `json:"characteristics"`
 	Time            BodyTimeState    `json:"time"`
-	Cultivation     Cultivation      `json:"cultivation"`
 	Lifecycle       BodyLifecycle    `json:"lifecycle"`
 	AgentPolicy     AgentPolicy      `json:"agent_policy"`
 	Soul            SoulProfile      `json:"soul"`
@@ -69,11 +68,6 @@ type BodyTimeState struct {
 	RemainingSeconds int64 `json:"remaining_seconds"`
 	MaxSeconds       int64 `json:"max_seconds"`
 	DangerDrainRate  int64 `json:"danger_drain_rate"`
-}
-
-type Cultivation struct {
-	Tier       string `json:"tier"`
-	ProgressXP int64  `json:"progress_xp"`
 }
 
 type BodyLifecycle string
@@ -207,7 +201,6 @@ func BuildAgentContextPrompt(ctx AgentContext, maxMemories int) string {
 		ctx.Body.Stats.DefensePower,
 	))
 	writeKV(&b, "body_lifecycle", string(ctx.Body.Lifecycle))
-	writeKV(&b, "cultivation_tier", ctx.Body.Cultivation.Tier)
 	writeKV(&b, "body_time_seconds", fmt.Sprintf("%d/%d", ctx.Body.Time.RemainingSeconds, ctx.Body.Time.MaxSeconds))
 	writeKV(&b, "traits", fmt.Sprintf("curiosity=%d courage=%d empathy=%d discipline=%d aggression=%d sociability=%d",
 		ctx.Body.Characteristics.Curiosity,

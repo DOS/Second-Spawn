@@ -12,7 +12,7 @@
 - [Game Pillars](design/01-pillars.md)
 - [Vertical Slice Spec](design/02-vertical-slice-spec.md)
 - [Systems Index](design/03-systems-index.md)
-- [Cultivation System](design/04-cultivation-system.md)
+- [Deferred Advanced Body Progression](design/04-cultivation-system.md)
 - [Networking Architecture](design/05-networking-architecture.md)
 - [Overview Design](design/06-overview-design.md)
 - [Networked Player Controller Prototype](design/07-player-controller-prototype.md)

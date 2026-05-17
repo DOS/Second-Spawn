@@ -453,7 +453,6 @@ function actorProfileNeedsNormalization(profile: any): boolean {
     !profile.body.stats ||
     !profile.body.characteristics ||
     !profile.body.time ||
-    !profile.body.cultivation ||
     !profile.body.lifecycle ||
     !profile.body.agent_policy ||
     !profile.body.soul ||
@@ -514,7 +513,6 @@ function defaultActorProfile(ownerId: string, actorId: string, request: any): an
       stats: normalizeStats(request.stats || {}),
       characteristics: normalizeTraits(request.characteristics || {}),
       time: normalizeBodyTime(request.time || {}),
-      cultivation: normalizeCultivation(request.cultivation || {}),
       lifecycle: "alive",
       agent_policy: normalizePolicy(request.agent_policy || {}),
       soul: normalizeSoul(request.soul || { name: displayName }, displayName)
@@ -552,7 +550,6 @@ function ensureActorProfile(profile: any, ownerId: string, actorId: string): any
   profile.body.stats = normalizeStats(profile.body.stats || {});
   profile.body.characteristics = normalizeTraits(profile.body.characteristics || {});
   profile.body.time = normalizeBodyTime(profile.body.time || {});
-  profile.body.cultivation = normalizeCultivation(profile.body.cultivation || {});
   profile.body.lifecycle = trimString(profile.body.lifecycle) || "alive";
   profile.body.agent_policy = normalizePolicy(profile.body.agent_policy || {});
   profile.body.soul = normalizeSoul(profile.body.soul || { name: profile.display_name }, profile.display_name);
@@ -585,10 +582,6 @@ function defaultAgentContext(playerId: string): any {
         remaining_seconds: 86400,
         max_seconds: 86400,
         danger_drain_rate: 1
-      },
-      cultivation: {
-        tier: "Awakening",
-        progress_xp: 0
       },
       lifecycle: "alive",
       agent_policy: normalizePolicy({}),
@@ -626,7 +619,6 @@ function ensureAgentContext(context: any, playerId: string): any {
   context.body.stats = normalizeStats(context.body.stats || {});
   context.body.characteristics = normalizeTraits(context.body.characteristics || {});
   context.body.time = normalizeBodyTime(context.body.time || {});
-  context.body.cultivation = normalizeCultivation(context.body.cultivation || {});
   context.body.lifecycle = trimString(context.body.lifecycle) || "alive";
   context.body.agent_policy = normalizePolicy(context.body.agent_policy || {});
   context.body.soul = normalizeSoul(context.body.soul || {}, context.player.display_name);
@@ -730,13 +722,6 @@ function normalizeBodyTime(time: any): any {
     remaining_seconds: clampNumber(numberOrDefault(time.remaining_seconds, 86400), 0, 31536000),
     max_seconds: clampNumber(numberOrDefault(time.max_seconds, 86400), 1, 31536000),
     danger_drain_rate: clampNumber(numberOrDefault(time.danger_drain_rate, 1), 0, 1000)
-  };
-}
-
-function normalizeCultivation(cultivation: any): any {
-  return {
-    tier: trimString(cultivation.tier) || "Awakening",
-    progress_xp: clampNumber(numberOrDefault(cultivation.progress_xp, 0), 0, agentRuntimeMetricMax)
   };
 }
 
@@ -1095,7 +1080,7 @@ function normalizeSoul(soul: any, fallbackName: string): any {
       "do not spend scarce resources without permission"
     ]),
     long_term_goals: normalizeStringArray(soul.long_term_goals, [
-      "reach Enhancement",
+      "survive the next expedition",
       "build trusted relationships with NPCs"
     ]),
     player_notes: trimString(soul.player_notes) || "prototype default soul",

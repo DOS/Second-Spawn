@@ -38,7 +38,6 @@ func TestBuildAgentContextPromptSortsAndBoundsMemories(t *testing.T) {
 				RemainingSeconds: 3600,
 				MaxSeconds:       7200,
 			},
-			Cultivation: Cultivation{Tier: "Awakening"},
 			AgentPolicy: AgentPolicy{
 				Enabled:               true,
 				Mode:                  "farm_safe_area",
@@ -50,7 +49,7 @@ func TestBuildAgentContextPromptSortsAndBoundsMemories(t *testing.T) {
 				Temperament:     "cautious",
 				CombatStyle:     "kite enemies",
 				SocialStyle:     "brief and practical",
-				LongTermGoals:   []string{"reach Enhancement"},
+				LongTermGoals:   []string{"survive the next expedition"},
 				MoralBoundaries: []string{"do not betray allies"},
 				PlayerNotes:     "avoid unnecessary risk",
 			},

@@ -13,7 +13,7 @@
 
 This prototype proves the smallest useful SECOND SPAWN gameplay foundation: a network-spawned player can move in a top-down ARPG scene under Fusion authority, with a readable camera and no Unity console errors.
 
-This is not the combat system. This is the movement and authority contract that combat, cultivation, reincarnation, AI agent control, and future asset-controller integrations must respect.
+This is not the combat system. This is the movement and authority contract that combat, reincarnation, AI agent control, and future asset-controller integrations must respect.
 
 ---
 
