@@ -135,6 +135,7 @@ GameObject:
   - component: {fileID: 34500820}
   - component: {fileID: 34500821}
   - component: {fileID: 34500822}
+  - component: {fileID: 34500823}
   m_Layer: 0
   m_Name: _AgentGateway
   m_TagString: Untagged
@@ -296,6 +297,29 @@ MonoBehaviour:
   _topic: patrol
   _intentText: Route check complete. Keep the eastern gate quiet.
   _distanceMeters: 2
+--- !u!114 &34500823
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 34500814}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5c95ee097334a9d9b244b68a87af141, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.PermanentNpcPrototypeSpawner
+  _spawnOnStart: 1
+  _authWaitSeconds: 8
+  _maxNpcMarkers: 10
+  _spawnOrigin: {x: -8, y: 0, z: 7}
+  _columns: 5
+  _spacing: 3
+  _markerHeight: 1.8
+  _markerRadius: 0.45
+  _labelHeight: 2.2
+  _refreshKey: 287
+  _logStatus: 1
 --- !u!1 &47583031
 GameObject:
   m_ObjectHideFlags: 0
