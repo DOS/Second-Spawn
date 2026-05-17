@@ -49,6 +49,11 @@ namespace SecondSpawn.AI
         public AnimationCapabilitiesDto animation_capabilities;
         public BodyTimeDto time;
         public string lifecycle = "alive";
+        public FrameIdentityDto identity;
+        public FrameSkillDto[] skills;
+        public FrameAgentDto[] agents;
+        public FrameToolDto[] tools;
+        public FrameHeartbeatDto heartbeat;
         public AgentPolicyDto agent_policy;
         public SoulProfileDto soul;
         public MemoryRecordDto[] memory;
@@ -148,6 +153,57 @@ namespace SecondSpawn.AI
         public long remaining_seconds;
         public long max_seconds;
         public long danger_drain_rate;
+    }
+
+    [Serializable]
+    public sealed class FrameIdentityDto
+    {
+        public string public_name;
+        public string callsign;
+        public string public_role;
+        public string faction_title;
+        public string profession;
+        public string reputation_summary;
+    }
+
+    [Serializable]
+    public sealed class FrameSkillDto
+    {
+        public string id;
+        public string name;
+        public string category;
+        public int rank = 1;
+        public string summary;
+    }
+
+    [Serializable]
+    public sealed class FrameAgentDto
+    {
+        public string id;
+        public string mode;
+        public int priority = 1;
+        public string routine;
+        public string[] allowed_activities;
+        public string[] forbidden_activities;
+    }
+
+    [Serializable]
+    public sealed class FrameToolDto
+    {
+        public string name;
+        public string category;
+        public string intent;
+        public bool requires_validation = true;
+    }
+
+    [Serializable]
+    public sealed class FrameHeartbeatDto
+    {
+        public long cadence_seconds = 60;
+        public string last_seen_at;
+        public string offline_session_state;
+        public string last_action_summary;
+        public string fallback_state;
     }
 
     [Serializable]
@@ -267,6 +323,11 @@ namespace SecondSpawn.AI
         public BodyStoryDto story;
         public AnimationCapabilitiesDto animation_capabilities;
         public BodyTimeDto time;
+        public FrameIdentityDto identity;
+        public FrameSkillDto[] skills;
+        public FrameAgentDto[] agents;
+        public FrameToolDto[] tools;
+        public FrameHeartbeatDto heartbeat;
         public SoulProfileDto soul;
         public AgentPolicyDto agent_policy;
     }

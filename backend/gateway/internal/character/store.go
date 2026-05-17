@@ -235,6 +235,53 @@ func NewDefaultAgentContext(playerID string, now time.Time) AgentContext {
 				DangerDrainRate:  1,
 			},
 			Lifecycle: BodyLifecycleAlive,
+			Identity: FrameIdentity{
+				PublicName:        displayName,
+				Callsign:          "npc-prototype-hunter",
+				PublicRole:        "Prototype hunter body",
+				FactionTitle:      "Unaffiliated Frame",
+				Profession:        "Prototype hunter body",
+				ReputationSummary: "Newly inhabited body. Reputation is still being rebuilt under player control.",
+			},
+			Skills: []FrameSkill{
+				{
+					ID:       "skill-body-role",
+					Name:     "Prototype hunter body",
+					Category: "profession",
+					Rank:     1,
+					Summary:  "Prototype profession capability derived from the current Frame role.",
+				},
+				{
+					ID:       "skill-combat-kit",
+					Name:     "none",
+					Category: "combat",
+					Rank:     1,
+					Summary:  "Prototype combat kit derived from the server-selected body equipment.",
+				},
+			},
+			Agents: []FrameAgent{
+				{
+					ID:                  "agent-offline-player",
+					Mode:                "offline_player_agent",
+					Priority:            1,
+					Routine:             "Follow player policy, preserve BodyTime, and request only server-validated intents.",
+					AllowedActivities:   []string{"explore", "talk", "safe_farming"},
+					ForbiddenActivities: []string{"spend_body_time", "start_pvp", "trade_items"},
+				},
+			},
+			Tools: []FrameTool{
+				{Name: "move", Category: "intent", Intent: "move", RequiresValidation: true},
+				{Name: "interact", Category: "intent", Intent: "interact", RequiresValidation: true},
+				{Name: "say", Category: "intent", Intent: "say", RequiresValidation: true},
+				{Name: "loot_request", Category: "intent", Intent: "loot", RequiresValidation: true},
+			},
+			Heartbeat: FrameHeartbeat{
+				CadenceSeconds:      60,
+				LastSeenAt:          now.Format(time.RFC3339),
+				OfflineSessionState: "online",
+				LastActionSummary:   "No recent action.",
+				FallbackState:       "none",
+			},
 			AgentPolicy: AgentPolicy{
 				Enabled:               true,
 				Mode:                  "observe_and_keep_safe",

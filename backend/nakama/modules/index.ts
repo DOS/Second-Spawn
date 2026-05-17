@@ -819,6 +819,11 @@ function actorProfileNeedsNormalization(profile: any): boolean {
     !profile.body.animation_capabilities ||
     !profile.body.time ||
     !profile.body.lifecycle ||
+    !profile.body.identity ||
+    !profile.body.skills ||
+    !profile.body.agents ||
+    !profile.body.tools ||
+    !profile.body.heartbeat ||
     !profile.body.agent_policy ||
     !profile.body.soul ||
     !profile.memory ||
@@ -915,6 +920,11 @@ function defaultActorProfile(ownerId: string, actorId: string, request: any): an
       animation_capabilities: normalizeAnimationCapabilities(request.animation_capabilities || {}, archetype.animation_capabilities || {}),
       time: normalizeBodyTime(request.time || {}),
       lifecycle: "alive",
+      identity: normalizeFrameIdentity(request.identity || {}, displayName, archetype, actorId, false),
+      skills: normalizeFrameSkills(request.skills, archetype, equipmentOrArchetypeDefault(request.equipment, archetype)),
+      agents: normalizeFrameAgents(request.agents, request.agent_policy || {}, archetype, false),
+      tools: normalizeFrameTools(request.tools),
+      heartbeat: normalizeFrameHeartbeat(request.heartbeat || {}, timestamp, "idle"),
       agent_policy: normalizePolicy(request.agent_policy || {}),
       soul: normalizeSoulWithDefaults(request.soul || { name: displayName }, archetype.soul || {}, displayName)
     },
@@ -962,6 +972,11 @@ function ensureActorProfile(profile: any, ownerId: string, actorId: string): any
   profile.body.animation_capabilities = normalizeAnimationCapabilities(profile.body.animation_capabilities || {}, archetype.animation_capabilities || {});
   profile.body.time = normalizeBodyTime(profile.body.time || {});
   profile.body.lifecycle = trimString(profile.body.lifecycle) || "alive";
+  profile.body.identity = normalizeFrameIdentity(profile.body.identity || {}, profile.display_name, archetype, profile.actor_id, false);
+  profile.body.skills = normalizeFrameSkills(profile.body.skills, archetype, profile.body.equipment || {});
+  profile.body.agents = normalizeFrameAgents(profile.body.agents, profile.body.agent_policy || {}, archetype, false);
+  profile.body.tools = normalizeFrameTools(profile.body.tools);
+  profile.body.heartbeat = normalizeFrameHeartbeat(profile.body.heartbeat || {}, timestamp, "idle");
   profile.body.agent_policy = normalizePolicy(profile.body.agent_policy || {});
   profile.body.soul = normalizeSoulWithDefaults(profile.body.soul || { name: profile.display_name }, archetype.soul || {}, profile.display_name);
   profile.memory = sortAndBoundMemories(profile.memory || []);
@@ -994,6 +1009,9 @@ function defaultBodyProfile(playerId: string, displayName: string, timestamp: st
   var archetype = sourceFrame
     ? selectBodyArchetype(sourceFrame.archetype_id)
     : selectBodyArchetype(assignmentSeed);
+  var sourceActorId = sourceFrame
+    ? sourceFrame.npc_id
+    : sourceActorIdForArchetype(archetype, assignmentSeed);
   return {
     body_id: "body-" + playerId,
     archetype_id: archetype.archetype_id,
@@ -1001,9 +1019,7 @@ function defaultBodyProfile(playerId: string, displayName: string, timestamp: st
     visual_variant: normalizeVisualVariant(archetype.visual_variant),
     appearance: normalizeBodyAppearance(archetype.appearance || {}),
     inhabitation: normalizeBodyInhabitation({
-      source_actor_id: sourceFrame
-        ? sourceFrame.npc_id
-        : sourceActorIdForArchetype(archetype, assignmentSeed),
+      source_actor_id: sourceActorId,
       previous_role: (sourceFrame && sourceFrame.role) || (archetype.story && archetype.story.role),
       inhabited_by_player: true,
       assigned_at: timestamp
@@ -1019,6 +1035,11 @@ function defaultBodyProfile(playerId: string, displayName: string, timestamp: st
       danger_drain_rate: 1
     },
     lifecycle: "alive",
+    identity: normalizeFrameIdentity({}, displayName, archetype, sourceActorId, true),
+    skills: normalizeFrameSkills([], archetype, { equipment_visual_id: archetype.equipment_visual_id }),
+    agents: normalizeFrameAgents([], {}, archetype, true),
+    tools: normalizeFrameTools([]),
+    heartbeat: normalizeFrameHeartbeat({}, timestamp, "online"),
     agent_policy: normalizePolicy({}),
     soul: normalizeSoulWithDefaults({}, archetype.soul || {}, displayName),
     memory: [{
@@ -1070,6 +1091,11 @@ function ensureAgentContext(context: any, playerId: string): any {
   context.body.animation_capabilities = normalizeAnimationCapabilities(context.body.animation_capabilities || {}, archetype.animation_capabilities || {});
   context.body.time = normalizeBodyTime(context.body.time || {});
   context.body.lifecycle = trimString(context.body.lifecycle) || "alive";
+  context.body.identity = normalizeFrameIdentity(context.body.identity || {}, context.player.display_name, archetype, context.body.inhabitation && context.body.inhabitation.source_actor_id, true);
+  context.body.skills = normalizeFrameSkills(context.body.skills, archetype, context.body.equipment || {});
+  context.body.agents = normalizeFrameAgents(context.body.agents, context.body.agent_policy || {}, archetype, true);
+  context.body.tools = normalizeFrameTools(context.body.tools);
+  context.body.heartbeat = normalizeFrameHeartbeat(context.body.heartbeat || {}, timestamp, "online");
   context.body.agent_policy = normalizePolicy(context.body.agent_policy || {});
   context.body.soul = normalizeSoulWithDefaults(context.body.soul || {}, archetype.soul || {}, context.player.display_name);
   context.body.memory = sortAndBoundMemories(context.body.memory || []);
@@ -1606,6 +1632,9 @@ function addAgentActivity(context: any, activity: any, nk: nkruntime.Nakama): bo
   context.body.agent_activity = activities;
   context.body.agent_runtime.activity_count += 1;
   context.body.agent_runtime.last_activity_at = activity.occurred_at;
+  context.body.heartbeat = normalizeFrameHeartbeat(context.body.heartbeat || {}, activity.occurred_at, activity.kind === "offline_session" ? "offline" : "online");
+  context.body.heartbeat.last_seen_at = activity.occurred_at;
+  context.body.heartbeat.last_action_summary = activity.summary;
   return true;
 }
 
@@ -1769,6 +1798,161 @@ function normalizeBodyStory(story: any): any {
     role: trimString(story.role) || "Wanderer body",
     conflict: trimString(story.conflict) || "The body carries old habits that may not match its new consciousness.",
     rumor: trimString(story.rumor) || "No one knows which memories belong to the body and which belong to the soul."
+  };
+}
+
+function normalizeFrameIdentity(identity: any, displayName: string, archetype: any, sourceActorId: string, inhabitedByPlayer: boolean): any {
+  var role = trimString(identity.public_role) ||
+    trimString(identity.role) ||
+    trimString(archetype && archetype.story && archetype.story.role) ||
+    "Wanderer body";
+  var publicName = trimString(identity.public_name) ||
+    trimString(identity.name) ||
+    displayName ||
+    actorDisplayName(sourceActorId || "frame");
+  var callsign = trimString(identity.callsign) ||
+    trimString(sourceActorId) ||
+    sanitizeNakamaIdentifier(publicName, "frame");
+
+  return {
+    public_name: publicName,
+    callsign: callsign,
+    public_role: role,
+    faction_title: trimString(identity.faction_title) || "Unaffiliated Frame",
+    profession: trimString(identity.profession) || role,
+    reputation_summary: trimString(identity.reputation_summary) ||
+      (inhabitedByPlayer
+        ? "Newly inhabited body. Reputation is still being rebuilt under player control."
+        : "World NPC Frame with server-owned behavior and public identity.")
+  };
+}
+
+function normalizeFrameSkills(skills: any, archetype: any, equipment: any): any[] {
+  var normalized: any[] = [];
+  if (skills && typeof skills.length === "number") {
+    for (var i = 0; i < skills.length && normalized.length < 12; i += 1) {
+      var skill = normalizeFrameSkill(skills[i], i);
+      if (skill.id) {
+        normalized.push(skill);
+      }
+    }
+  }
+
+  if (normalized.length > 0) {
+    return normalized;
+  }
+
+  var role = trimString(archetype && archetype.story && archetype.story.role) || "Wanderer body";
+  var equipmentVisualId = clampNumber((equipment && equipment.equipment_visual_id) || (archetype && archetype.equipment_visual_id) || 0, 0, 9);
+  var defaults = equipmentVisualDefaults(equipmentVisualId);
+  return [
+    normalizeFrameSkill({
+      id: "skill-body-role",
+      name: role,
+      category: "profession",
+      rank: 1,
+      summary: "Prototype profession capability derived from the current Frame role."
+    }, 0),
+    normalizeFrameSkill({
+      id: "skill-combat-kit",
+      name: trimString(defaults.weapon_visual_key) || primaryWeaponName(equipmentVisualId),
+      category: "combat",
+      rank: 1,
+      summary: "Prototype combat kit derived from the server-selected body equipment."
+    }, 1)
+  ];
+}
+
+function normalizeFrameSkill(skill: any, index: number): any {
+  return {
+    id: trimString(skill && skill.id) || "skill-" + (index + 1),
+    name: trimString(skill && skill.name) || "Prototype skill",
+    category: trimString(skill && skill.category) || "profession",
+    rank: clampNumber((skill && skill.rank) || 1, 1, 100),
+    summary: trimString(skill && skill.summary) || "Prototype skill entry."
+  };
+}
+
+function normalizeFrameAgents(agents: any, policy: any, archetype: any, inhabitedByPlayer: boolean): any[] {
+  var normalized: any[] = [];
+  if (agents && typeof agents.length === "number") {
+    for (var i = 0; i < agents.length && normalized.length < 8; i += 1) {
+      var agent = normalizeFrameAgent(agents[i], policy, i);
+      if (agent.id) {
+        normalized.push(agent);
+      }
+    }
+  }
+
+  if (normalized.length > 0) {
+    return normalized;
+  }
+
+  var role = trimString(archetype && archetype.story && archetype.story.role) || "Wanderer body";
+  return [
+    normalizeFrameAgent({
+      id: inhabitedByPlayer ? "agent-offline-player" : "agent-world-npc",
+      mode: inhabitedByPlayer ? "offline_player_agent" : "world_npc_routine",
+      priority: 1,
+      routine: inhabitedByPlayer
+        ? "Follow player policy, preserve BodyTime, and request only server-validated intents."
+        : "Run the public NPC routine for the current Frame role: " + role + "."
+    }, policy, 0)
+  ];
+}
+
+function normalizeFrameAgent(agent: any, policy: any, index: number): any {
+  var normalizedPolicy = normalizePolicy(policy || {});
+  return {
+    id: trimString(agent && agent.id) || "agent-" + (index + 1),
+    mode: trimString(agent && agent.mode) || normalizedPolicy.mode,
+    priority: clampNumber((agent && agent.priority) || index + 1, 1, 100),
+    routine: trimString(agent && agent.routine) || "Observe, keep safe, and report changes through server-validated actions.",
+    allowed_activities: normalizeStringArray(agent && agent.allowed_activities, normalizedPolicy.preferred_activities),
+    forbidden_activities: normalizeStringArray(agent && agent.forbidden_activities, normalizedPolicy.forbidden_activities)
+  };
+}
+
+function normalizeFrameTools(tools: any): any[] {
+  var normalized: any[] = [];
+  if (tools && typeof tools.length === "number") {
+    for (var i = 0; i < tools.length && normalized.length < 16; i += 1) {
+      var tool = normalizeFrameTool(tools[i], i);
+      if (tool.name) {
+        normalized.push(tool);
+      }
+    }
+  }
+
+  if (normalized.length > 0) {
+    return normalized;
+  }
+
+  return [
+    normalizeFrameTool({ name: "move", category: "intent", intent: "move", requires_validation: true }, 0),
+    normalizeFrameTool({ name: "interact", category: "intent", intent: "interact", requires_validation: true }, 1),
+    normalizeFrameTool({ name: "say", category: "intent", intent: "say", requires_validation: true }, 2),
+    normalizeFrameTool({ name: "loot_request", category: "intent", intent: "loot", requires_validation: true }, 3)
+  ];
+}
+
+function normalizeFrameTool(tool: any, index: number): any {
+  var name = trimString(tool && tool.name) || "tool-" + (index + 1);
+  return {
+    name: name,
+    category: trimString(tool && tool.category) || "intent",
+    intent: trimString(tool && tool.intent) || name,
+    requires_validation: tool && tool.requires_validation === false ? false : true
+  };
+}
+
+function normalizeFrameHeartbeat(heartbeat: any, timestamp: string, fallbackState: string): any {
+  return {
+    cadence_seconds: clampNumber((heartbeat && heartbeat.cadence_seconds) || 60, 5, 3600),
+    last_seen_at: trimString(heartbeat && heartbeat.last_seen_at) || timestamp,
+    offline_session_state: trimString(heartbeat && heartbeat.offline_session_state) || fallbackState,
+    last_action_summary: trimString(heartbeat && heartbeat.last_action_summary) || "No recent action.",
+    fallback_state: trimString(heartbeat && heartbeat.fallback_state) || "none"
   };
 }
 

@@ -194,6 +194,42 @@ func TestAgentDecidePrototype(t *testing.T) {
 					"danger_drain_rate": 1
 				},
 				"lifecycle": "alive",
+				"identity": {
+					"public_name": "Crossline Surveyor 5104",
+					"callsign": "npc-crossline-hunter-5104",
+					"public_role": "Ranged survey body",
+					"faction_title": "Relay Runner",
+					"profession": "Perimeter scout",
+					"reputation_summary": "Known by the hub as reliable but time-poor."
+				},
+				"skills": [{
+					"id": "skill-scout",
+					"name": "Perimeter Scout",
+					"category": "profession",
+					"rank": 1,
+					"summary": "Reads perimeter threats."
+				}],
+				"agents": [{
+					"id": "agent-offline-player",
+					"mode": "offline_player_agent",
+					"priority": 1,
+					"routine": "Scout low-risk routes and preserve BodyTime.",
+					"allowed_activities": ["explore"],
+					"forbidden_activities": ["start_pvp"]
+				}],
+				"tools": [{
+					"name": "move",
+					"category": "intent",
+					"intent": "move",
+					"requires_validation": true
+				}],
+				"heartbeat": {
+					"cadence_seconds": 60,
+					"last_seen_at": "2026-05-16T00:00:00Z",
+					"offline_session_state": "online",
+					"last_action_summary": "Standing near the hub gate.",
+					"fallback_state": "none"
+				},
 				"agent_policy": {
 					"enabled": true,
 					"mode": "observe_and_keep_safe",

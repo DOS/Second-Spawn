@@ -800,7 +800,7 @@ MonoBehaviour:
   _showPrototypeStats: 1
   _showFrameIdentity: 1
   _panelPosition: {x: 16, y: 16}
-  _panelSize: {x: 420, y: 360}
+  _panelSize: {x: 440, y: 420}
   _maxStoryCharacters: 110
 --- !u!4 &769241725
 Transform:
