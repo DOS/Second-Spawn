@@ -43,6 +43,8 @@ namespace SecondSpawn.Networking
         [Networked] public int EquipmentVisualId { get; set; }
         [Networked] public NetworkBool SupportsJumpAnimation { get; set; }
         [Networked] public NetworkBool SupportsRollAnimation { get; set; }
+        [Networked] public NetworkBool SupportsMeleeAnimation { get; set; }
+        [Networked] public NetworkBool SupportsRangedAnimation { get; set; }
 
         /// <summary>True when the offline AI agent is driving this character (Pillar 1).</summary>
         [Networked] public NetworkBool IsAgentControlled { get; set; }
@@ -86,6 +88,11 @@ namespace SecondSpawn.Networking
                 if (!SupportsRollAnimation)
                 {
                     SupportsRollAnimation = true;
+                }
+
+                if (!SupportsMeleeAnimation)
+                {
+                    SupportsMeleeAnimation = true;
                 }
 
                 IsAgentControlled = false;
@@ -179,7 +186,13 @@ namespace SecondSpawn.Networking
             EquipmentVisualId = Mathf.Max(EquipmentVisualCatalog.None, equipmentVisualId);
         }
 
-        public void ApplyProfileVisual(int visualVariant, int equipmentVisualId, bool supportsJumpAnimation, bool supportsRollAnimation)
+        public void ApplyProfileVisual(
+            int visualVariant,
+            int equipmentVisualId,
+            bool supportsJumpAnimation,
+            bool supportsRollAnimation,
+            bool supportsMeleeAnimation,
+            bool supportsRangedAnimation)
         {
             if (!HasStateAuthority)
             {
@@ -195,6 +208,8 @@ namespace SecondSpawn.Networking
                     : EquipmentVisualCatalog.GetDefaultForVisualVariant(VisualVariant));
             SupportsJumpAnimation = supportsJumpAnimation;
             SupportsRollAnimation = supportsRollAnimation;
+            SupportsMeleeAnimation = supportsMeleeAnimation;
+            SupportsRangedAnimation = supportsRangedAnimation;
         }
 
         public void ApplyProfileStats(
@@ -277,6 +292,8 @@ namespace SecondSpawn.Networking
             VisualVariant = 12;
             SupportsJumpAnimation = true;
             SupportsRollAnimation = true;
+            SupportsMeleeAnimation = true;
+            SupportsRangedAnimation = false;
             IsBodyDead = false;
             SecondBalanceSeconds = 7 * 24 * 60 * 60;
             ReincarnationCount = 0;

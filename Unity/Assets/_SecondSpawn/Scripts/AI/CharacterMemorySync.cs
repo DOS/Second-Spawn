@@ -235,8 +235,10 @@ namespace SecondSpawn.AI
             var visualVariant = ResolveVisualVariant(body, player.VisualVariant);
             var supportsJump = body.animation_capabilities == null || body.animation_capabilities.supports_jump;
             var supportsRoll = body.animation_capabilities == null || body.animation_capabilities.supports_roll;
+            var supportsMelee = body.animation_capabilities == null || body.animation_capabilities.supports_melee;
+            var supportsRanged = body.animation_capabilities != null && body.animation_capabilities.supports_ranged;
 
-            player.ApplyProfileVisual(visualVariant, equipmentVisualId, supportsJump, supportsRoll);
+            player.ApplyProfileVisual(visualVariant, equipmentVisualId, supportsJump, supportsRoll, supportsMelee, supportsRanged);
             var loaders = player.GetComponentsInChildren<LocalVisualPrefabLoader>(includeInactive: true);
             foreach (var loader in loaders)
             {

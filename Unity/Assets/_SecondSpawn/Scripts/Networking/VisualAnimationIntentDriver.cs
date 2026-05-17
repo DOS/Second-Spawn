@@ -132,6 +132,8 @@ namespace SecondSpawn.Networking
             return intent switch
             {
                 VisualAnimationIntent.Jump => _networkPlayer.SupportsJumpAnimation,
+                VisualAnimationIntent.Attack => _networkPlayer.SupportsMeleeAnimation || _networkPlayer.SupportsRangedAnimation,
+                VisualAnimationIntent.Cast => _networkPlayer.SupportsRangedAnimation,
                 VisualAnimationIntent.DodgeLeft or
                     VisualAnimationIntent.DodgeRight or
                     VisualAnimationIntent.DodgeBackward => _networkPlayer.SupportsRollAnimation,
