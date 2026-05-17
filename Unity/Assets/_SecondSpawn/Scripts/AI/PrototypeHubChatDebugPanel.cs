@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace SecondSpawn.AI
 {
@@ -12,7 +13,7 @@ namespace SecondSpawn.AI
     public sealed class PrototypeHubChatDebugPanel : MonoBehaviour
     {
         [SerializeField] private bool _showPanel = true;
-        [SerializeField] private KeyCode _toggleKey = KeyCode.F3;
+        [SerializeField] private Key _toggleKey = Key.F3;
         [SerializeField] private Vector2 _panelPosition = new Vector2(552f, 16f);
         [SerializeField] private Vector2 _panelSize = new Vector2(420f, 248f);
         [SerializeField] private string _channelId = "prototype-hub";
@@ -34,7 +35,8 @@ namespace SecondSpawn.AI
 
         private void Update()
         {
-            if (Input.GetKeyDown(_toggleKey))
+            var keyboard = Keyboard.current;
+            if (keyboard != null && keyboard[_toggleKey].wasPressedThisFrame)
             {
                 _showPanel = !_showPanel;
             }

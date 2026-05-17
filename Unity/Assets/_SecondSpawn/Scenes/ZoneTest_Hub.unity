@@ -229,7 +229,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.PrototypeBodyLifecycleDebugPanel
   _showPanel: 0
-  _toggleKey: 283
+  _toggleKey: 95
   _panelPosition: {x: 16, y: 212}
   _panelSize: {x: 320, y: 224}
   _earnSeconds: 300
@@ -249,7 +249,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.PrototypeOpenClawDebugPanel
   _showPanel: 0
-  _toggleKey: 285
+  _toggleKey: 97
   _panelPosition: {x: 16, y: 424}
   _panelSize: {x: 360, y: 248}
   _frameActorId: npc-openclaw-guide
@@ -269,7 +269,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.PrototypeHubChatDebugPanel
   _showPanel: 0
-  _toggleKey: 284
+  _toggleKey: 96
   _panelPosition: {x: 552, y: 16}
   _panelSize: {x: 420, y: 248}
   _channelId: prototype-hub
@@ -289,7 +289,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.PrototypeNpcWorldDebugPanel
   _showPanel: 0
-  _toggleKey: 286
+  _toggleKey: 98
   _panelPosition: {x: 552, y: 280}
   _panelSize: {x: 420, y: 344}
   _actorAId: npc-synthetic-sentinel-0101
@@ -318,7 +318,7 @@ MonoBehaviour:
   _markerHeight: 1.8
   _markerRadius: 0.45
   _labelHeight: 2.2
-  _refreshKey: 287
+  _refreshKey: 99
   _logStatus: 1
 --- !u!1 &47583031
 GameObject:

@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace SecondSpawn.AI
 {
@@ -11,7 +12,7 @@ namespace SecondSpawn.AI
     public sealed class PrototypeNpcWorldDebugPanel : MonoBehaviour
     {
         [SerializeField] private bool _showPanel = true;
-        [SerializeField] private KeyCode _toggleKey = KeyCode.F5;
+        [SerializeField] private Key _toggleKey = Key.F5;
         [SerializeField] private Vector2 _panelPosition = new Vector2(552f, 280f);
         [SerializeField] private Vector2 _panelSize = new Vector2(420f, 292f);
         [SerializeField] private string _actorAId = "npc-synthetic-sentinel-0101";
@@ -37,7 +38,8 @@ namespace SecondSpawn.AI
 
         private void Update()
         {
-            if (Input.GetKeyDown(_toggleKey))
+            var keyboard = Keyboard.current;
+            if (keyboard != null && keyboard[_toggleKey].wasPressedThisFrame)
             {
                 _showPanel = !_showPanel;
             }

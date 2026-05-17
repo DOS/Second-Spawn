@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace SecondSpawn.AI
 {
@@ -17,7 +18,7 @@ namespace SecondSpawn.AI
         private const string DebugFatalDrainSource = "prototype_reincarnation_debug";
 
         [SerializeField] private bool _showPanel = true;
-        [SerializeField] private KeyCode _toggleKey = KeyCode.F2;
+        [SerializeField] private Key _toggleKey = Key.F2;
         [SerializeField] private Vector2 _panelPosition = new Vector2(16f, 212f);
         [SerializeField] private Vector2 _panelSize = new Vector2(320f, 224f);
         [SerializeField] private long _earnSeconds = 300;
@@ -37,7 +38,8 @@ namespace SecondSpawn.AI
 
         private void Update()
         {
-            if (Input.GetKeyDown(_toggleKey))
+            var keyboard = Keyboard.current;
+            if (keyboard != null && keyboard[_toggleKey].wasPressedThisFrame)
             {
                 _showPanel = !_showPanel;
             }

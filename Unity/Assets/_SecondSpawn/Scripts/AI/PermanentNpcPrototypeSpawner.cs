@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace SecondSpawn.AI
 {
@@ -21,7 +22,7 @@ namespace SecondSpawn.AI
         [SerializeField, Min(0.5f)] private float _markerHeight = 1.8f;
         [SerializeField, Min(0.1f)] private float _markerRadius = 0.45f;
         [SerializeField, Min(0.5f)] private float _labelHeight = 2.2f;
-        [SerializeField] private KeyCode _refreshKey = KeyCode.F6;
+        [SerializeField] private Key _refreshKey = Key.F6;
         [SerializeField] private bool _logStatus = true;
 
         private const string RootName = "_PermanentNpcMarkers";
@@ -49,7 +50,8 @@ namespace SecondSpawn.AI
 
         private void Update()
         {
-            if (Input.GetKeyDown(_refreshKey))
+            var keyboard = Keyboard.current;
+            if (keyboard != null && keyboard[_refreshKey].wasPressedThisFrame)
             {
                 Refresh();
             }
