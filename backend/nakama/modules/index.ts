@@ -26,6 +26,7 @@ var bodyTimeEarnCapSeconds = 3600;
 var bodyTimeSpendCapSeconds = 600;
 var bodyTimeDrainCapSeconds = 300;
 var bodyTimeEarnCooldownSeconds = 60;
+var bodyTimeDebugFatalDrainSource = "prototype_reincarnation_debug";
 var secondPrototypeMaxBalanceSeconds = 86400 * 365;
 var secondPrototypeStartingBalanceSeconds = 86400 * 7;
 var secondPrototypeReincarnationCostSeconds = 86400 * 5;
@@ -246,7 +247,10 @@ function rpcBodyTimeEvent(
 ): string {
   var state = getOrCreateAgentContextState(ctx, nk);
   var context = state.context;
-  var event = normalizeBodyTimeEvent(parseJson(payload || "{}", "body time payload"));
+  var event = normalizeBodyTimeEvent(
+    parseJson(payload || "{}", "body time payload"),
+    debugBodyTimeEnabled(ctx)
+  );
 
   ensureBodyTime(context);
   if (event.id && hasAgentActivityId(context.body.agent_activity || [], event.id)) {
@@ -804,10 +808,10 @@ function ensureBodyTime(context: any): void {
   }
 }
 
-function normalizeBodyTimeEvent(request: any): any {
+function normalizeBodyTimeEvent(request: any, allowDebugFatalDrain: boolean): any {
   var kind = normalizeBodyTimeEventKind(request.kind);
-  var source = normalizeBodyTimeEventSource(kind, request.source);
-  var amount = normalizeBodyTimeAmount(kind, firstDefined(request.amount_seconds, request.seconds));
+  var source = normalizeBodyTimeEventSource(kind, request.source, allowDebugFatalDrain);
+  var amount = normalizeBodyTimeAmount(kind, firstDefined(request.amount_seconds, request.seconds), source);
   return {
     id: trimString(request.id),
     kind: kind,
@@ -825,7 +829,7 @@ function normalizeBodyTimeEventKind(kind: any): string {
   throw new Error("body time event kind must be earn, spend, or drain");
 }
 
-function normalizeBodyTimeEventSource(kind: string, source: any): string {
+function normalizeBodyTimeEventSource(kind: string, source: any, allowDebugFatalDrain: boolean): string {
   var value = trimString(source);
   if (kind === "earn" && value === "prototype_safe_farming") {
     return value;
@@ -836,10 +840,13 @@ function normalizeBodyTimeEventSource(kind: string, source: any): string {
   if (kind === "drain" && value === "danger_zone_tick") {
     return value;
   }
+  if (kind === "drain" && allowDebugFatalDrain && value === bodyTimeDebugFatalDrainSource) {
+    return value;
+  }
   throw new Error("body time source is not allowed for " + kind);
 }
 
-function normalizeBodyTimeAmount(kind: string, amount: any): number {
+function normalizeBodyTimeAmount(kind: string, amount: any, source: string): number {
   var numberValue = Number(amount);
   if (isNaN(numberValue) || !isFinite(numberValue) || numberValue <= 0) {
     throw new Error("body time amount_seconds must be a positive finite number");
@@ -850,9 +857,15 @@ function normalizeBodyTimeAmount(kind: string, amount: any): number {
     maxAmount = bodyTimeEarnCapSeconds;
   } else if (kind === "spend") {
     maxAmount = bodyTimeSpendCapSeconds;
+  } else if (source === bodyTimeDebugFatalDrainSource) {
+    maxAmount = bodyTimeMaxSeconds;
   }
 
   return clampNumber(Math.floor(numberValue), 1, maxAmount);
+}
+
+function debugBodyTimeEnabled(ctx: nkruntime.Context): boolean {
+  return lowercase(ctx.env["SECOND_SPAWN_ENABLE_DEBUG_BODYTIME"] || "") === "true";
 }
 
 function applyBodyTimeEvent(context: any, event: any, nk: nkruntime.Nakama): void {

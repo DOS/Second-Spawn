@@ -31,6 +31,17 @@ SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 ```
 
+Optional local Play Mode debug env:
+
+```text
+SECOND_SPAWN_ENABLE_DEBUG_BODYTIME=true
+```
+
+This enables the prototype fatal BodyTime drain source used by Unity smoke
+tools to force the death -> reincarnation loop. Leave it disabled outside
+local development. Real PvP, contested-zone, or player-loot time transfers must
+come from server-validated combat or zone events, not client self-reporting.
+
 Use `local.example.yml` as the public-safe local config template. Keep real
 per-machine config outside git. Nakama expects `runtime.env` as key-value
 entries such as:
@@ -40,6 +51,7 @@ runtime:
   env:
     - "SUPABASE_URL=https://your-project.supabase.co"
     - "SUPABASE_PUBLISHABLE_KEY=sb_publishable_..."
+    - "SECOND_SPAWN_ENABLE_DEBUG_BODYTIME=false"
 ```
 
 If Supabase anonymous auth is not configured yet, the Unity prototype can fall

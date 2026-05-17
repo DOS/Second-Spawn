@@ -131,6 +131,7 @@ GameObject:
   - component: {fileID: 34500817}
   - component: {fileID: 34500816}
   - component: {fileID: 34500815}
+  - component: {fileID: 34500819}
   m_Layer: 0
   m_Name: _AgentGateway
   m_TagString: Untagged
@@ -167,7 +168,10 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.CharacterMemorySync
   _syncOnStart: 1
+  _preferNakama: 1
   _seedPrototypeMemory: 1
+  _applyProfileStatsToLocalPlayer: 1
+  _applyProfileEquipmentToLocalPlayer: 1
   _prototypeMemory: JOY wants overnight prototype progress without client-side LLM
     secrets.
 --- !u!114 &34500817
@@ -184,6 +188,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.SecondSpawnGatewayClient
   _gatewayBaseUrl: https://second-spawn-gateway-535583621422.asia-southeast1.run.app
   _playerId: dev-player
+  _authenticateOnStart: 1
+  _supabaseUrl:
+  _supabaseAnonKey:
+  _nakamaBaseUrl: http://127.0.0.1:7350
+  _nakamaServerKey: defaultkey
+  _allowNakamaDeviceFallback: 1
+  _bootstrapProfileAfterAuth: 1
+  _requestTimeoutSeconds: 10
 --- !u!4 &34500818
 Transform:
   m_ObjectHideFlags: 0
@@ -199,6 +211,24 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &34500819
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 34500814}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 47e3e1f6f17c4f5a87dbd4b0c70b321d, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.PrototypeBodyLifecycleDebugPanel
+  _showPanel: 1
+  _panelPosition: {x: 16, y: 212}
+  _panelSize: {x: 320, y: 196}
+  _earnSeconds: 300
+  _spendSeconds: 600
+  _dangerDrainSeconds: 300
 --- !u!1 &47583031
 GameObject:
   m_ObjectHideFlags: 0
@@ -552,6 +582,7 @@ GameObject:
   m_Component:
   - component: {fileID: 529322320}
   - component: {fileID: 529322319}
+  - component: {fileID: 529322321}
   m_Layer: 0
   m_Name: _AgentNPC_Prototype
   m_TagString: Untagged
@@ -582,6 +613,8 @@ MonoBehaviour:
   _talkIntervalSeconds: 7.5
   _seedSoulOnStart: 1
   _alignFeetToGround: 1
+  _logPhaseTransitions: 1
+  _gatewayFailureErrorThreshold: 3
 --- !u!4 &529322320
 Transform:
   m_ObjectHideFlags: 0
@@ -597,6 +630,30 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &529322321
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 529322318}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2bb44b8edfbf4b41a928f752d071c948, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.ActorProfileBinder
+  _loadOnStart: 1
+  _actorId: prototype-npc-guide
+  _actorType: npc
+  _displayName: Prototype Guide
+  _archetypeId: prototype-npc
+  _visualPrefabKey: prototype-npc
+  _applyDisplayNameToGameObject: 1
+  _seedMemoryOnStart: 1
+  _seedMemoryKind: system
+  _seedMemorySummary: Prototype Guide is a hub NPC body with its own actor profile,
+    memory, stats, traits, soul, and policy.
+  _seedMemoryImportance: 6
 --- !u!1 &584568219
 GameObject:
   m_ObjectHideFlags: 0

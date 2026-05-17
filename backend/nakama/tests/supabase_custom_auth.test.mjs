@@ -593,6 +593,46 @@ assert.throws(
   /source is not allowed/
 );
 
+const debugDrainHarness = createRuntimeHarness(module);
+debugDrainHarness.registeredRpcs.get("secondspawn_profile_get")(
+  { userId: "debug-drain-user", env: {} },
+  debugDrainHarness.logger,
+  debugDrainHarness.nk,
+  ""
+);
+assert.throws(
+  () => debugDrainHarness.registeredRpcs.get("secondspawn_bodytime_event")(
+    { userId: "debug-drain-user", env: {} },
+    debugDrainHarness.logger,
+    debugDrainHarness.nk,
+    JSON.stringify({
+      id: "debug-drain-rejected",
+      kind: "drain",
+      source: "prototype_reincarnation_debug",
+      amount_seconds: 86400
+    })
+  ),
+  /source is not allowed/
+);
+const debugDrainedBody = JSON.parse(debugDrainHarness.registeredRpcs.get("secondspawn_bodytime_event")(
+  {
+    userId: "debug-drain-user",
+    env: { SECOND_SPAWN_ENABLE_DEBUG_BODYTIME: "true" }
+  },
+  debugDrainHarness.logger,
+  debugDrainHarness.nk,
+  JSON.stringify({
+    id: "debug-drain-accepted",
+    kind: "drain",
+    source: "prototype_reincarnation_debug",
+    amount_seconds: 86400,
+    note: "Debug fatal drain."
+  })
+));
+assert.equal(debugDrainedBody.body.time.remaining_seconds, 0);
+assert.equal(debugDrainedBody.body.lifecycle, "dead");
+assert.equal(debugDrainedBody.body.agent_activity[0].body_time_source, "prototype_reincarnation_debug");
+
 const reincarnationHarness = createRuntimeHarness(module);
 reincarnationHarness.registeredRpcs.get("secondspawn_profile_get")(
   { userId: "reincarnation-user", env: {} },

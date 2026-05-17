@@ -40,9 +40,13 @@ especially `docs/design/02-vertical-slice-spec.md` and
 ## Current Review Gate
 
 - [x] Merge PR #5: model-backed agent decisions and brain phase logging.
-- [ ] Review the profile bootstrap and agent activity branch.
-- [ ] Merge the profile bootstrap and agent activity branch into `dev` after
+- [x] Review the profile bootstrap and agent activity branch.
+- [x] Merge the profile bootstrap and agent activity branch into `dev` after
   backend tests, Unity compile, and reviewer verification.
+- [x] Merge BodyTime event flow into `dev`.
+- [x] Defer cultivation/Nibirium runtime progression from the current vertical
+  slice.
+- [x] Merge reincarnation placeholder flow into `dev`.
 
 ## Vertical Slice - Current Milestone
 
@@ -67,9 +71,14 @@ MVP, and a visible offline-agent prototype.
 - [ ] Persist gateway-side prototype context or remove in-memory fallback once
   Nakama is the only source of durable game profile truth.
 - [ ] Wire Convai phase 1 NPC dialogue through the server-side intent boundary.
-- [ ] Add BodyTime meter MVP with one earn source and one spend sink.
-- [ ] Add reincarnation placeholder flow: death -> SECOND token check ->
+- [x] Add BodyTime meter MVP with one earn source and one spend sink.
+- [x] Add reincarnation placeholder flow: death -> SECOND token check ->
   respawn with current-body reset.
+- [ ] Surface BodyTime, lifecycle, SECOND balance, reincarnation count, and
+  debug reincarnation controls in the Unity prototype.
+- [ ] Design server-authoritative PvP or contested-zone loot rules where
+  BodyTime and SECOND can be taken from other users after validated combat or
+  zone events. Clients and LLMs must never self-report this loot.
 - [ ] Add one dungeon instance with one boss and grounded dialogue.
 - [ ] Add one Hunter NFT skin equip placeholder with DOS Chain escrow design
   still server-authoritative.
