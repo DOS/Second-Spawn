@@ -110,6 +110,8 @@ Recommended views:
   context read, pending intent submission, and heartbeat/audit updates.
 - [x] Unity Play Mode has an OpenClaw bridge debug panel for binding, context
   read, pending `say` intent, and heartbeat smoke testing.
+- [x] Nakama has bounded prototype hub chat RPCs, and Unity Play Mode has a
+  debug panel for sending and refreshing hub chat messages.
 - [x] `_AgentNPC_Prototype` can bind to an actor profile, patrol, speak, use the
   model-backed gateway decision path, and recover through Nakama deterministic
   fallback when the gateway is unavailable or rate-limited.
@@ -143,7 +145,7 @@ MVP, and a visible offline-agent prototype.
 - [ ] Replace prototype cube visuals with one approved Hunter-style player
   visual using the existing visual prefab catalog.
 - [ ] Add a proper hub NPC prefab using the prototype NPC brain contract.
-- [ ] Add Nakama channel-based basic chat for the vertical slice.
+- [x] Add Nakama channel-based basic chat for the vertical slice.
 - [x] Surface agent runtime stats and recent activity in an in-editor or
   prototype debug UI.
 - [ ] Add route-level gateway authentication before non-local AI or voice

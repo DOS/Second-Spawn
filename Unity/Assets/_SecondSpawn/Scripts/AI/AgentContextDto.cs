@@ -479,6 +479,49 @@ namespace SecondSpawn.AI
     }
 
     [Serializable]
+    public sealed class ChatSendRequestDto
+    {
+        public string channel_id = "prototype-hub";
+        public string sender_display_name;
+        public string message;
+        public string source = "player";
+    }
+
+    [Serializable]
+    public sealed class ChatListRequestDto
+    {
+        public string channel_id = "prototype-hub";
+        public int limit = 8;
+    }
+
+    [Serializable]
+    public sealed class ChatMessageDto
+    {
+        public string id;
+        public string channel_id;
+        public string sender_player_id;
+        public string sender_display_name;
+        public string text;
+        public string sent_at;
+        public string source;
+    }
+
+    [Serializable]
+    public sealed class ChatSendResponseDto
+    {
+        public string channel_id;
+        public ChatMessageDto message;
+        public ChatMessageDto[] messages;
+    }
+
+    [Serializable]
+    public sealed class ChatListResponseDto
+    {
+        public string channel_id;
+        public ChatMessageDto[] messages;
+    }
+
+    [Serializable]
     public sealed class AgentDecisionRequestDto
     {
         public AgentContextDto context;

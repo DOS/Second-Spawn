@@ -97,6 +97,10 @@ The current prototype module registers:
   update runtime counters for offline sessions or Unity-side bootstrap
 - `secondspawn_agent_decide` - deterministic safe fallback decision for local
   agent control when the LLM gateway is unavailable, with runtime counters
+- `secondspawn_chat_send` - append a bounded prototype message to a named hub
+  channel; this is an RPC storage log, not the final realtime socket
+- `secondspawn_chat_list` - read recent bounded messages for a named prototype
+  hub channel
 - `secondspawn_openclaw_bind` - bind a user-owned external OpenClaw agent to a
   server-owned Frame actor through `frame_actor_id`, `connected_agent_id`,
   consent, moderation, connection status, and rate limit metadata

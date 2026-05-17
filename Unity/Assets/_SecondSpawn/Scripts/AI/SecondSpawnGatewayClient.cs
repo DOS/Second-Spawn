@@ -211,6 +211,16 @@ namespace SecondSpawn.AI
             yield return SendNakamaRpc("secondspawn_openclaw_heartbeat", request, onSuccess, onError);
         }
 
+        public IEnumerator SendHubChatMessage(ChatSendRequestDto request, Action<ChatSendResponseDto> onSuccess, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_chat_send", request, onSuccess, onError);
+        }
+
+        public IEnumerator ListHubChatMessages(ChatListRequestDto request, Action<ChatListResponseDto> onSuccess, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_chat_list", request, onSuccess, onError);
+        }
+
         public IEnumerator GetContextForPlayer(string playerId, Action<AgentContextDto> onSuccess, Action<string> onError = null)
         {
             yield return Send<AgentContextDto>(
