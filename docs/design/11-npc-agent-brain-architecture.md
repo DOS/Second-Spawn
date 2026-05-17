@@ -173,8 +173,33 @@ Later production shape:
 User-owned OpenClaw agents can become in-world NPC-like actors through a bridge:
 
 ```text
-OpenClaw agent -> Game bridge API -> Nakama identity/policy -> Brain graph -> Fusion validated action
+OpenClaw agent -> Pull Frame context -> Submit intent -> Nakama policy/moderation -> Fusion validated action
 ```
+
+The game does not import or execute the OpenClaw agent's workspace files. The
+external agent keeps its own `AGENTS.md`, `SOUL.md`, `MEMORY.md`, tools, and
+private reasoning files. SECOND SPAWN exposes a structured read model for the
+controlled Frame and accepts structured intent requests.
+
+Required game-side contract:
+
+| Contract Piece | Purpose |
+| ---- | ---- |
+| `FrameIdentity` | Public role, callsign, profession, faction title, and reputation context |
+| `FrameSoul` | Bounded behavior style and durable motivation for prompt context |
+| `FrameBody` | Current body, stats, TIME, lifecycle, equipment, and world snapshot |
+| `FrameMemory` | Bounded summaries and relationship facts |
+| `FramePolicy` | Player or server-owned constraints |
+| `FrameTools` | Allowed request schema, not executable tools |
+| `FrameHeartbeat` | Connection state and last-decision observability |
+| Control binding | `frame_actor_id`, `controller_type`, `connected_agent_id`, owner, consent, moderation, and rate limit |
+
+Deferred or unnecessary for MVP:
+
+- Mirroring OpenClaw `AGENTS.md` into a `FrameAgents` backend layer.
+- Mirroring OpenClaw `SKILL.md` into a `FrameSkill` backend layer before the
+  combat/profession systems need structured skill records.
+- Importing raw OpenClaw `.md` files into Nakama storage.
 
 Allowed first roles:
 

@@ -66,28 +66,38 @@ changes.
 
 ---
 
-## Frame Core Layer Reference
+## Frame Layer Boundary
 
-The long-term agent-file vocabulary should use `Frame*` names so it maps cleanly
-to OpenClaw-style files while staying game-specific. These are design layers,
-not a requirement to create ten database tables in the vertical slice.
+Keep the `Frame*` vocabulary because it maps well to agent concepts, but do
+not mirror a full OpenClaw workspace inside the game backend. OpenClaw agents
+own their own `.md` files and reasoning setup. SECOND SPAWN only needs enough
+structured Frame context for an external agent to understand the NPC it is
+controlling and enough policy/tool metadata for the game to validate requests.
 
-| Frame Layer | Agent File Map | Owns | Example |
-| ---- | ---- | ---- | ---- |
-| `FrameUser` | `USER.md` | Real account, wallet, consent, cocoon owner, and external identity links | JOY owns the account, DOS Chain wallet, and AMB cocoon session that can enter a Frame |
-| `FrameIdentity` | `IDENTITY.md` | Public face, name, callsign, faction-facing role, title, and reputation summary | "Crossline courier 5104", public title "Relay Runner", known by the hub as reliable but time-poor |
-| `FrameSoul` | `SOUL.md` | Drive, temperament, values, moral boundaries, and durable motivation | Protective, curious, refuses to betray civilians, wants to recover memories from a prior Frame |
-| `FrameBody` | Body / current `BodyProfile` | Current bio-synthetic vessel, TIME, stats, lifecycle, visual archetype, and body-bound story | A low-tier Frame with 3,600 SECOND loaded, agile stats, damaged arm, and source actor `npc-crossline-hunter-5104` |
-| `FrameMemory` | `MEMORY.md` | Curated memories, relationships, promises, debts, rivalries, and private context | Remembers owing Mina a favor, distrusts DOS Labs patrols, and promised to return a stolen TIME canister |
-| `FramePolicy` | Policy file | Player-approved offline behavior, spending caps, risk limits, and allowed social posture | May farm low-risk zones offline, may spend up to 300 SECOND, must avoid PvP unless attacked |
-| `FrameHeartbeat` | `HEARTBEAT.md` | Runtime cadence, activity counters, offline session state, fallback state, and last action summary | Last online 8 hours ago, 42 validated intents, 3 fallback moves, currently returning to hub |
-| `FrameTools` | `TOOLS.md` | Requestable action interface for the agent, with server-side validation owning final authority | Request move, interact, trade offer, dialogue reply, loot pickup, or combat skill use |
-| `FrameSkill` | `SKILL.md` | Gameplay abilities, profession capabilities, combat kit, crafting access, and usable expertise | Dagger combo level 2, scavenger scan, courier sprint, basic TIME repair |
-| `FrameAgents` | `AGENTS.md` | Operating playbooks, behavior routing, NPC job routines, and mode-specific instructions | When offline as a courier, prioritize delivery routes, avoid boss zones, and report anomalies at the hub |
+MVP backend layers:
 
-`FramePolicy` and `FrameTools` are not security boundaries by themselves. They
-describe what the agent may request. Nakama, Fusion, and authoritative server
-systems still validate every gameplay outcome.
+| Frame Layer | Backend Role | Why It Exists In Game |
+| ---- | ---- | ---- |
+| `FrameIdentity` | Structured read model | Public name, callsign, role, profession, faction title, and reputation summary for UI, social context, and prompts |
+| `FrameSoul` | Structured read model | Durable motivation, temperament, style, goals, and moral boundaries used as bounded agent context |
+| `FrameBody` | Authoritative body state | Current vessel, stats, TIME, lifecycle, visuals, equipment, source NPC, and body-bound story |
+| `FrameMemory` | Bounded memory records | Short curated game memories and relationship facts for prompt context |
+| `FramePolicy` | Player or server-owned guardrail | Allowed risk, spending, combat, session, and activity limits |
+| `FrameTools` | Request schema only | Which in-game intents may be requested, never directly executed |
+| `FrameHeartbeat` | Runtime observability | Connection state, last seen, last action summary, fallback state, and counters |
+
+Deferred or external-owned layers:
+
+| Frame Layer | MVP Treatment |
+| ---- | ---- |
+| `FrameUser` | Account, wallet, consent, and ownership remain in normal player/account records, not the per-Frame runtime context |
+| `FrameSkill` | Use current stats, equipment, and profession summary first; add a structured skill list only when combat/profession systems need it |
+| `FrameAgents` | Do not mirror OpenClaw `AGENTS.md`; use `controller_type`, `controller_agent_id`, connection state, and policy instead |
+
+`FrameTools` is not an MCP tool surface. It is an in-game intent catalog.
+External agents may read it and submit intent requests such as `move`, `say`,
+`interact`, or `loot_request`. Nakama, Fusion, and authoritative server systems
+still validate every gameplay outcome.
 
 ---
 
@@ -150,21 +160,21 @@ Required fields:
 Profession and social state should not live in one catch-all profile field.
 
 - Public profession, callsign, faction-facing role, title, and reputation
-  summary belong to the identity layer. During the prototype this can be stored
-  as body story or identity metadata, then split into a future `FrameIdentity`
-  field set.
-- Profession abilities belong to the future `FrameSkill` or combat/profession
-  system.
-- Profession routines, such as how an actor works while offline, belong to
-  future `FrameAgents` playbooks or current NPC behavior modes.
+  summary belong to `FrameIdentity`.
+- Profession abilities should stay in combat/profession systems until they need
+  a structured `FrameSkill` list. Do not create a skill layer just to mirror an
+  external agent file.
+- Profession routines for OpenClaw-connected NPCs live in the external
+  OpenClaw agent. The game stores only the control binding, current policy, and
+  recent activity needed to validate and audit requests.
 - Personal relationships, debts, promises, rivalries, and private social facts
-  belong in `MemoryRecord`.
+  belong in `FrameMemory` records.
 - Relationships that become durable motivations can be promoted into
-  `SoulProfile.long_term_goals` or `moral_boundaries`.
+  `FrameSoul.long_term_goals` or `moral_boundaries`.
 
-This keeps "what the world sees", "what the body can do", "what the agent does",
-and "what the character remembers" separate enough for later UI and backend
-design.
+This keeps "what the world sees", "what the body can do", "what the external
+agent controls", and "what the character remembers" separate enough for later
+UI and backend design.
 
 ---
 
@@ -263,27 +273,44 @@ This is not the same as the player's offline agent:
 | Actor | Primary Owner | In-World Role | Authority |
 | ---- | ---- | ---- | ---- |
 | Offline player agent | Player character owner | Controls the player's current body while offline | Emits action intent; Fusion server validates |
-| OpenClaw-connected NPC | OpenClaw agent owner | Companion, hub NPC, merchant-like persona, quest-adjacent social actor, or world citizen | Emits dialogue or action intent; Fusion server validates |
+| OpenClaw-connected NPC | OpenClaw agent owner | Companion, hub NPC, merchant-like persona, quest-adjacent social actor, or world citizen | Pulls game context and emits dialogue or action intent; Fusion server validates |
 
-Minimum data contract:
+The game does not import, parse, or execute the OpenClaw agent's `.md` files.
+Those files remain the external agent's private brain. The game exposes a
+structured context API and receives structured intent requests.
+
+Minimum control binding:
 
 | Field | Meaning |
 | ---- | ---- |
 | `connected_agent_id` | Stable ID for the OpenClaw agent |
 | `owner_player_id` | Player who connected the agent |
-| `display_name` | Public in-game agent name |
+| `frame_actor_id` | NPC-like Frame actor controlled through the bridge |
+| `controller_type` | `game_ai`, `player`, `offline_agent`, or `openclaw` |
+| `connection_status` | Connected, disconnected, degraded, suspended, or blocked |
 | `agent_kind` | Companion, hub_npc, merchant_persona, quest_actor, social_actor |
 | `consent_scope` | What the owner allows the agent to do in-game |
 | `moderation_state` | Active, limited, suspended, or blocked |
-| `memory_scope` | Which memories can be read or written |
 | `rate_limit_profile` | Token and action limits for this connected agent |
+
+Context exposed to OpenClaw:
+
+| Layer | Access |
+| ---- | ---- |
+| `FrameIdentity` | Read current public identity |
+| `FrameSoul` | Read bounded motivation and behavior style |
+| `FrameBody` | Read current body state, stats, TIME, lifecycle, equipment, and zone snapshot |
+| `FrameMemory` | Read bounded summaries; append proposals only if allowed |
+| `FramePolicy` | Read constraints and risk limits |
+| `FrameTools` | Read request schema only |
+| `FrameHeartbeat` | Write own heartbeat and last-decision summary only |
 
 Safety rules:
 
 - OpenClaw agents are untrusted external actors from the game server's point of view.
 - They never mutate inventory, currency, quest, TIME, SECOND, level/stats, combat, or world state directly.
-- They may produce dialogue, social memory, and structured intent.
-- Nakama owns identity binding, consent, moderation, rate limit, and activity logging.
+- They may produce dialogue, social memory proposals, heartbeat updates, and structured intent.
+- Nakama owns identity binding, consent, moderation, rate limit, control binding, and activity logging.
 - `api.dos.ai` / Go LLM Gateway owns prompt safety and model routing.
 - Fusion server remains the final validator for any in-world action.
 

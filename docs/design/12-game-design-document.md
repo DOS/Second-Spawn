@@ -384,10 +384,19 @@ Every important NPC-like actor should eventually resolve to a bundle with clear 
 | `AgentPolicy` or NPC policy | What the actor is allowed to attempt |
 | `AgentRuntime` | Counters, fallback visibility, and recent operational state |
 | `AgentActivity` | Player-facing or operator-facing audit summary |
-| `FrameSkill` | Gameplay abilities, profession capabilities, and usable expertise |
-| `FrameAgents` | Optional behavior playbooks for offline-agent and NPC job routines |
 
-Server-side systems decide which parts are editable, inherited, generated, or read-only for each actor type. Profession and social state should be split across the bundle: public role and reputation in `FrameIdentity`, usable job abilities in future `FrameSkill`, offline work routines in future `FrameAgents` playbooks, private relationships in `MemoryRecord`, and relationships that become core motivations in `SoulProfile`.
+Server-side systems decide which parts are editable, inherited, generated, or
+read-only for each actor type. Profession and social state should be split
+across the bundle: public role and reputation in `FrameIdentity`, usable job
+abilities in combat/profession systems until a real `FrameSkill` layer is
+needed, private relationships in `MemoryRecord`, and relationships that become
+core motivations in `SoulProfile`.
+
+`FrameSkill` and `FrameAgents` are names we may still use later, but they are
+not required backend layers for the MVP. For OpenClaw-connected NPCs, the
+external OpenClaw instance owns its own agent files and routines. The game only
+stores the control binding, policy, allowed intent schema, bounded context, and
+runtime audit state.
 
 Prototype body-model decisions:
 
@@ -655,7 +664,35 @@ They are separate from the player's offline agent.
 | Actor | Role | Authority |
 | ---- | ---- | ---- |
 | Offline player agent | Controls the player's current body while offline | Emits action intent validated by Fusion server |
-| OpenClaw-connected NPC | Companion, hub NPC, merchant persona, quest-adjacent actor, or social citizen | Emits dialogue or action intent validated by game systems |
+| OpenClaw-connected NPC | Companion, hub NPC, merchant persona, quest-adjacent actor, or social citizen | Pulls game context and emits dialogue or action intent validated by game systems |
+
+The game does not need to mirror an OpenClaw workspace. OpenClaw `.md` files
+remain outside the game and define the external agent's private reasoning. The
+game exposes only structured Frame context and accepts only structured intent
+requests.
+
+Game-owned context exposed to OpenClaw:
+
+- `FrameIdentity`: public name, callsign, role, profession, faction title, and reputation.
+- `FrameSoul`: bounded motivation, style, goals, and moral boundaries.
+- `FrameBody`: current vessel, stats, TIME, lifecycle, equipment, and world snapshot.
+- `FrameMemory`: bounded summaries and relationship facts.
+- `FramePolicy`: owner-approved constraints.
+- `FrameTools`: request schema only, not executable tools.
+- `FrameHeartbeat`: connection and last-decision status.
+
+Minimum control binding:
+
+| Field | Meaning |
+| ---- | ---- |
+| `frame_actor_id` | NPC-like Frame controlled by this bridge |
+| `controller_type` | `game_ai`, `player`, `offline_agent`, or `openclaw` |
+| `connected_agent_id` | Stable external OpenClaw agent ID |
+| `owner_player_id` | Player who connected the agent |
+| `connection_status` | Connected, disconnected, degraded, suspended, or blocked |
+| `consent_scope` | What the owner allows |
+| `moderation_state` | Active, limited, suspended, or blocked |
+| `rate_limit_profile` | Token and action limits |
 
 Allowed concept roles:
 
@@ -672,7 +709,10 @@ Disallowed until later:
 - Combat authority.
 - Quest completion authority.
 
-Nakama owns identity binding, consent, moderation, rate limit, memory scope, and audit logs. `api.dos.ai` handles prompt safety and model routing. Fusion server validates in-world actions.
+Nakama owns identity binding, consent, moderation, rate limit, control binding,
+memory scope, and audit logs. `api.dos.ai` handles prompt safety and model
+routing when the game hosts model calls. Fusion server validates in-world
+actions.
 
 Open prototype decision:
 
