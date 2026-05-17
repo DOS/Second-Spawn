@@ -3,7 +3,6 @@ import fs from "node:fs";
 import vm from "node:vm";
 
 const runtime = fs.readFileSync(new URL("../build/index.js", import.meta.url), "utf8");
-
 function loadRuntime() {
   const context = {};
   vm.createContext(context);
@@ -225,9 +224,9 @@ const seededNpcs = JSON.parse(harness.registeredRpcs.get("secondspawn_npc_seed")
 assert.equal(seededNpcs.count, 10);
 assert.equal(seededNpcs.npcs[0].actor_id, "npc-synthetic-sentinel-0101");
 assert.equal(seededNpcs.npcs[0].actor_type, "npc");
-assert.equal(seededNpcs.npcs[0].owner_player_id, "");
+assert.equal(seededNpcs.npcs[0].owner_player_id, "user-1");
 assert.equal(seededNpcs.npcs[0].body.identity.public_name, "Gate Sentinel 0101");
-assert.ok(harness.storage.get(storageKey("", "secondspawn_actor", "profile:npc-synthetic-sentinel-0101")));
+assert.ok(harness.storage.get(storageKey("user-1", "secondspawn_actor", "world_profile:npc-synthetic-sentinel-0101")));
 
 const listedNpcs = JSON.parse(harness.registeredRpcs.get("secondspawn_npc_list")(
   { userId: "user-1", env: {} },
