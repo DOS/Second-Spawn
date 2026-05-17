@@ -54,6 +54,9 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 - Nakama now exposes the first OpenClaw bridge RPCs for binding an external
   agent to a Frame actor, reading structured Frame context, submitting
   server-validated intent requests, and updating connection heartbeat state.
+- Unity now has prototype OpenClaw bridge client wrappers and a Play Mode debug
+  panel for binding an external agent to a Frame, reading context, submitting a
+  pending `say` intent, and updating heartbeat state.
 
 ### Changed
 

@@ -343,6 +343,142 @@ namespace SecondSpawn.AI
     }
 
     [Serializable]
+    public sealed class OpenClawBindRequestDto
+    {
+        public string frame_actor_id;
+        public string connected_agent_id;
+        public string display_name;
+        public string agent_kind = "companion";
+        public string[] consent_scope;
+        public string moderation_state = "active";
+        public string connection_status = "connected";
+        public OpenClawRateLimitProfileDto rate_limit_profile;
+    }
+
+    [Serializable]
+    public sealed class OpenClawBindingDto
+    {
+        public string frame_actor_id;
+        public string controller_type;
+        public string connected_agent_id;
+        public string owner_player_id;
+        public string connection_status;
+        public string agent_kind;
+        public string[] consent_scope;
+        public string moderation_state;
+        public OpenClawRateLimitProfileDto rate_limit_profile;
+        public string created_at;
+        public string updated_at;
+        public string last_seen_at;
+    }
+
+    [Serializable]
+    public sealed class OpenClawRateLimitProfileDto
+    {
+        public int requests_per_minute = 30;
+        public int intents_per_minute = 20;
+        public int tokens_per_day = 50000;
+    }
+
+    [Serializable]
+    public sealed class OpenClawContextRequestDto
+    {
+        public string connected_agent_id;
+    }
+
+    [Serializable]
+    public sealed class OpenClawContextResponseDto
+    {
+        public OpenClawBindingDto binding;
+        public OpenClawFrameContextDto context;
+    }
+
+    [Serializable]
+    public sealed class OpenClawFrameContextDto
+    {
+        public FrameIdentityDto identity;
+        public SoulProfileDto soul;
+        public OpenClawFrameBodyDto body;
+        public MemoryRecordDto[] memory;
+        public AgentPolicyDto policy;
+        public FrameToolDto[] tools;
+        public FrameHeartbeatDto heartbeat;
+    }
+
+    [Serializable]
+    public sealed class OpenClawFrameBodyDto
+    {
+        public string body_id;
+        public string archetype_id;
+        public string visual_prefab_key;
+        public int visual_variant = -1;
+        public BodyAppearanceDto appearance;
+        public BodyInhabitationDto inhabitation;
+        public EquipmentLoadoutDto equipment;
+        public CharacterStatsDto stats;
+        public CharacterTraitsDto characteristics;
+        public BodyStoryDto story;
+        public AnimationCapabilitiesDto animation_capabilities;
+        public BodyTimeDto time;
+        public string lifecycle = "alive";
+    }
+
+    [Serializable]
+    public sealed class OpenClawIntentSubmitRequestDto
+    {
+        public string connected_agent_id;
+        public string id;
+        public string intent = "say";
+        public OpenClawIntentPayloadDto payload;
+        public string reason;
+    }
+
+    [Serializable]
+    public sealed class OpenClawIntentPayloadDto
+    {
+        public string text;
+        public string target_id;
+        public float x;
+        public float z;
+    }
+
+    [Serializable]
+    public sealed class OpenClawIntentSubmitResponseDto
+    {
+        public bool accepted;
+        public string status;
+        public OpenClawBindingDto binding;
+        public OpenClawIntentDto intent;
+        public AgentActivityRecordDto activity;
+    }
+
+    [Serializable]
+    public sealed class OpenClawIntentDto
+    {
+        public string id;
+        public string intent;
+        public OpenClawIntentPayloadDto payload;
+        public string reason;
+        public string requested_at;
+    }
+
+    [Serializable]
+    public sealed class OpenClawHeartbeatRequestDto
+    {
+        public string connected_agent_id;
+        public string connection_status = "connected";
+        public string summary;
+    }
+
+    [Serializable]
+    public sealed class OpenClawHeartbeatResponseDto
+    {
+        public OpenClawBindingDto binding;
+        public OpenClawFrameContextDto context;
+        public AgentActivityRecordDto activity;
+    }
+
+    [Serializable]
     public sealed class AgentDecisionRequestDto
     {
         public AgentContextDto context;

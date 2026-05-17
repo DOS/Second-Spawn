@@ -191,6 +191,26 @@ namespace SecondSpawn.AI
             yield return SendNakamaRpc("secondspawn_agent_decide", request, onSuccess, onError);
         }
 
+        public IEnumerator BindOpenClawAgent(OpenClawBindRequestDto request, Action<OpenClawBindingDto> onSuccess, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_openclaw_bind", request, onSuccess, onError);
+        }
+
+        public IEnumerator GetOpenClawContext(OpenClawContextRequestDto request, Action<OpenClawContextResponseDto> onSuccess, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_openclaw_context_get", request, onSuccess, onError);
+        }
+
+        public IEnumerator SubmitOpenClawIntent(OpenClawIntentSubmitRequestDto request, Action<OpenClawIntentSubmitResponseDto> onSuccess, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_openclaw_intent_submit", request, onSuccess, onError);
+        }
+
+        public IEnumerator SendOpenClawHeartbeat(OpenClawHeartbeatRequestDto request, Action<OpenClawHeartbeatResponseDto> onSuccess, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_openclaw_heartbeat", request, onSuccess, onError);
+        }
+
         public IEnumerator GetContextForPlayer(string playerId, Action<AgentContextDto> onSuccess, Action<string> onError = null)
         {
             yield return Send<AgentContextDto>(
