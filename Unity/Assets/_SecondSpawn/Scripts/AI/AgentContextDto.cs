@@ -164,6 +164,9 @@ namespace SecondSpawn.AI
         public string public_role;
         public string faction_title;
         public string profession;
+        public int age_years;
+        public string age_band;
+        public string home_base;
         public string reputation_summary;
     }
 

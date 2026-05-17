@@ -24,6 +24,7 @@ namespace SecondSpawn.Networking
             "Assets/ExplosiveLLC/Fighter Pack Bundle FREE/Fighters/Female Fighter Mecanim Animation Pack FREE/Prefabs/Female.prefab",
             "Assets/ExplosiveLLC/Fighter Pack Bundle FREE/Fighters/Heavy Fighter Mecanim Animation Pack FREE/Prefabs/Heavy.prefab",
             "Assets/ExplosiveLLC/Fighter Pack Bundle FREE/Fighters/Male Fighter Mecanim Animation Pack FREE/Prefabs/Male.prefab",
+            "Assets/ExplosiveLLC/Warrior Pack Bundle 1 FREE/Sorceress Warrior Mecanim Animation Pack/Prefabs/Crafter FREE.prefab",
         };
 
         public static int Count => SourceAssetPaths.Length;

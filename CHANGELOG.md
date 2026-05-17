@@ -151,6 +151,13 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   so the scene focuses on the 10 persistent NPC agents.
 - Visual body catalog now includes the 4 Fighter Pack variants in addition to
   the RPG Character and 12 Warrior variants, for 17 source body variants total.
+- Visual body catalog now also includes the Crafter FREE body as variant 17,
+  bringing the local source body variant count to 18.
+- Permanent NPC profiles now carry per-NPC identity, profession, apparent age,
+  home base, stats, traits, soul, story, and seed memory instead of only
+  archetype-level defaults.
+- Prototype overhead NPC labels were reduced to compact two-line name and role
+  plates so 10 spawned NPCs remain readable in Play Mode.
 - Generated character prefabs now resolve from `_SecondSpawn/Prefabs` and
   generated materials from `_SecondSpawn/Materials`, while vendor asset packs
   remain immutable under `Assets/ExplosiveLLC`.

@@ -314,10 +314,12 @@ MonoBehaviour:
   _maxNpcMarkers: 10
   _spawnOrigin: {x: -8, y: 0, z: 7}
   _columns: 5
-  _spacing: 3
+  _spacing: 4
   _markerHeight: 1.8
   _markerRadius: 0.45
-  _labelHeight: 2.2
+  _labelHeight: 2.35
+  _labelCharacterSize: 0.05
+  _labelMaxLineLength: 22
   _refreshKey: 99
   _logStatus: 1
   _zoneId: prototype-hub

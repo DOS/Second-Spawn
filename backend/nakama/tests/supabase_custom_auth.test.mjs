@@ -229,6 +229,7 @@ assert.equal(seededNpcs.npcs[0].body.identity.public_name, "Gate Sentinel 0101")
 assert.equal(seededNpcs.npcs[0].body.visual_variant, 7);
 assert.equal(seededNpcs.npcs[5].body.visual_variant, 16);
 assert.equal(seededNpcs.npcs[6].body.visual_variant, 14);
+assert.equal(seededNpcs.npcs[7].body.visual_variant, 17);
 assert.equal(seededNpcs.npcs[8].body.visual_variant, 15);
 assert.ok(harness.storage.get(storageKey("user-1", "secondspawn_actor", "world_profile:npc-synthetic-sentinel-0101")));
 
@@ -594,6 +595,16 @@ assert.equal(permanentNpcProfile.display_name, "Clinic Operator 0819");
 assert.equal(permanentNpcProfile.body.archetype_id, "clinic-operator");
 assert.equal(permanentNpcProfile.body.inhabitation.previous_role, "Support and researcher body");
 assert.equal(permanentNpcProfile.body.inhabitation.inhabited_by_player, false);
+assert.equal(permanentNpcProfile.body.visual_variant, 17);
+assert.equal(permanentNpcProfile.body.identity.profession, "crafter clinician");
+assert.equal(permanentNpcProfile.body.identity.age_years, 39);
+assert.equal(permanentNpcProfile.body.identity.home_base, "Repair Bench 8");
+assert.equal(permanentNpcProfile.body.stats.level, 3);
+assert.equal(permanentNpcProfile.body.stats.focus, 12);
+assert.equal(permanentNpcProfile.body.characteristics.discipline, 9);
+assert.equal(permanentNpcProfile.body.soul.name, "Clinic-0819 Craft");
+assert.equal(permanentNpcProfile.memory[0].id, "memory-repair-bench");
+assert.match(permanentNpcProfile.memory[0].summary, /cracked frame hand/);
 
 assert.throws(
   () => harness.registeredRpcs.get("secondspawn_actor_profile_get")(

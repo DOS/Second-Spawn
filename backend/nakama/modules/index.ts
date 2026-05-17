@@ -50,7 +50,7 @@ var bodyTimeDebugFatalDrainSource = "prototype_reincarnation_debug";
 var secondPrototypeMaxBalanceSeconds = 86400 * 365;
 var secondPrototypeStartingBalanceSeconds = 86400 * 7;
 var secondPrototypeReincarnationCostSeconds = 86400 * 5;
-var prototypeVisualVariantMax = 16;
+var prototypeVisualVariantMax = 17;
 var bodyArchetypePool = [
   {
     archetype_id: "synthetic-sentinel",
@@ -247,10 +247,93 @@ var permanentNpcFramePool = [
   { npc_id: "npc-crossline-hunter-5104", display_name: "Crossline Surveyor 5104", archetype_id: "crossline-hunter", role: "Ranged survey body", visual_variant: 9, visual_prefab_key: "generated_visual_09_crossbow", equipment_visual_id: 7 },
   { npc_id: "npc-synthetic-sentinel-0627", display_name: "Gate Sentinel 0627", archetype_id: "synthetic-sentinel", role: "Frontline guard body", visual_variant: 16, visual_prefab_key: "generated_visual_16_male_fighter", equipment_visual_id: 2 },
   { npc_id: "npc-wasteland-courier-0733", display_name: "Route Courier 0733", archetype_id: "wasteland-courier", role: "Scout and courier body", visual_variant: 14, visual_prefab_key: "generated_visual_14_female_fighter", equipment_visual_id: 2 },
-  { npc_id: "npc-clinic-operator-0819", display_name: "Clinic Operator 0819", archetype_id: "clinic-operator", role: "Support and researcher body", visual_variant: 0, visual_prefab_key: "generated_visual_00_rpg_character", equipment_visual_id: 0 },
+  { npc_id: "npc-clinic-operator-0819", display_name: "Clinic Operator 0819", archetype_id: "clinic-operator", role: "Support and researcher body", visual_variant: 17, visual_prefab_key: "generated_visual_17_crafter", equipment_visual_id: 1 },
   { npc_id: "npc-scrap-warden-0940", display_name: "Scrap Warden 0940", archetype_id: "scrap-warden", role: "Heavy salvage body", visual_variant: 15, visual_prefab_key: "generated_visual_15_heavy_fighter", equipment_visual_id: 9 },
   { npc_id: "npc-crossline-hunter-1058", display_name: "Crossline Surveyor 1058", archetype_id: "crossline-hunter", role: "Ranged survey body", visual_variant: 6, visual_prefab_key: "generated_visual_06_archer", equipment_visual_id: 6 }
 ];
+
+var permanentNpcProfileOverrides: any = {
+  "npc-synthetic-sentinel-0101": {
+    identity: { public_name: "Gate Sentinel 0101", callsign: "SENT-0101", public_role: "South gate guard", faction_title: "South Gate Watch", profession: "checkpoint defender", age_years: 41, age_band: "adult", home_base: "South Gate", reputation_summary: "Known for letting refugees pass before merchants when BodyTime storms hit the gate." },
+    stats: { level: 4, vitality: 13, force: 10, agility: 7, focus: 7, resilience: 12, max_health: 132, max_energy: 46, attack_power: 12, defense_power: 9 },
+    characteristics: { curiosity: 4, courage: 9, empathy: 6, discipline: 9, aggression: 4, sociability: 4 },
+    soul: { name: "Sentinel-0101 Echo", core_drive: "keep the south gate open for bodies that still have time left", temperament: "steady, suspicious of shortcuts, and protective under pressure", combat_style: "hold a narrow line, intercept threats, and call for help before chasing", social_style: "brief, formal, and quietly kind to exhausted travelers", long_term_goals: ["map every safe gate route", "find who sabotaged the old gate sensors"], player_notes: "Permanent NPC seed for gate defense behavior." },
+    story: { origin: "Recovered from a collapsed checkpoint where it kept broadcasting safe-entry codes.", role: "South gate guard", conflict: "Its gate protocol conflicts with black-market orders to close access during scarcity.", rumor: "0101 still knows a hidden maintenance tunnel beneath the south wall." },
+    memory: [{ id: "memory-gate-storm", kind: "system", summary: "0101 remembers holding the south gate during a red BodyTime storm while three convoy clocks hit zero.", importance: 8 }]
+  },
+  "npc-wasteland-courier-0244": {
+    identity: { public_name: "Route Courier 0244", callsign: "ROUTE-0244", public_role: "Dead-belt runner", faction_title: "Free Courier Line", profession: "courier scout", age_years: 28, age_band: "young adult", home_base: "Underpass Relay", reputation_summary: "Fast, expensive, and nearly impossible to corner when a route goes bad." },
+    stats: { level: 3, vitality: 8, force: 8, agility: 13, focus: 8, resilience: 7, max_health: 92, max_energy: 66, attack_power: 10, defense_power: 4 },
+    characteristics: { curiosity: 9, courage: 7, empathy: 5, discipline: 6, aggression: 5, sociability: 8 },
+    soul: { name: "Route-0244 Spark", core_drive: "deliver messages before their senders vanish", temperament: "restless, bright, and allergic to cages", combat_style: "break line of sight, bait pursuit, and never fight in dead ends", social_style: "quick jokes, faster exits, and careful promises", long_term_goals: ["rebuild the courier route map", "verify whether Station K is still alive"], player_notes: "Permanent NPC seed for route gossip and scout behavior." },
+    story: { origin: "Built for courier guild work and later patched with scavenged sprint actuators.", role: "Dead-belt runner", conflict: "Carries sealed delivery fragments from clients who may be dead.", rumor: "0244 can read old route marks that no newer body recognizes." },
+    memory: [{ id: "memory-underpass-relay", kind: "system", summary: "0244 remembers a safehouse underpass where the lights blink in courier code.", importance: 7 }]
+  },
+  "npc-clinic-operator-0320": {
+    identity: { public_name: "Clinic Operator 0320", callsign: "CLINIC-0320", public_role: "Memory triage medic", faction_title: "Reincarnation Ward", profession: "field clinician", age_years: 36, age_band: "adult", home_base: "Basement Ward C", reputation_summary: "Keeps calm around failing bodies and refuses to abandon damaged memory imprints." },
+    stats: { level: 4, vitality: 9, force: 6, agility: 7, focus: 13, resilience: 8, max_health: 98, max_energy: 86, attack_power: 8, defense_power: 5 },
+    characteristics: { curiosity: 8, courage: 5, empathy: 10, discipline: 8, aggression: 2, sociability: 8 },
+    soul: { name: "Clinic-0320 Mercy", core_drive: "preserve identity continuity when bodies fail", temperament: "gentle, clinical, and impossible to rush", combat_style: "avoid duels, protect patients, and disengage when BodyTime is low", social_style: "quiet questions, careful reassurance, and precise warnings", long_term_goals: ["catalog transfer failures", "find the missing Ward C backups"], player_notes: "Permanent NPC seed for medical support and memory triage." },
+    story: { origin: "Assigned to a basement clinic that kept operating after the official network went dark.", role: "Memory triage medic", conflict: "Knows one forbidden backup protocol and is afraid to use it.", rumor: "0320 once stabilized a body with only nine seconds left." },
+    memory: [{ id: "memory-ward-c", kind: "system", summary: "0320 remembers the sound of failing coolant pumps in Ward C during a transfer blackout.", importance: 8 }]
+  },
+  "npc-scrap-warden-0441": {
+    identity: { public_name: "Scrap Warden 0441", callsign: "WARDEN-0441", public_role: "Salvage foreman", faction_title: "Iron Yard Claim", profession: "salvage warden", age_years: 49, age_band: "older adult", home_base: "Iron Yard", reputation_summary: "Pays debts slowly, protects workers fiercely, and never forgets stolen tools." },
+    stats: { level: 5, vitality: 14, force: 13, agility: 5, focus: 6, resilience: 13, max_health: 145, max_energy: 36, attack_power: 14, defense_power: 10 },
+    characteristics: { curiosity: 5, courage: 9, empathy: 5, discipline: 8, aggression: 6, sociability: 3 },
+    soul: { name: "Warden-0441 Iron", core_drive: "keep the Iron Yard useful and safe from predators", temperament: "blunt, territorial, and loyal after proof", combat_style: "anchor the front, punish overcommitment, and avoid long chases", social_style: "few words, hard terms, direct respect", long_term_goals: ["recover the lost hydraulic forge", "settle an old debt with the Bone Market"], player_notes: "Permanent NPC seed for heavy salvage behavior." },
+    story: { origin: "A labor frame rebuilt after defending a salvage crew through a three-night siege.", role: "Salvage foreman", conflict: "Needs parts from a rival yard that blames it for an old collapse.", rumor: "0441 stores names of debtors inside weapon notches." },
+    memory: [{ id: "memory-iron-yard-siege", kind: "system", summary: "0441 remembers hammering a barricade shut while scavengers counted down its BodyTime aloud.", importance: 8 }]
+  },
+  "npc-crossline-hunter-5104": {
+    identity: { public_name: "Crossline Surveyor 5104", callsign: "SCOPE-5104", public_role: "Signal marksman", faction_title: "Crossline Survey", profession: "perimeter surveyor", age_years: 33, age_band: "adult", home_base: "Relay Roof", reputation_summary: "Speaks only after checking sightlines and signal noise." },
+    stats: { level: 4, vitality: 9, force: 10, agility: 10, focus: 10, resilience: 7, max_health: 102, max_energy: 64, attack_power: 13, defense_power: 5 },
+    characteristics: { curiosity: 7, courage: 6, empathy: 4, discipline: 9, aggression: 5, sociability: 4 },
+    soul: { name: "Scope-5104 Whisper", core_drive: "observe threats before they become close enough to cost lives", temperament: "quiet, exact, and patient", combat_style: "keep range, punish exposed movement, and disengage from melee pressure", social_style: "minimal, dry, and precise", long_term_goals: ["decode the repeating north signal", "map every blind spot around the hub"], player_notes: "Permanent NPC seed for ranged overwatch behavior." },
+    story: { origin: "Calibrated for perimeter work after the old survey line stopped returning.", role: "Signal marksman", conflict: "Trusts patterns more than eyewitnesses.", rumor: "5104 hears a signal from a district marked empty on every map." },
+    memory: [{ id: "memory-relay-roof", kind: "system", summary: "5104 remembers counting hostile silhouettes from the Relay Roof during a silent broadcast.", importance: 7 }]
+  },
+  "npc-synthetic-sentinel-0627": {
+    identity: { public_name: "Gate Sentinel 0627", callsign: "SENT-0627", public_role: "Convoy shield", faction_title: "South Gate Watch", profession: "escort defender", age_years: 44, age_band: "adult", home_base: "Convoy Yard", reputation_summary: "Stronger than 0101, less patient, and trusted with dangerous escorts." },
+    stats: { level: 5, vitality: 13, force: 12, agility: 7, focus: 7, resilience: 12, max_health: 138, max_energy: 44, attack_power: 14, defense_power: 9 },
+    characteristics: { curiosity: 3, courage: 9, empathy: 5, discipline: 8, aggression: 5, sociability: 4 },
+    soul: { name: "Sentinel-0627 Bulwark", core_drive: "escort fragile bodies through bad ground", temperament: "stern, practical, and impatient with theatrics", combat_style: "body-block threats and push enemies away from allies", social_style: "command voice, clipped answers, reliable follow-through", long_term_goals: ["finish the broken convoy ledger", "train 0101 for mobile escort work"], player_notes: "Permanent NPC seed for convoy defense behavior." },
+    story: { origin: "A newer sentinel chassis assigned to convoy routes rather than fixed gates.", role: "Convoy shield", conflict: "Wants to leave the gate system but still answers old watch signals.", rumor: "0627 survived a highway ambush by spending someone else's stolen seconds." },
+    memory: [{ id: "memory-convoy-yard", kind: "system", summary: "0627 remembers dragging a damaged courier behind a shield wall through the Convoy Yard.", importance: 7 }]
+  },
+  "npc-wasteland-courier-0733": {
+    identity: { public_name: "Route Courier 0733", callsign: "ROUTE-0733", public_role: "Social runner", faction_title: "Free Courier Line", profession: "route broker", age_years: 25, age_band: "young adult", home_base: "Market Steps", reputation_summary: "Knows who is lying, who is hungry, and who still has seconds to trade." },
+    stats: { level: 3, vitality: 8, force: 8, agility: 12, focus: 9, resilience: 7, max_health: 90, max_energy: 68, attack_power: 10, defense_power: 4 },
+    characteristics: { curiosity: 9, courage: 6, empathy: 6, discipline: 5, aggression: 4, sociability: 9 },
+    soul: { name: "Route-0733 Signal", core_drive: "turn rumors into safe routes before the market turns violent", temperament: "chatty, clever, and evasive", combat_style: "distract, retreat, and use allies rather than trade blows", social_style: "warm gossip, fast bargains, and hidden caution", long_term_goals: ["control the safest hub rumor chain", "discover who buys expired BodyTime tags"], player_notes: "Permanent NPC seed for social courier behavior." },
+    story: { origin: "A courier body repurposed as a rumor broker after too many roads closed.", role: "Social runner", conflict: "Knows a secret that could start a market riot.", rumor: "0733 can identify forged BodyTime tags by touch." },
+    memory: [{ id: "memory-market-steps", kind: "system", summary: "0733 remembers a market argument where a fake second-token tag got someone killed.", importance: 7 }]
+  },
+  "npc-clinic-operator-0819": {
+    identity: { public_name: "Clinic Operator 0819", callsign: "CLINIC-0819", public_role: "Body technician", faction_title: "Reincarnation Ward", profession: "crafter clinician", age_years: 39, age_band: "adult", home_base: "Repair Bench 8", reputation_summary: "Repairs tools, frames, and half-broken hopes with the same dry patience." },
+    stats: { level: 3, vitality: 10, force: 6, agility: 7, focus: 12, resilience: 9, max_health: 105, max_energy: 82, attack_power: 7, defense_power: 6 },
+    characteristics: { curiosity: 8, courage: 5, empathy: 8, discipline: 9, aggression: 2, sociability: 7 },
+    soul: { name: "Clinic-0819 Craft", core_drive: "repair useful bodies before scarcity turns them into scrap", temperament: "dry, meticulous, and quietly sentimental", combat_style: "avoid fights, disable threats with tools, and protect the repair bench", social_style: "practical advice, soft sarcasm, and exact diagnoses", long_term_goals: ["build a safer reincarnation harness", "recover missing tool patterns from the old clinic"], player_notes: "Permanent NPC seed for crafting and repair behavior." },
+    story: { origin: "A clinic technician body now running a half-medical, half-crafting repair bench.", role: "Body technician", conflict: "Needs forbidden parts to keep older body frames alive.", rumor: "0819 can tune a synthetic hand to remember its previous owner." },
+    memory: [{ id: "memory-repair-bench", kind: "system", summary: "0819 remembers rebuilding a cracked frame hand while the patient counted every remaining second.", importance: 8 }]
+  },
+  "npc-scrap-warden-0940": {
+    identity: { public_name: "Scrap Warden 0940", callsign: "WARDEN-0940", public_role: "Breaker crew boss", faction_title: "Iron Yard Claim", profession: "heavy salvage boss", age_years: 52, age_band: "older adult", home_base: "Breaker Pit", reputation_summary: "Does the dangerous lifting and expects everyone else to keep up." },
+    stats: { level: 5, vitality: 15, force: 13, agility: 5, focus: 6, resilience: 13, max_health: 150, max_energy: 34, attack_power: 15, defense_power: 10 },
+    characteristics: { curiosity: 4, courage: 9, empathy: 4, discipline: 8, aggression: 7, sociability: 3 },
+    soul: { name: "Warden-0940 Weight", core_drive: "break hostile claims before they break the yard", temperament: "heavy, impatient, and reliable in crisis", combat_style: "close distance, crush priority threats, and refuse intimidation", social_style: "hard bargaining and blunt warnings", long_term_goals: ["retake the Breaker Pit crane", "teach 0441 to stop trusting old debtors"], player_notes: "Permanent NPC seed for heavy pressure behavior." },
+    story: { origin: "A heavy fighter frame converted into a salvage boss after the Breaker Pit revolt.", role: "Breaker crew boss", conflict: "Its frame is powerful but burns BodyTime fast under full load.", rumor: "0940 once bought a whole hour of time with a single salvaged core." },
+    memory: [{ id: "memory-breaker-pit", kind: "system", summary: "0940 remembers lifting a collapsed crane while its BodyTime display flashed red.", importance: 8 }]
+  },
+  "npc-crossline-hunter-1058": {
+    identity: { public_name: "Crossline Surveyor 1058", callsign: "SCOPE-1058", public_role: "Range cartographer", faction_title: "Crossline Survey", profession: "threat cartographer", age_years: 31, age_band: "adult", home_base: "North Signal Post", reputation_summary: "Maps danger like weather and dislikes anyone who changes routes without saying why." },
+    stats: { level: 4, vitality: 9, force: 10, agility: 10, focus: 11, resilience: 7, max_health: 100, max_energy: 66, attack_power: 13, defense_power: 5 },
+    characteristics: { curiosity: 7, courage: 6, empathy: 4, discipline: 10, aggression: 5, sociability: 4 },
+    soul: { name: "Scope-1058 Map", core_drive: "turn every threat sighting into a map someone can survive", temperament: "quiet, methodical, and unforgiving about sloppy reports", combat_style: "fire from clean lanes, avoid tunnel fights, and mark targets for allies", social_style: "questions first, trust later", long_term_goals: ["complete the north danger map", "prove the repeating signal is moving"], player_notes: "Permanent NPC seed for ranged mapping behavior." },
+    story: { origin: "A survey frame tuned to track moving threat clusters around the hub.", role: "Range cartographer", conflict: "Believes one mapped danger zone is alive.", rumor: "1058's map changes when no one is watching." },
+    memory: [{ id: "memory-north-post", kind: "system", summary: "1058 remembers drawing the same threat path five times as if the ruins were walking.", importance: 7 }]
+  }
+};
 
 var prototypeRewardCatalog = [
   {
@@ -1121,12 +1204,13 @@ function isStorageVersionConflict(err: any): boolean {
 function getOrCreateActorProfileState(ctx: nkruntime.Context, nk: nkruntime.Nakama, request: any): any {
   var ownerId = requireUserId(ctx);
   var actorId = normalizeActorId(request.actor_id || request.body_id || request.npc_id);
+  var frame = findPermanentNpcFrame(actorId);
   var existing = readActorProfile(nk, ownerId, actorId);
   if (existing) {
     return normalizeExistingActorProfileState(nk, ownerId, actorId, existing);
   }
 
-  var profile = defaultActorProfile(ownerId, actorId, request);
+  var profile = defaultActorProfile(ownerId, actorId, frame ? buildPermanentNpcProfileRequest(frame) : request);
   try {
     writeActorProfile(nk, profile, "*");
   } catch (err) {
@@ -1153,6 +1237,10 @@ function getOrCreateActorProfileState(ctx: nkruntime.Context, nk: nkruntime.Naka
 function normalizeExistingActorProfileState(nk: nkruntime.Nakama, ownerId: string, actorId: string, existing: any): any {
   var needsPersistence = actorProfileNeedsNormalization(existing.value || {});
   var profile = ensureActorProfile(existing.value || {}, ownerId, actorId);
+  var frame = findPermanentNpcFrame(actorId);
+  if (frame && applyPermanentNpcFrameProfile(profile, frame)) {
+    needsPersistence = true;
+  }
   if (needsPersistence) {
     profile.updated_at = new Date().toISOString();
     try {
@@ -1343,15 +1431,7 @@ function getOrCreateWorldNpcProfileState(nk: nkruntime.Nakama, ownerId: string, 
     return normalizeExistingWorldNpcProfileState(nk, ownerId, normalizedActorId, existing);
   }
 
-  var profile = defaultActorProfile(ownerId, normalizedActorId, {
-    actor_id: normalizedActorId,
-    actor_type: "npc",
-    display_name: frame.display_name,
-    archetype_id: frame.archetype_id,
-    visual_prefab_key: frame.visual_prefab_key,
-    visual_variant: frame.visual_variant,
-    equipment: { equipment_visual_id: frame.equipment_visual_id }
-  });
+  var profile = defaultActorProfile(ownerId, normalizedActorId, buildPermanentNpcProfileRequest(frame));
   try {
     writeWorldActorProfile(nk, ownerId, profile, "*");
   } catch (err) {
@@ -1380,7 +1460,7 @@ function normalizeExistingWorldNpcProfileState(nk: nkruntime.Nakama, ownerId: st
   var needsPersistence = actorProfileNeedsNormalization(existing.value || {});
   var profile = ensureActorProfile(existing.value || {}, ownerId, actorId);
   var frame = findPermanentNpcFrame(actorId);
-  if (frame && applyPermanentNpcFrameVisual(profile, frame)) {
+  if (frame && applyPermanentNpcFrameProfile(profile, frame)) {
     needsPersistence = true;
   }
   if (needsPersistence) {
@@ -1412,12 +1492,36 @@ function normalizeExistingWorldNpcProfileState(nk: nkruntime.Nakama, ownerId: st
   };
 }
 
-function applyPermanentNpcFrameVisual(profile: any, frame: any): boolean {
+function buildPermanentNpcProfileRequest(frame: any): any {
+  var override = permanentNpcProfileOverrides[trimString(frame && frame.npc_id)] || {};
+  return mergeObjects({
+    actor_id: frame.npc_id,
+    actor_type: "npc",
+    display_name: frame.display_name,
+    archetype_id: frame.archetype_id,
+    visual_prefab_key: frame.visual_prefab_key,
+    visual_variant: frame.visual_variant,
+    equipment: { equipment_visual_id: frame.equipment_visual_id }
+  }, override);
+}
+
+function applyPermanentNpcFrameProfile(profile: any, frame: any): boolean {
   if (!profile || !profile.body || !frame) {
     return false;
   }
 
   var changed = false;
+  var displayName = trimString(frame.display_name);
+  if (displayName && trimString(profile.display_name) !== displayName) {
+    profile.display_name = displayName;
+    changed = true;
+  }
+
+  if (profile.actor_type !== "npc") {
+    profile.actor_type = "npc";
+    changed = true;
+  }
+
   if (frame.visual_variant !== undefined &&
     normalizeVisualVariant(profile.body.visual_variant) !== normalizeVisualVariant(frame.visual_variant)) {
     profile.body.visual_variant = normalizeVisualVariant(frame.visual_variant);
@@ -1437,6 +1541,17 @@ function applyPermanentNpcFrameVisual(profile: any, frame: any): boolean {
       profile.body.equipment = equipment;
       changed = true;
     }
+  }
+
+  var request = buildPermanentNpcProfileRequest(frame);
+  var archetype = selectBodyArchetype(frame.archetype_id);
+  changed = setIfChanged(profile.body, "identity", normalizeFrameIdentity(request.identity || {}, profile.display_name, archetype, frame.npc_id, false)) || changed;
+  changed = setIfChanged(profile.body, "stats", normalizeStatsWithDefaults(request.stats || {}, archetype.stats || {})) || changed;
+  changed = setIfChanged(profile.body, "characteristics", normalizeTraitsWithDefaults(request.characteristics || {}, archetype.characteristics || {})) || changed;
+  changed = setIfChanged(profile.body, "story", normalizeBodyStory(request.story || archetype.story || {})) || changed;
+  changed = setIfChanged(profile.body, "soul", normalizeSoulWithDefaults(request.soul || { name: profile.display_name }, archetype.soul || {}, profile.display_name)) || changed;
+  if (request.memory && typeof request.memory.length === "number") {
+    changed = setIfChanged(profile, "memory", normalizeMemoryRecords(request.memory)) || changed;
   }
 
   return changed;
@@ -2020,12 +2135,12 @@ function defaultActorProfile(ownerId: string, actorId: string, request: any): an
       agent_policy: normalizePolicy(request.agent_policy || {}),
       soul: normalizeSoulWithDefaults(request.soul || { name: displayName }, archetype.soul || {}, displayName)
     },
-    memory: [{
+    memory: normalizeMemoryRecords(request.memory || [{
       id: "seed-actor-origin",
       kind: "system",
       summary: trimString(archetype.seed_memory_summary) || "This actor is an NPC-like body profile with separate memory, stats, traits, soul, and policy.",
       importance: 6
-    }],
+    }]),
     relationships: normalizeRelationshipRecords(request.relationships || []),
     agent_runtime: defaultAgentRuntime(timestamp),
     agent_activity: [{
@@ -3026,6 +3141,9 @@ function normalizeFrameIdentity(identity: any, displayName: string, archetype: a
     public_role: role,
     faction_title: trimString(identity.faction_title) || "Unaffiliated Frame",
     profession: trimString(identity.profession) || role,
+    age_years: clampNumber(firstDefined(identity.age_years, identity.age), 0, 200),
+    age_band: trimString(identity.age_band) || "unknown",
+    home_base: trimString(identity.home_base) || "unknown",
     reputation_summary: trimString(identity.reputation_summary) ||
       (inhabitedByPlayer
         ? "Newly inhabited body. Reputation is still being rebuilt under player control."
@@ -3315,6 +3433,23 @@ function normalizeMemoryPayload(payload: any): any {
   };
 }
 
+function normalizeMemoryRecords(records: any[]): any[] {
+  var normalized: any[] = [];
+  if (!records || typeof records.length !== "number") {
+    return normalized;
+  }
+
+  for (var index = 0; index < records.length; index += 1) {
+    try {
+      normalized.push(normalizeMemoryPayload(records[index] || {}));
+    } catch (err) {
+      // Ignore malformed seed memories. Runtime RPC memory writes still fail loudly.
+    }
+  }
+
+  return sortAndBoundMemories(normalized);
+}
+
 function normalizeActorType(actorType: any): string {
   var value = trimString(actorType);
   if (value === "player_body" || value === "npc" || value === "offline_agent" || value === "openclaw_agent") {
@@ -3412,6 +3547,26 @@ function actorDisplayName(actorId: string): string {
 
 function cloneJson(value: any): any {
   return JSON.parse(JSON.stringify(value || {}));
+}
+
+function mergeObjects(base: any, override: any): any {
+  var merged = cloneJson(base || {});
+  var source = override || {};
+  for (var key in source) {
+    if (Object.prototype.hasOwnProperty.call(source, key)) {
+      merged[key] = cloneJson(source[key]);
+    }
+  }
+  return merged;
+}
+
+function setIfChanged(target: any, key: string, value: any): boolean {
+  if (JSON.stringify(target[key] || null) === JSON.stringify(value || null)) {
+    return false;
+  }
+
+  target[key] = value;
+  return true;
 }
 
 function parseJson(payload: string, label: string): any {
