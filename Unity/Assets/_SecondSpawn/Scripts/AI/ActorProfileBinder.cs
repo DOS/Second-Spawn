@@ -54,6 +54,8 @@ namespace SecondSpawn.AI
             if (_loadRoutine != null)
             {
                 StopCoroutine(_loadRoutine);
+                _loadRoutine = null;
+                _isLoading = false;
             }
 
             _loadRoutine = StartCoroutine(LoadActorProfileRoutine());
@@ -99,7 +101,7 @@ namespace SecondSpawn.AI
                 yield return _gateway.AddNakamaActorMemory(new ActorMemoryAddRequestDto
                 {
                     actor_id = profile.actor_id,
-                    kind = string.IsNullOrWhiteSpace(_seedMemoryKind) ? "system" : _seedMemoryKind.Trim(),
+                    kind = NormalizeIdentifier(_seedMemoryKind, "system"),
                     summary = _seedMemorySummary.Trim(),
                     importance = Mathf.Clamp(_seedMemoryImportance, 1, 10)
                 }, value => memoryProfile = value, error => memoryError = error);
@@ -123,7 +125,7 @@ namespace SecondSpawn.AI
             return new ActorProfileRequestDto
             {
                 actor_id = ResolveActorId(),
-                actor_type = string.IsNullOrWhiteSpace(_actorType) ? "npc" : _actorType.Trim(),
+                actor_type = NormalizeIdentifier(_actorType, "npc"),
                 display_name = string.IsNullOrWhiteSpace(_displayName) ? gameObject.name : _displayName.Trim(),
                 archetype_id = string.IsNullOrWhiteSpace(_archetypeId) ? "prototype-npc" : _archetypeId.Trim(),
                 visual_prefab_key = string.IsNullOrWhiteSpace(_visualPrefabKey) ? "prototype-npc" : _visualPrefabKey.Trim()
@@ -160,6 +162,11 @@ namespace SecondSpawn.AI
             }
 
             return string.IsNullOrWhiteSpace(gameObject.name) ? "npc-body" : gameObject.name.Trim();
+        }
+
+        private static string NormalizeIdentifier(string value, string fallback)
+        {
+            return string.IsNullOrWhiteSpace(value) ? fallback : value.Trim().ToLowerInvariant();
         }
     }
 }
