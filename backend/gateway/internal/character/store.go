@@ -168,6 +168,7 @@ func NewDefaultAgentContext(playerID string, now time.Time) AgentContext {
 			BodyID:          "body-" + playerID,
 			ArchetypeID:     "prototype-hunter",
 			VisualPrefabKey: "prototype-random",
+			VisualVariant:   12,
 			Equipment: EquipmentLoadout{
 				PrimaryWeapon:     "none",
 				EquipmentVisualID: 0,
@@ -191,6 +192,15 @@ func NewDefaultAgentContext(playerID string, now time.Time) AgentContext {
 				Discipline:  5,
 				Aggression:  3,
 				Sociability: 5,
+			},
+			Story: BodyStory{
+				Origin:   "A synthetic body prepared for prototype testing.",
+				Role:     "Prototype hunter body",
+				Conflict: "The body has no stable pre-player history yet.",
+				Rumor:    "Early bodies are tuned for safety while the backend contract settles.",
+			},
+			AnimationCapabilities: AnimationCapabilities{
+				SupportsJump: true,
 			},
 			Time: BodyTimeState{
 				RemainingSeconds: 24 * 60 * 60,

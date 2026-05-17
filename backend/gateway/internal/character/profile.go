@@ -20,20 +20,23 @@ type PlayerProfile struct {
 
 // BodyProfile is the current synthetic body. It is replaced on reincarnation.
 type BodyProfile struct {
-	BodyID          string           `json:"body_id"`
-	ArchetypeID     string           `json:"archetype_id"`
-	VisualPrefabKey string           `json:"visual_prefab_key"`
-	Equipment       EquipmentLoadout `json:"equipment"`
-	Stats           CharacterStats   `json:"stats"`
-	Characteristics CharacterTraits  `json:"characteristics"`
-	Time            BodyTimeState    `json:"time"`
-	Lifecycle       BodyLifecycle    `json:"lifecycle"`
-	AgentPolicy     AgentPolicy      `json:"agent_policy"`
-	Soul            SoulProfile      `json:"soul"`
-	Memory          []MemoryRecord   `json:"memory"`
-	AgentRuntime    AgentRuntime     `json:"agent_runtime"`
-	AgentActivity   []AgentActivity  `json:"agent_activity"`
-	CreatedAt       time.Time        `json:"created_at"`
+	BodyID                string                `json:"body_id"`
+	ArchetypeID           string                `json:"archetype_id"`
+	VisualPrefabKey       string                `json:"visual_prefab_key"`
+	VisualVariant         int                   `json:"visual_variant"`
+	Equipment             EquipmentLoadout      `json:"equipment"`
+	Stats                 CharacterStats        `json:"stats"`
+	Characteristics       CharacterTraits       `json:"characteristics"`
+	Story                 BodyStory             `json:"story"`
+	AnimationCapabilities AnimationCapabilities `json:"animation_capabilities"`
+	Time                  BodyTimeState         `json:"time"`
+	Lifecycle             BodyLifecycle         `json:"lifecycle"`
+	AgentPolicy           AgentPolicy           `json:"agent_policy"`
+	Soul                  SoulProfile           `json:"soul"`
+	Memory                []MemoryRecord        `json:"memory"`
+	AgentRuntime          AgentRuntime          `json:"agent_runtime"`
+	AgentActivity         []AgentActivity       `json:"agent_activity"`
+	CreatedAt             time.Time             `json:"created_at"`
 }
 
 type EquipmentLoadout struct {
@@ -64,6 +67,19 @@ type CharacterTraits struct {
 	Discipline  int `json:"discipline"`
 	Aggression  int `json:"aggression"`
 	Sociability int `json:"sociability"`
+}
+
+// BodyStory is a short body-specific hook used for NPC/player onboarding.
+type BodyStory struct {
+	Origin   string `json:"origin"`
+	Role     string `json:"role"`
+	Conflict string `json:"conflict"`
+	Rumor    string `json:"rumor"`
+}
+
+// AnimationCapabilities describe visual-only clip availability for this body.
+type AnimationCapabilities struct {
+	SupportsJump bool `json:"supports_jump"`
 }
 
 type BodyTimeState struct {
@@ -191,7 +207,10 @@ func BuildAgentContextPrompt(ctx AgentContext, maxMemories int) string {
 	writeKV(&b, "body_id", ctx.Body.BodyID)
 	writeKV(&b, "archetype_id", ctx.Body.ArchetypeID)
 	writeKV(&b, "visual_prefab_key", ctx.Body.VisualPrefabKey)
+	writeKV(&b, "visual_variant", fmt.Sprintf("%d", ctx.Body.VisualVariant))
 	writeKV(&b, "primary_weapon", ctx.Body.Equipment.PrimaryWeapon)
+	writeKV(&b, "body_story", formatBodyStory(ctx.Body.Story))
+	writeKV(&b, "supports_jump_animation", fmt.Sprintf("%t", ctx.Body.AnimationCapabilities.SupportsJump))
 	writeKV(&b, "stats", fmt.Sprintf("level=%d vitality=%d force=%d agility=%d focus=%d resilience=%d max_health=%d max_energy=%d attack_power=%d defense_power=%d",
 		ctx.Body.Stats.Level,
 		ctx.Body.Stats.Vitality,
@@ -233,6 +252,23 @@ func BuildAgentContextPrompt(ctx AgentContext, maxMemories int) string {
 	}
 
 	return strings.TrimSpace(b.String())
+}
+
+func formatBodyStory(story BodyStory) string {
+	parts := []string{}
+	if strings.TrimSpace(story.Origin) != "" {
+		parts = append(parts, "origin="+strings.TrimSpace(story.Origin))
+	}
+	if strings.TrimSpace(story.Role) != "" {
+		parts = append(parts, "role="+strings.TrimSpace(story.Role))
+	}
+	if strings.TrimSpace(story.Conflict) != "" {
+		parts = append(parts, "conflict="+strings.TrimSpace(story.Conflict))
+	}
+	if strings.TrimSpace(story.Rumor) != "" {
+		parts = append(parts, "rumor="+strings.TrimSpace(story.Rumor))
+	}
+	return strings.Join(parts, "; ")
 }
 
 func writeKV(b *strings.Builder, key string, value string) {

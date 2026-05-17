@@ -17,6 +17,7 @@ func TestBuildAgentContextPromptSortsAndBoundsMemories(t *testing.T) {
 			BodyID:          "body-1",
 			ArchetypeID:     "hunter-default",
 			VisualPrefabKey: "rpg-character",
+			VisualVariant:   9,
 			Equipment: EquipmentLoadout{
 				PrimaryWeapon:     "one_hand_sword",
 				EquipmentVisualID: 2,
@@ -33,7 +34,14 @@ func TestBuildAgentContextPromptSortsAndBoundsMemories(t *testing.T) {
 				AttackPower:  15,
 				DefensePower: 7,
 			},
-			Lifecycle: BodyLifecycleAlive,
+			Story: BodyStory{
+				Origin:   "A recovered perimeter hunter body.",
+				Role:     "Ranged survey body",
+				Conflict: "It trusts patterns more than people.",
+				Rumor:    "Its optics still receive a signal from a silent district.",
+			},
+			AnimationCapabilities: AnimationCapabilities{SupportsJump: false},
+			Lifecycle:             BodyLifecycleAlive,
 			Time: BodyTimeState{
 				RemainingSeconds: 3600,
 				MaxSeconds:       7200,
@@ -71,6 +79,15 @@ func TestBuildAgentContextPromptSortsAndBoundsMemories(t *testing.T) {
 	}
 	if !strings.Contains(prompt, "primary_weapon: one_hand_sword") {
 		t.Fatalf("expected equipment in prompt, got %s", prompt)
+	}
+	if !strings.Contains(prompt, "visual_variant: 9") {
+		t.Fatalf("expected visual variant in prompt, got %s", prompt)
+	}
+	if !strings.Contains(prompt, "role=Ranged survey body") {
+		t.Fatalf("expected body story in prompt, got %s", prompt)
+	}
+	if !strings.Contains(prompt, "supports_jump_animation: false") {
+		t.Fatalf("expected animation capability in prompt, got %s", prompt)
 	}
 	if !strings.Contains(prompt, "stats: level=2 vitality=12 force=9 agility=11 focus=8 resilience=10 max_health=140 max_energy=60 attack_power=15 defense_power=7") {
 		t.Fatalf("expected body stats in prompt, got %s", prompt)
