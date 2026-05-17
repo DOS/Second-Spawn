@@ -106,6 +106,8 @@ Recommended views:
   traits, soul, memory, policy, runtime, and activity state.
 - [x] Nakama has prototype OpenClaw bridge RPCs for Frame binding, structured
   context read, pending intent submission, and heartbeat/audit updates.
+- [x] Unity Play Mode has an OpenClaw bridge debug panel for binding, context
+  read, pending `say` intent, and heartbeat smoke testing.
 - [x] `_AgentNPC_Prototype` can bind to an actor profile, patrol, speak, and use
   the model-backed gateway decision path with deterministic fallback.
 - [ ] Real combat damage, enemy rewards, loot drops, quest progress, and player
