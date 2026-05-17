@@ -129,7 +129,7 @@ assert.equal(
 
 const harness = createRuntimeHarness(module);
 assert.equal(harness.registeredHooks.length, 1);
-assert.equal(harness.registeredRpcs.size, 10);
+assert.equal(harness.registeredRpcs.size, 14);
 assert.ok(harness.registeredRpcs.has("secondspawn_health"));
 assert.ok(harness.registeredRpcs.has("secondspawn_profile_get"));
 assert.ok(harness.registeredRpcs.has("secondspawn_memory_add"));
@@ -140,6 +140,10 @@ assert.ok(harness.registeredRpcs.has("secondspawn_actor_profile_get"));
 assert.ok(harness.registeredRpcs.has("secondspawn_actor_memory_add"));
 assert.ok(harness.registeredRpcs.has("secondspawn_bodytime_event"));
 assert.ok(harness.registeredRpcs.has("secondspawn_reincarnate"));
+assert.ok(harness.registeredRpcs.has("secondspawn_openclaw_bind"));
+assert.ok(harness.registeredRpcs.has("secondspawn_openclaw_context_get"));
+assert.ok(harness.registeredRpcs.has("secondspawn_openclaw_intent_submit"));
+assert.ok(harness.registeredRpcs.has("secondspawn_openclaw_heartbeat"));
 
 const createConflictHarness = createRuntimeHarness(module);
 createConflictHarness.conflictNextCreateOnlyWrite();
@@ -960,6 +964,128 @@ assert.throws(
   ),
   /storage version conflict/
 );
+
+const openClawHarness = createRuntimeHarness(module);
+const openClawActor = JSON.parse(openClawHarness.registeredRpcs.get("secondspawn_actor_profile_get")(
+  { userId: "openclaw-owner", env: {} },
+  openClawHarness.logger,
+  openClawHarness.nk,
+  JSON.stringify({
+    actor_id: "npc-openclaw-guide",
+    display_name: "OpenClaw Guide"
+  })
+));
+assert.equal(openClawActor.actor_id, "npc-openclaw-guide");
+
+const openClawBinding = JSON.parse(openClawHarness.registeredRpcs.get("secondspawn_openclaw_bind")(
+  { userId: "openclaw-owner", env: {} },
+  openClawHarness.logger,
+  openClawHarness.nk,
+  JSON.stringify({
+    frame_actor_id: "npc-openclaw-guide",
+    connected_agent_id: "oc-agent-guide-1",
+    agent_kind: "companion",
+    consent_scope: ["dialogue", "heartbeat", "intent:say"],
+    rate_limit_profile: {
+      requests_per_minute: 12,
+      intents_per_minute: 6,
+      tokens_per_day: 1234
+    }
+  })
+));
+assert.equal(openClawBinding.frame_actor_id, "npc-openclaw-guide");
+assert.equal(openClawBinding.connected_agent_id, "oc-agent-guide-1");
+assert.equal(openClawBinding.controller_type, "openclaw");
+assert.equal(openClawBinding.owner_player_id, "openclaw-owner");
+assert.equal(openClawBinding.connection_status, "connected");
+assert.equal(openClawBinding.moderation_state, "active");
+assert.equal(openClawBinding.rate_limit_profile.requests_per_minute, 12);
+assert.equal(openClawBinding.rate_limit_profile.intents_per_minute, 6);
+assert.equal(openClawBinding.rate_limit_profile.tokens_per_day, 1234);
+
+const openClawContext = JSON.parse(openClawHarness.registeredRpcs.get("secondspawn_openclaw_context_get")(
+  { userId: "openclaw-owner", env: {} },
+  openClawHarness.logger,
+  openClawHarness.nk,
+  JSON.stringify({ connected_agent_id: "oc-agent-guide-1" })
+));
+assert.equal(openClawContext.binding.frame_actor_id, "npc-openclaw-guide");
+assert.equal(openClawContext.context.identity.public_name, "OpenClaw Guide");
+assert.equal(openClawContext.context.body.body_id, "body-npc-openclaw-guide");
+assert.equal(openClawContext.context.body.lifecycle, "alive");
+assert.ok(openClawContext.context.body.stats.max_health > 0);
+assert.ok(openClawContext.context.body.time.remaining_seconds > 0);
+assert.ok(openClawContext.context.tools.some((tool) => tool.intent === "say"));
+assert.equal(openClawContext.context.skills, undefined);
+assert.equal(openClawContext.context.agents, undefined);
+
+const openClawIntent = JSON.parse(openClawHarness.registeredRpcs.get("secondspawn_openclaw_intent_submit")(
+  { userId: "openclaw-owner", env: {} },
+  openClawHarness.logger,
+  openClawHarness.nk,
+  JSON.stringify({
+    connected_agent_id: "oc-agent-guide-1",
+    id: "oc-intent-1",
+    intent: "say",
+    payload: { text: "The gate is clear for now." },
+    reason: "player asked for hub status"
+  })
+));
+assert.equal(openClawIntent.accepted, true);
+assert.equal(openClawIntent.status, "pending_validation");
+assert.equal(openClawIntent.intent.intent, "say");
+assert.equal(openClawIntent.activity.kind, "openclaw_intent");
+assert.match(openClawIntent.activity.summary, /say/);
+
+assert.throws(
+  () => openClawHarness.registeredRpcs.get("secondspawn_openclaw_intent_submit")(
+    { userId: "openclaw-owner", env: {} },
+    openClawHarness.logger,
+    openClawHarness.nk,
+    JSON.stringify({
+      connected_agent_id: "oc-agent-guide-1",
+      id: "oc-intent-2",
+      intent: "attack",
+      payload: { target_id: "npc-target" }
+    })
+  ),
+  /intent is not allowed for this Frame/
+);
+
+assert.throws(
+  () => openClawHarness.registeredRpcs.get("secondspawn_openclaw_intent_submit")(
+    { userId: "openclaw-owner", env: {} },
+    openClawHarness.logger,
+    openClawHarness.nk,
+    JSON.stringify({
+      connected_agent_id: "oc-agent-guide-1",
+      id: "oc-intent-3",
+      intent: "move",
+      payload: { x: 1, z: 1 }
+    })
+  ),
+  /intent is outside consent scope/
+);
+
+const openClawHeartbeat = JSON.parse(openClawHarness.registeredRpcs.get("secondspawn_openclaw_heartbeat")(
+  { userId: "openclaw-owner", env: {} },
+  openClawHarness.logger,
+  openClawHarness.nk,
+  JSON.stringify({
+    connected_agent_id: "oc-agent-guide-1",
+    connection_status: "degraded",
+    summary: "External agent is online but model latency is high."
+  })
+));
+assert.equal(openClawHeartbeat.binding.connection_status, "degraded");
+assert.equal(openClawHeartbeat.context.heartbeat.offline_session_state, "degraded");
+assert.equal(openClawHeartbeat.context.heartbeat.last_action_summary, "External agent is online but model latency is high.");
+assert.equal(openClawHeartbeat.activity.kind, "openclaw_heartbeat");
+
+const storedOpenClawActor = openClawHarness.storage.get(storageKey("openclaw-owner", "secondspawn_actor", "profile:npc-openclaw-guide"));
+assert.equal(storedOpenClawActor.value.agent_activity[0].kind, "openclaw_heartbeat");
+assert.equal(storedOpenClawActor.value.agent_activity[1].kind, "openclaw_intent");
+assert.equal(storedOpenClawActor.value.body.heartbeat.offline_session_state, "degraded");
 
 const calls = [];
 const response = harness.registeredHooks[0](

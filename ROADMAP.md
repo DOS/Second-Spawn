@@ -104,6 +104,8 @@ Recommended views:
   controls exist in Play Mode for smoke testing.
 - [x] Actor profile registry exists for NPC-like actors, including body, stats,
   traits, soul, memory, policy, runtime, and activity state.
+- [x] Nakama has prototype OpenClaw bridge RPCs for Frame binding, structured
+  context read, pending intent submission, and heartbeat/audit updates.
 - [x] `_AgentNPC_Prototype` can bind to an actor profile, patrol, speak, and use
   the model-backed gateway decision path with deterministic fallback.
 - [ ] Real combat damage, enemy rewards, loot drops, quest progress, and player
