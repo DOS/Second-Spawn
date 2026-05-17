@@ -61,6 +61,8 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 - Unity profile sync now reloads the local visual model from the Nakama body
   profile, applies the server-selected weapon visual, and skips jump animation
   triggers for models marked as missing jump support.
+- Unity visual intent playback now respects body melee and ranged animation
+  capability flags for prototype attack and cast actions.
 - Current visible progression baseline is level and body-bound stats. Advanced
   body progression, cultivation tiers, and Nibiru-derived XP remain deferred.
 - Gateway config now supports `AGENT_DECISION_MODEL`.
