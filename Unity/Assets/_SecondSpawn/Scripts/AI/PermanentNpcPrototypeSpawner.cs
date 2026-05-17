@@ -18,10 +18,12 @@ namespace SecondSpawn.AI
         [SerializeField, Range(1, 50)] private int _maxNpcMarkers = 10;
         [SerializeField] private Vector3 _spawnOrigin = new Vector3(-8f, 0f, 7f);
         [SerializeField, Min(1)] private int _columns = 5;
-        [SerializeField, Min(0.5f)] private float _spacing = 3f;
+        [SerializeField, Min(0.5f)] private float _spacing = 4f;
         [SerializeField, Min(0.5f)] private float _markerHeight = 1.8f;
         [SerializeField, Min(0.1f)] private float _markerRadius = 0.45f;
-        [SerializeField, Min(0.5f)] private float _labelHeight = 2.2f;
+        [SerializeField, Min(0.5f)] private float _labelHeight = 2.35f;
+        [SerializeField, Min(0.01f)] private float _labelCharacterSize = 0.05f;
+        [SerializeField, Range(8, 32)] private int _labelMaxLineLength = 22;
         [SerializeField] private Key _refreshKey = Key.F6;
         [SerializeField] private bool _logStatus = true;
         [SerializeField] private string _zoneId = "prototype-hub";
@@ -186,8 +188,8 @@ namespace SecondSpawn.AI
             text.text = BuildLabel(npc, index);
             text.anchor = TextAnchor.MiddleCenter;
             text.alignment = TextAlignment.Center;
-            text.fontSize = 42;
-            text.characterSize = 0.12f;
+            text.fontSize = 56;
+            text.characterSize = _labelCharacterSize;
             text.color = Color.white;
         }
 
@@ -302,7 +304,7 @@ namespace SecondSpawn.AI
                 && value.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
-        private static string BuildLabel(ActorProfileDto npc, int index)
+        private string BuildLabel(ActorProfileDto npc, int index)
         {
             var displayName = string.IsNullOrWhiteSpace(npc?.display_name) ? $"Permanent NPC {index + 1:00}" : npc.display_name.Trim();
             var level = npc?.body?.stats != null ? Mathf.Max(1, npc.body.stats.level) : 1;
@@ -312,28 +314,26 @@ namespace SecondSpawn.AI
                 role = npc?.body?.archetype_id;
             }
 
-            var actorId = string.IsNullOrWhiteSpace(npc?.actor_id) ? "unknown" : npc.actor_id.Trim();
-            var shortId = ShortActorId(actorId);
+            var title = $"#{index + 1:00} {Shorten(displayName, _labelMaxLineLength)}";
             return string.IsNullOrWhiteSpace(role)
-                ? $"#{index + 1:00} {displayName}\n{shortId}\nLv {level}"
-                : $"#{index + 1:00} {displayName}\n{shortId}\nLv {level} | {role.Trim()}";
+                ? $"{title}\nLv {level}"
+                : $"{title}\nLv {level} | {Shorten(role.Trim(), _labelMaxLineLength)}";
         }
 
-        private static string ShortActorId(string actorId)
+        private static string Shorten(string value, int maxLength)
         {
-            if (string.IsNullOrWhiteSpace(actorId))
+            if (string.IsNullOrWhiteSpace(value))
             {
-                return "unknown";
+                return "";
             }
 
-            var normalized = actorId.Trim();
-            const int maxLabelLength = 28;
-            if (normalized.Length <= maxLabelLength)
+            var normalized = value.Trim();
+            if (normalized.Length <= maxLength)
             {
                 return normalized;
             }
 
-            return normalized.Substring(0, maxLabelLength - 3) + "...";
+            return maxLength <= 3 ? normalized.Substring(0, maxLength) : normalized.Substring(0, maxLength - 3) + "...";
         }
 
         private static string SanitizeName(string value)

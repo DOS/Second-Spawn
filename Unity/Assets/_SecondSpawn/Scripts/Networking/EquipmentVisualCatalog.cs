@@ -34,6 +34,7 @@ namespace SecondSpawn.Networking
                 14 => OneHandSword, // Female fighter
                 15 => Hammer, // Heavy fighter
                 16 => OneHandSword, // Male fighter
+                17 => Unarmed, // Crafter
                 _ => None
             };
         }
