@@ -1,3 +1,4 @@
+using SecondSpawn.AI;
 using SecondSpawn.Networking;
 using UnityEngine;
 
@@ -18,12 +19,19 @@ namespace SecondSpawn.UI
     public sealed class HUDController : MonoBehaviour
     {
         [SerializeField] private bool _showPrototypeStats = true;
+        [SerializeField] private bool _showFrameIdentity = true;
         [SerializeField] private Vector2 _panelPosition = new Vector2(16f, 16f);
-        [SerializeField] private Vector2 _panelSize = new Vector2(320f, 184f);
+        [SerializeField] private Vector2 _panelSize = new Vector2(420f, 360f);
+        [SerializeField] private int _maxStoryCharacters = 110;
 
         private NetworkPlayer _cachedPlayer;
+        private CharacterMemorySync _cachedMemorySync;
         private GUIStyle _labelStyle;
+        private GUIStyle _headingStyle;
+        private GUIStyle _mutedStyle;
+        private GUIStyle _wrapStyle;
         private float _nextPlayerRefreshAt;
+        private float _nextMemorySyncRefreshAt;
 
         private void OnGUI()
         {
@@ -33,27 +41,67 @@ namespace SecondSpawn.UI
             }
 
             var player = ResolvePlayer();
-            if (player == null)
-            {
-                return;
-            }
-
-            _labelStyle ??= new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 14,
-                normal = { textColor = Color.white }
-            };
+            EnsureStyles();
 
             var rect = new Rect(_panelPosition.x, _panelPosition.y, _panelSize.x, _panelSize.y);
             GUI.Box(rect, "SECOND SPAWN");
             GUILayout.BeginArea(new Rect(rect.x + 12f, rect.y + 24f, rect.width - 24f, rect.height - 32f));
+            DrawStats(player);
+            if (_showFrameIdentity)
+            {
+                DrawFrameIdentity();
+            }
+            GUILayout.EndArea();
+        }
+
+        private void DrawStats(NetworkPlayer player)
+        {
+            GUILayout.Label("Current Body", _headingStyle);
+            if (player == null)
+            {
+                GUILayout.Label("Waiting for player body...", _mutedStyle);
+                return;
+            }
+
             GUILayout.Label($"Level {player.Level}", _labelStyle);
             GUILayout.Label($"HP {player.Hp:0}/{player.MaxHealth} | Energy {player.Stamina:0}/{player.MaxEnergy}", _labelStyle);
             GUILayout.Label($"ATK {player.AttackPower} | DEF {player.DefensePower} | AGI {player.Agility}", _labelStyle);
-            GUILayout.Label($"BodyTime {FormatSeconds(player.BodyTimeRemainingSeconds)} / {FormatSeconds(player.BodyTimeMaxSeconds)}", _labelStyle);
+            GUILayout.Label($"TIME {FormatSeconds(player.BodyTimeRemainingSeconds)} / {FormatSeconds(player.BodyTimeMaxSeconds)}", _labelStyle);
             GUILayout.Label($"Lifecycle {(player.IsBodyDead ? "dead" : "alive")} | Drain {player.BodyTimeDangerDrainRate}s/tick", _labelStyle);
             GUILayout.Label($"SECOND {FormatSeconds(player.SecondBalanceSeconds)} | Reincarnations {player.ReincarnationCount}", _labelStyle);
-            GUILayout.EndArea();
+        }
+
+        private void DrawFrameIdentity()
+        {
+            GUILayout.Space(8f);
+            GUILayout.Label("Frame Identity", _headingStyle);
+
+            var context = ResolveMemoryContext();
+            var body = context?.body;
+            if (body == null)
+            {
+                GUILayout.Label("Waiting for Nakama profile sync...", _mutedStyle);
+                return;
+            }
+
+            var inhabitation = body.inhabitation;
+            var equipment = body.equipment;
+            var soul = body.soul;
+            var story = body.story;
+
+            GUILayout.Label($"Frame: {Fallback(body.body_id, "unknown")}", _labelStyle);
+            GUILayout.Label($"Source: {Fallback(inhabitation?.source_actor_id, "unassigned")}", _labelStyle);
+            GUILayout.Label($"Role: {Fallback(inhabitation?.previous_role, story?.role, "unknown")}", _labelStyle);
+            GUILayout.Label($"Archetype: {Fallback(body.archetype_id, "unknown")} | Visual {body.visual_variant}", _labelStyle);
+            GUILayout.Label($"Weapon: {FormatWeapon(equipment)} | {Fallback(equipment?.combat_stance, "relaxed")}", _labelStyle);
+            GUILayout.Label($"Caps: {FormatCapabilities(body.animation_capabilities)}", _labelStyle);
+            GUILayout.Label($"Soul: {Fallback(soul?.name, context?.player?.display_name, "unknown")}", _labelStyle);
+
+            var storyText = TrimForHud(Fallback(story?.origin, story?.rumor, ""));
+            if (!string.IsNullOrWhiteSpace(storyText))
+            {
+                GUILayout.Label(storyText, _wrapStyle);
+            }
         }
 
         private NetworkPlayer ResolvePlayer()
@@ -83,6 +131,49 @@ namespace SecondSpawn.UI
             return _cachedPlayer;
         }
 
+        private AgentContextDto ResolveMemoryContext()
+        {
+            if (_cachedMemorySync != null && _cachedMemorySync.isActiveAndEnabled)
+            {
+                return _cachedMemorySync.Context;
+            }
+
+            if (Time.unscaledTime < _nextMemorySyncRefreshAt)
+            {
+                return null;
+            }
+
+            _nextMemorySyncRefreshAt = Time.unscaledTime + 0.5f;
+            _cachedMemorySync = FindAnyObjectByType<CharacterMemorySync>(FindObjectsInactive.Exclude);
+            return _cachedMemorySync != null ? _cachedMemorySync.Context : null;
+        }
+
+        private void EnsureStyles()
+        {
+            _labelStyle ??= new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 14,
+                normal = { textColor = Color.white }
+            };
+
+            _headingStyle ??= new GUIStyle(_labelStyle)
+            {
+                fontSize = 15,
+                fontStyle = FontStyle.Bold,
+                normal = { textColor = new Color(0.68f, 0.88f, 1f) }
+            };
+
+            _mutedStyle ??= new GUIStyle(_labelStyle)
+            {
+                normal = { textColor = new Color(0.75f, 0.78f, 0.82f) }
+            };
+
+            _wrapStyle ??= new GUIStyle(_mutedStyle)
+            {
+                wordWrap = true
+            };
+        }
+
         private static string FormatSeconds(int seconds)
         {
             if (seconds <= 0)
@@ -104,6 +195,61 @@ namespace SecondSpawn.UI
             }
 
             return hours > 0 ? $"{hours}h {minutes}m" : $"{minutes}m";
+        }
+
+        private static string FormatCapabilities(AnimationCapabilitiesDto capabilities)
+        {
+            if (capabilities == null)
+            {
+                return "jump, roll, melee";
+            }
+
+            return $"jump:{FormatBool(capabilities.supports_jump)} roll:{FormatBool(capabilities.supports_roll)} melee:{FormatBool(capabilities.supports_melee)} ranged:{FormatBool(capabilities.supports_ranged)}";
+        }
+
+        private static string FormatWeapon(EquipmentLoadoutDto equipment)
+        {
+            if (equipment == null)
+            {
+                return "none";
+            }
+
+            var weaponName = Fallback(equipment.weapon_visual_key, equipment.primary_weapon, "none");
+            return equipment.equipment_visual_id > 0 ? $"{weaponName} #{equipment.equipment_visual_id}" : weaponName;
+        }
+
+        private static string FormatBool(bool value)
+        {
+            return value ? "Y" : "N";
+        }
+
+        private string TrimForHud(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return "";
+            }
+
+            var trimmed = value.Trim();
+            if (_maxStoryCharacters <= 0 || trimmed.Length <= _maxStoryCharacters)
+            {
+                return trimmed;
+            }
+
+            return trimmed.Substring(0, Mathf.Max(0, _maxStoryCharacters - 3)).TrimEnd() + "...";
+        }
+
+        private static string Fallback(params string[] values)
+        {
+            foreach (var value in values)
+            {
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    return value.Trim();
+                }
+            }
+
+            return "";
         }
     }
 }
