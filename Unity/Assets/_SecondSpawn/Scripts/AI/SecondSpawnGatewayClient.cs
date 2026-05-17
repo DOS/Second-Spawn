@@ -603,6 +603,8 @@ namespace SecondSpawn.AI
             public string archetype_id;
             public string visual_prefab_key;
             public int visual_variant;
+            public BodyAppearanceDto appearance;
+            public BodyInhabitationDto inhabitation;
             public EquipmentLoadoutDto equipment;
             public CharacterStatsDto stats;
             public CharacterTraitsDto characteristics;
@@ -626,6 +628,8 @@ namespace SecondSpawn.AI
                     archetype_id = body.archetype_id,
                     visual_prefab_key = body.visual_prefab_key,
                     visual_variant = body.visual_variant,
+                    appearance = body.appearance,
+                    inhabitation = body.inhabitation,
                     equipment = body.equipment,
                     stats = body.stats,
                     characteristics = body.characteristics,

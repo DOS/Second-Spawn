@@ -40,6 +40,8 @@ namespace SecondSpawn.AI
         public string archetype_id;
         public string visual_prefab_key;
         public int visual_variant = -1;
+        public BodyAppearanceDto appearance;
+        public BodyInhabitationDto inhabitation;
         public EquipmentLoadoutDto equipment;
         public CharacterStatsDto stats;
         public CharacterTraitsDto characteristics;
@@ -59,6 +61,40 @@ namespace SecondSpawn.AI
     {
         public string primary_weapon = "none";
         public int equipment_visual_id;
+        public string weapon_visual_key;
+        public string weapon_family;
+        public string combat_stance;
+        public string socket;
+    }
+
+    [Serializable]
+    public sealed class BodyAppearanceDto
+    {
+        public string body_type;
+        public BodyPartsDto body_parts;
+        public string skin;
+        public string hair;
+        public string material;
+        public string[] marks;
+    }
+
+    [Serializable]
+    public sealed class BodyPartsDto
+    {
+        public string head;
+        public string face;
+        public string torso;
+        public string arms;
+        public string legs;
+    }
+
+    [Serializable]
+    public sealed class BodyInhabitationDto
+    {
+        public string source_actor_id;
+        public string previous_role;
+        public bool inhabited_by_player;
+        public string assigned_at;
     }
 
     [Serializable]
@@ -85,6 +121,10 @@ namespace SecondSpawn.AI
     public sealed class AnimationCapabilitiesDto
     {
         public bool supports_jump = true;
+        public bool supports_roll = true;
+        public bool supports_melee = true;
+        public bool supports_ranged;
+        public string weapon_stance;
     }
 
     [Serializable]
@@ -219,6 +259,8 @@ namespace SecondSpawn.AI
         public string archetype_id;
         public string visual_prefab_key;
         public int visual_variant = -1;
+        public BodyAppearanceDto appearance;
+        public BodyInhabitationDto inhabitation;
         public EquipmentLoadoutDto equipment;
         public CharacterStatsDto stats;
         public CharacterTraitsDto characteristics;

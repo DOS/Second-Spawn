@@ -37,6 +37,20 @@ var bodyArchetypePool = [
     visual_prefab_key: "generated_visual_07_knight",
     visual_variant: 7,
     equipment_visual_id: 2,
+    appearance: {
+      body_type: "synthetic_hunter",
+      body_parts: {
+        head: "sentinel-visor-head",
+        face: "sealed-guard-face",
+        torso: "armored-sentinel-torso",
+        arms: "shield-braced-arms",
+        legs: "patrol-stabilizer-legs"
+      },
+      skin: "steel-blue",
+      hair: "none",
+      material: "brushed-alloy",
+      marks: ["cordon-stripe", "vault-scar"]
+    },
     stats: { vitality: 12, force: 9, agility: 7, focus: 7, resilience: 11, max_health: 120, max_energy: 45, attack_power: 11, defense_power: 8 },
     characteristics: { curiosity: 4, courage: 8, empathy: 5, discipline: 8, aggression: 4, sociability: 4 },
     soul: {
@@ -52,7 +66,7 @@ var bodyArchetypePool = [
       conflict: "Its old command routines still prioritize civilians over self-preservation.",
       rumor: "Some hub survivors claim this line once guarded a sealed Nibirium vault."
     },
-    animation_capabilities: { supports_jump: true },
+    animation_capabilities: { supports_jump: true, supports_roll: true, supports_melee: true, supports_ranged: false, weapon_stance: "one_hand_melee" },
     seed_memory_summary: "This body remembers standing watch near the southern gate during a Nibirium storm."
   },
   {
@@ -60,6 +74,20 @@ var bodyArchetypePool = [
     visual_prefab_key: "generated_visual_03_ninja",
     visual_variant: 3,
     equipment_visual_id: 2,
+    appearance: {
+      body_type: "synthetic_hunter",
+      body_parts: {
+        head: "courier-wrap-head",
+        face: "half-mask-runner-face",
+        torso: "light-courier-torso",
+        arms: "quickdraw-runner-arms",
+        legs: "spring-fiber-legs"
+      },
+      skin: "dark-graphite",
+      hair: "short-black",
+      material: "flex-carbon",
+      marks: ["route-scratch", "safehouse-tag"]
+    },
     stats: { vitality: 8, force: 8, agility: 12, focus: 8, resilience: 7, max_health: 90, max_energy: 60, attack_power: 10, defense_power: 4 },
     characteristics: { curiosity: 8, courage: 7, empathy: 5, discipline: 6, aggression: 5, sociability: 7 },
     soul: {
@@ -75,7 +103,7 @@ var bodyArchetypePool = [
       conflict: "It carries delivery fragments for clients who may no longer be alive.",
       rumor: "A courier with this imprint once crossed the dead belt without losing a second of BodyTime."
     },
-    animation_capabilities: { supports_jump: true },
+    animation_capabilities: { supports_jump: true, supports_roll: true, supports_melee: true, supports_ranged: false, weapon_stance: "one_hand_melee" },
     seed_memory_summary: "This body remembers hidden route markers scratched under broken street lights."
   },
   {
@@ -83,6 +111,20 @@ var bodyArchetypePool = [
     visual_prefab_key: "generated_visual_08_mage",
     visual_variant: 8,
     equipment_visual_id: 8,
+    appearance: {
+      body_type: "synthetic_hunter",
+      body_parts: {
+        head: "clinic-sensor-head",
+        face: "soft-medical-face",
+        torso: "field-clinic-torso",
+        arms: "precision-medic-arms",
+        legs: "quiet-step-legs"
+      },
+      skin: "warm-synthetic",
+      hair: "white-bob",
+      material: "clean-polymer",
+      marks: ["clinic-band", "recovery-seal"]
+    },
     stats: { vitality: 9, force: 6, agility: 7, focus: 12, resilience: 8, max_health: 95, max_energy: 80, attack_power: 8, defense_power: 5 },
     characteristics: { curiosity: 7, courage: 5, empathy: 9, discipline: 8, aggression: 2, sociability: 8 },
     soul: {
@@ -98,7 +140,7 @@ var bodyArchetypePool = [
       conflict: "It cannot ignore injured strangers, even when the clock says to run.",
       rumor: "The clinic kept one forbidden backup of a patient who never woke."
     },
-    animation_capabilities: { supports_jump: true },
+    animation_capabilities: { supports_jump: true, supports_roll: false, supports_melee: false, supports_ranged: true, weapon_stance: "staff_caster" },
     seed_memory_summary: "This body remembers the smell of coolant in an underground reincarnation ward."
   },
   {
@@ -106,6 +148,20 @@ var bodyArchetypePool = [
     visual_prefab_key: "generated_visual_10_hammer",
     visual_variant: 10,
     equipment_visual_id: 9,
+    appearance: {
+      body_type: "synthetic_hunter",
+      body_parts: {
+        head: "scrap-warden-head",
+        face: "reinforced-jaw-face",
+        torso: "heavy-salvage-torso",
+        arms: "hydraulic-lifter-arms",
+        legs: "wide-stance-legs"
+      },
+      skin: "oxide-brown",
+      hair: "none",
+      material: "scarred-iron",
+      marks: ["debt-notch", "workshop-burn"]
+    },
     stats: { vitality: 13, force: 12, agility: 5, focus: 6, resilience: 12, max_health: 135, max_energy: 35, attack_power: 13, defense_power: 9 },
     characteristics: { curiosity: 5, courage: 8, empathy: 4, discipline: 7, aggression: 6, sociability: 3 },
     soul: {
@@ -121,7 +177,7 @@ var bodyArchetypePool = [
       conflict: "Its reinforced frame is powerful but less agile than newer shells.",
       rumor: "Scrap wardens mark debts on weapon handles instead of ledgers."
     },
-    animation_capabilities: { supports_jump: false },
+    animation_capabilities: { supports_jump: false, supports_roll: false, supports_melee: true, supports_ranged: false, weapon_stance: "heavy_melee" },
     seed_memory_summary: "This body remembers defending a scrap claim through three nights of low BodyTime."
   },
   {
@@ -129,6 +185,20 @@ var bodyArchetypePool = [
     visual_prefab_key: "generated_visual_09_crossbow",
     visual_variant: 9,
     equipment_visual_id: 7,
+    appearance: {
+      body_type: "synthetic_hunter",
+      body_parts: {
+        head: "crossline-optic-head",
+        face: "masked-rangefinder-face",
+        torso: "ranged-survey-torso",
+        arms: "steady-ranged-arms",
+        legs: "survey-runner-legs"
+      },
+      skin: "graphite",
+      hair: "cropped-silver",
+      material: "matte-carbon",
+      marks: ["signal-burn", "survey-chevron"]
+    },
     stats: { vitality: 9, force: 10, agility: 9, focus: 9, resilience: 7, max_health: 100, max_energy: 60, attack_power: 12, defense_power: 5 },
     characteristics: { curiosity: 6, courage: 6, empathy: 4, discipline: 9, aggression: 5, sociability: 4 },
     soul: {
@@ -144,7 +214,7 @@ var bodyArchetypePool = [
       conflict: "It trusts patterns more than people.",
       rumor: "Its optical stack still receives a signal from a district that should be silent."
     },
-    animation_capabilities: { supports_jump: false },
+    animation_capabilities: { supports_jump: false, supports_roll: true, supports_melee: false, supports_ranged: true, weapon_stance: "ranged_crossbow" },
     seed_memory_summary: "This body remembers counting hostile silhouettes from a broken overpass."
   }
 ];
@@ -664,6 +734,8 @@ function actorProfileNeedsNormalization(profile: any): boolean {
     !profile.body.archetype_id ||
     !profile.body.visual_prefab_key ||
     profile.body.visual_variant === undefined ||
+    !profile.body.appearance ||
+    !profile.body.inhabitation ||
     !profile.body.equipment ||
     !profile.body.stats ||
     !profile.body.characteristics ||
@@ -749,11 +821,17 @@ function defaultActorProfile(ownerId: string, actorId: string, request: any): an
       archetype_id: archetype.archetype_id,
       visual_prefab_key: trimString(request.visual_prefab_key) || archetype.visual_prefab_key,
       visual_variant: normalizeVisualVariant(firstDefined(request.visual_variant, archetype.visual_variant)),
+      appearance: normalizeBodyAppearance(request.appearance || archetype.appearance || {}),
+      inhabitation: normalizeBodyInhabitation(request.inhabitation || {
+        source_actor_id: actorId,
+        previous_role: archetype.story && archetype.story.role,
+        inhabited_by_player: false
+      }, archetype, false, ownerId + ":" + actorId),
       equipment: normalizeEquipment(request.equipment || { equipment_visual_id: archetype.equipment_visual_id }),
       stats: normalizeStatsWithDefaults(request.stats || {}, archetype.stats || {}),
       characteristics: normalizeTraitsWithDefaults(request.characteristics || {}, archetype.characteristics || {}),
       story: normalizeBodyStory(request.story || archetype.story || {}),
-      animation_capabilities: normalizeAnimationCapabilities(request.animation_capabilities || archetype.animation_capabilities || {}),
+      animation_capabilities: normalizeAnimationCapabilities(request.animation_capabilities || {}, archetype.animation_capabilities || {}),
       time: normalizeBodyTime(request.time || {}),
       lifecycle: "alive",
       agent_policy: normalizePolicy(request.agent_policy || {}),
@@ -790,11 +868,17 @@ function ensureActorProfile(profile: any, ownerId: string, actorId: string): any
   profile.body.archetype_id = trimString(profile.body.archetype_id) || archetype.archetype_id;
   profile.body.visual_prefab_key = trimString(profile.body.visual_prefab_key) || archetype.visual_prefab_key;
   profile.body.visual_variant = normalizeVisualVariant(firstDefined(profile.body.visual_variant, archetype.visual_variant));
+  profile.body.appearance = normalizeBodyAppearance(profile.body.appearance || archetype.appearance || {});
+  profile.body.inhabitation = normalizeBodyInhabitation(profile.body.inhabitation || {
+    source_actor_id: profile.actor_id,
+    previous_role: archetype.story && archetype.story.role,
+    inhabited_by_player: false
+  }, archetype, false, profile.owner_player_id + ":" + profile.actor_id);
   profile.body.equipment = normalizeEquipment(equipmentOrArchetypeDefault(profile.body.equipment, archetype));
   profile.body.stats = normalizeStatsWithDefaults(profile.body.stats || {}, archetype.stats || {});
   profile.body.characteristics = normalizeTraitsWithDefaults(profile.body.characteristics || {}, archetype.characteristics || {});
   profile.body.story = normalizeBodyStory(profile.body.story || archetype.story || {});
-  profile.body.animation_capabilities = normalizeAnimationCapabilities(profile.body.animation_capabilities || archetype.animation_capabilities || {});
+  profile.body.animation_capabilities = normalizeAnimationCapabilities(profile.body.animation_capabilities || {}, archetype.animation_capabilities || {});
   profile.body.time = normalizeBodyTime(profile.body.time || {});
   profile.body.lifecycle = trimString(profile.body.lifecycle) || "alive";
   profile.body.agent_policy = normalizePolicy(profile.body.agent_policy || {});
@@ -824,17 +908,25 @@ function defaultAgentContext(playerId: string): any {
 }
 
 function defaultBodyProfile(playerId: string, displayName: string, timestamp: string, seedSuffix?: string): any {
-  var archetype = selectBodyArchetype(playerId + ":" + (seedSuffix || "initial"));
+  var assignmentSeed = playerId + ":" + (seedSuffix || "initial");
+  var archetype = selectBodyArchetype(assignmentSeed);
   return {
     body_id: "body-" + playerId,
     archetype_id: archetype.archetype_id,
     visual_prefab_key: archetype.visual_prefab_key,
     visual_variant: normalizeVisualVariant(archetype.visual_variant),
+    appearance: normalizeBodyAppearance(archetype.appearance || {}),
+    inhabitation: normalizeBodyInhabitation({
+      source_actor_id: sourceActorIdForArchetype(archetype, assignmentSeed),
+      previous_role: archetype.story && archetype.story.role,
+      inhabited_by_player: true,
+      assigned_at: timestamp
+    }, archetype, true, assignmentSeed),
     equipment: normalizeEquipment({ equipment_visual_id: archetype.equipment_visual_id }),
     stats: normalizeStatsWithDefaults({}, archetype.stats || {}),
     characteristics: normalizeTraitsWithDefaults({}, archetype.characteristics || {}),
     story: normalizeBodyStory(archetype.story || {}),
-    animation_capabilities: normalizeAnimationCapabilities(archetype.animation_capabilities || {}),
+    animation_capabilities: normalizeAnimationCapabilities({}, archetype.animation_capabilities || {}),
     time: {
       remaining_seconds: 86400,
       max_seconds: 86400,
@@ -874,11 +966,17 @@ function ensureAgentContext(context: any, playerId: string): any {
   context.body.archetype_id = trimString(context.body.archetype_id) || archetype.archetype_id;
   context.body.visual_prefab_key = trimString(context.body.visual_prefab_key) || archetype.visual_prefab_key;
   context.body.visual_variant = normalizeVisualVariant(firstDefined(context.body.visual_variant, archetype.visual_variant));
+  context.body.appearance = normalizeBodyAppearance(context.body.appearance || archetype.appearance || {});
+  context.body.inhabitation = normalizeBodyInhabitation(context.body.inhabitation || {
+    source_actor_id: sourceActorIdForArchetype(archetype, context.player.player_id + ":initial"),
+    previous_role: archetype.story && archetype.story.role,
+    inhabited_by_player: true
+  }, archetype, true, context.player.player_id + ":initial");
   context.body.equipment = normalizeEquipment(equipmentOrArchetypeDefault(context.body.equipment, archetype));
   context.body.stats = normalizeStatsWithDefaults(context.body.stats || {}, archetype.stats || {});
   context.body.characteristics = normalizeTraitsWithDefaults(context.body.characteristics || {}, archetype.characteristics || {});
   context.body.story = normalizeBodyStory(context.body.story || archetype.story || {});
-  context.body.animation_capabilities = normalizeAnimationCapabilities(context.body.animation_capabilities || archetype.animation_capabilities || {});
+  context.body.animation_capabilities = normalizeAnimationCapabilities(context.body.animation_capabilities || {}, archetype.animation_capabilities || {});
   context.body.time = normalizeBodyTime(context.body.time || {});
   context.body.lifecycle = trimString(context.body.lifecycle) || "alive";
   context.body.agent_policy = normalizePolicy(context.body.agent_policy || {});
@@ -976,11 +1074,25 @@ function selectBodyArchetype(seed: any): any {
       visual_prefab_key: "generated_visual_12_swordsman",
       visual_variant: 12,
       equipment_visual_id: 2,
+      appearance: {
+        body_type: "synthetic_hunter",
+        body_parts: {
+          head: "prototype-head",
+          face: "prototype-face",
+          torso: "prototype-torso",
+          arms: "prototype-arms",
+          legs: "prototype-legs"
+        },
+        skin: "neutral",
+        hair: "none",
+        material: "prototype-polymer",
+        marks: ["prototype"]
+      },
       stats: defaultCharacterStats(),
       characteristics: {},
       soul: {},
       story: {},
-      animation_capabilities: { supports_jump: true },
+      animation_capabilities: { supports_jump: true, supports_roll: true, supports_melee: true, supports_ranged: false, weapon_stance: "one_hand_melee" },
       seed_memory_summary: ""
     };
   }
@@ -1010,6 +1122,11 @@ function stableHashIndex(value: string, modulo: number): number {
     hash = (hash * 16777619) >>> 0;
   }
   return modulo <= 0 ? 0 : hash % modulo;
+}
+
+function sourceActorIdForArchetype(archetype: any, seed: string): string {
+  var archetypeId = sanitizeNakamaIdentifier(archetype.archetype_id || "body", "body");
+  return "npc-" + archetypeId + "-" + stableHashIndex(seed || archetypeId, 10000);
 }
 
 function defaultCharacterStats(): any {
@@ -1546,10 +1663,56 @@ function normalizeBodyStory(story: any): any {
   };
 }
 
-function normalizeAnimationCapabilities(capabilities: any): any {
+function normalizeBodyAppearance(appearance: any): any {
+  var parts = appearance.body_parts || {};
   return {
-    supports_jump: capabilities.supports_jump === false ? false : true
+    body_type: trimString(appearance.body_type) || "synthetic_hunter",
+    body_parts: {
+      head: trimString(parts.head) || "standard-head",
+      face: trimString(parts.face) || "standard-face",
+      torso: trimString(parts.torso) || "standard-torso",
+      arms: trimString(parts.arms) || "standard-arms",
+      legs: trimString(parts.legs) || "standard-legs"
+    },
+    skin: trimString(appearance.skin) || "neutral",
+    hair: trimString(appearance.hair) || "none",
+    material: trimString(appearance.material) || "synthetic-polymer",
+    marks: normalizeStringArray(appearance.marks, [])
   };
+}
+
+function normalizeBodyInhabitation(inhabitation: any, archetype: any, inhabitedByPlayer: boolean, seed: string): any {
+  var sourceActorId = trimString(inhabitation.source_actor_id) ||
+    sourceActorIdForArchetype(archetype || {}, seed);
+  return {
+    source_actor_id: sourceActorId,
+    previous_role: trimString(inhabitation.previous_role) ||
+      trimString(archetype && archetype.story && archetype.story.role) ||
+      "World body",
+    inhabited_by_player: inhabitation.inhabited_by_player === undefined
+      ? inhabitedByPlayer
+      : inhabitation.inhabited_by_player === true,
+    assigned_at: trimString(inhabitation.assigned_at) || new Date().toISOString()
+  };
+}
+
+function normalizeAnimationCapabilities(capabilities: any, defaults?: any): any {
+  var fallback = defaults || {};
+  return {
+    supports_jump: normalizeBooleanWithDefault(capabilities.supports_jump, fallback.supports_jump === false ? false : true),
+    supports_roll: normalizeBooleanWithDefault(capabilities.supports_roll, fallback.supports_roll === false ? false : true),
+    supports_melee: normalizeBooleanWithDefault(capabilities.supports_melee, fallback.supports_melee === false ? false : true),
+    supports_ranged: normalizeBooleanWithDefault(capabilities.supports_ranged, fallback.supports_ranged === true),
+    weapon_stance: trimString(capabilities.weapon_stance) || trimString(fallback.weapon_stance) || "one_hand_melee"
+  };
+}
+
+function normalizeBooleanWithDefault(value: any, fallback: boolean): boolean {
+  if (value === undefined || value === null) {
+    return fallback;
+  }
+
+  return value === true;
 }
 
 function equipmentOrArchetypeDefault(equipment: any, archetype: any): any {
@@ -1570,10 +1733,40 @@ function equipmentOrArchetypeDefault(equipment: any, archetype: any): any {
 
 function normalizeEquipment(equipment: any): any {
   var equipmentVisualId = clampNumber(equipment.equipment_visual_id || 0, 0, 9);
+  var defaults = equipmentVisualDefaults(equipmentVisualId);
   return {
     primary_weapon: trimString(equipment.primary_weapon) || primaryWeaponName(equipmentVisualId),
-    equipment_visual_id: equipmentVisualId
+    equipment_visual_id: equipmentVisualId,
+    weapon_visual_key: trimString(equipment.weapon_visual_key) || defaults.weapon_visual_key,
+    weapon_family: trimString(equipment.weapon_family) || defaults.weapon_family,
+    combat_stance: trimString(equipment.combat_stance) || defaults.combat_stance,
+    socket: trimString(equipment.socket) || defaults.socket
   };
+}
+
+function equipmentVisualDefaults(equipmentVisualId: number): any {
+  switch (equipmentVisualId) {
+    case 1:
+      return { weapon_visual_key: "unarmed", weapon_family: "unarmed", combat_stance: "unarmed", socket: "none" };
+    case 2:
+      return { weapon_visual_key: "sword", weapon_family: "melee", combat_stance: "one_hand_melee", socket: "right_hand" };
+    case 3:
+      return { weapon_visual_key: "two_hand_sword", weapon_family: "melee", combat_stance: "two_hand_melee", socket: "hands" };
+    case 4:
+      return { weapon_visual_key: "spear", weapon_family: "melee", combat_stance: "polearm", socket: "hands" };
+    case 5:
+      return { weapon_visual_key: "axe", weapon_family: "melee", combat_stance: "heavy_melee", socket: "hands" };
+    case 6:
+      return { weapon_visual_key: "bow", weapon_family: "ranged", combat_stance: "ranged_bow", socket: "hands" };
+    case 7:
+      return { weapon_visual_key: "crossbow", weapon_family: "ranged", combat_stance: "ranged_crossbow", socket: "hands" };
+    case 8:
+      return { weapon_visual_key: "staff", weapon_family: "caster", combat_stance: "staff_caster", socket: "hands" };
+    case 9:
+      return { weapon_visual_key: "hammer", weapon_family: "melee", combat_stance: "heavy_melee", socket: "hands" };
+    default:
+      return { weapon_visual_key: "none", weapon_family: "none", combat_stance: "relaxed", socket: "none" };
+  }
 }
 
 function primaryWeaponName(equipmentVisualId: number): string {
