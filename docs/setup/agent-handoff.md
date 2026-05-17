@@ -72,7 +72,7 @@ Do not touch:
 
 ## Current manual JOY actions
 
-1. Add Unity Linux Dedicated Server Build Support for Unity `6000.5.0b7` via
+1. Add Unity Linux Dedicated Server Build Support for Unity `6000.5.0b8` via
    Unity Hub before dedicated server build work.
 2. Import asset store packages in separate passes: Opsive UCC, then Behavior
    Designer, then Convai.
@@ -105,9 +105,10 @@ Do not touch:
   - `V`: check voice-session contract
 - Voice is a local prototype cue plus text bubble in Unity. Real TTS still
   requires server-side ephemeral token minting.
-- On 2026-05-16, Cloud Run revision `second-spawn-gateway-00003-779` served
-  100 percent of traffic. Smoke tests passed for `/readyz`,
-  `/v1/characters/dev-player/context`, and duplicate memory POST dedupe.
+- On 2026-05-17, Cloud Run revision `second-spawn-gateway-00008-cnn` served
+  100 percent of traffic. Smoke tests passed for `/readyz` and
+  `/v1/agent/decide` with Unity's current `second_balance_seconds` player
+  context field.
 - On 2026-05-16, CoplayDev MCP Play Mode verification spawned a generated
   Hammer Warrior visual with a clean console. Prototype agent input moved the
   spawned player from `x=1.50` to `x=14.03`, then cleared control.

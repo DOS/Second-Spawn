@@ -50,7 +50,7 @@ function createRuntimeHarness(module) {
           conflictOnNextVersionedWrite = false;
         }
         if (Object.prototype.hasOwnProperty.call(request, "version")) {
-          if (request.version === "") {
+          if (request.version === "*") {
             if (conflictOnNextCreateOnlyWrite) {
               storageVersion += 1;
               storage.set(key, {

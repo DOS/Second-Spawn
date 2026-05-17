@@ -42,7 +42,7 @@ Public docs are published from `/docs` to GitBook:
 
 Requirements:
 
-- Unity 6.5 beta `6000.5.0b7`
+- Unity 6.5 beta `6000.5.0b8`
 - Git LFS
 - Photon Fusion 2 app ID
 - Nakama local backend for backend work

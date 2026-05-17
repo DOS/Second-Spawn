@@ -55,36 +55,25 @@ gcloud run deploy second-spawn-gateway \
   --region asia-southeast1 \
   --allow-unauthenticated \
   --env-vars-file backend/gateway/deploy/cloudrun.env.yaml \
-  --set-secrets SUPABASE_JWT_SECRET=second-spawn-supabase-jwt-secret:latest,SUPABASE_SERVICE_ROLE_KEY=second-spawn-supabase-service-role-key:latest,ANTHROPIC_API_KEY=second-spawn-anthropic-api-key:latest,OPENAI_API_KEY=second-spawn-openai-api-key:latest,CONVAI_API_KEY=second-spawn-convai-api-key:latest
+  --set-secrets ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest
 ```
 
 `--allow-unauthenticated` is intentional for the public game endpoint. Application
-auth still happens with Supabase JWTs at the gateway level. Do not put Cloud Run
-behind IAM auth for normal game clients.
+auth happens with Supabase JWTs once the Unity bearer-token path is wired. Do
+not put Cloud Run behind IAM auth for normal game clients.
 
 ## Secret Creation
 
 Create secrets once, then paste values interactively:
 
 ```bash
-gcloud secrets create second-spawn-supabase-jwt-secret --replication-policy automatic
-gcloud secrets versions add second-spawn-supabase-jwt-secret --data-file -
-
-gcloud secrets create second-spawn-supabase-service-role-key --replication-policy automatic
-gcloud secrets versions add second-spawn-supabase-service-role-key --data-file -
-
-gcloud secrets create second-spawn-anthropic-api-key --replication-policy automatic
-gcloud secrets versions add second-spawn-anthropic-api-key --data-file -
-
-gcloud secrets create second-spawn-openai-api-key --replication-policy automatic
-gcloud secrets versions add second-spawn-openai-api-key --data-file -
-
-gcloud secrets create second-spawn-convai-api-key --replication-policy automatic
-gcloud secrets versions add second-spawn-convai-api-key --data-file -
+gcloud secrets create ANTHROPIC_API_KEY --replication-policy automatic
+gcloud secrets versions add ANTHROPIC_API_KEY --data-file -
 ```
 
 For the current prototype, provider keys can be omitted only if `GATEWAY_ENV` is
-not `production`. Production must have real provider credentials.
+not `production`. Production must have real provider credentials and a wired
+Supabase bearer-token path before setting `SUPABASE_JWT_SECRET`.
 
 ## Smoke Test
 

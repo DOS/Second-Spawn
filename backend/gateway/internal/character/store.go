@@ -158,9 +158,11 @@ func NewDefaultAgentContext(playerID string, now time.Time) AgentContext {
 
 	return AgentContext{
 		Player: PlayerProfile{
-			PlayerID:    playerID,
-			DisplayName: displayName,
-			CreatedAt:   now,
+			PlayerID:             playerID,
+			DisplayName:          displayName,
+			SecondBalanceSeconds: 7 * 24 * 60 * 60,
+			ReincarnationCount:   0,
+			CreatedAt:            now,
 		},
 		Body: BodyProfile{
 			BodyID:          "body-" + playerID,
