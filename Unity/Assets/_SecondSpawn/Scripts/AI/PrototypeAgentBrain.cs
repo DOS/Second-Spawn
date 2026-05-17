@@ -39,6 +39,7 @@ namespace SecondSpawn.AI
         [SerializeField] private string _zoneId = "prototype-hub";
         [SerializeField] private int _visualVariant = 10;
         [SerializeField] private float _decisionIntervalSeconds = 1.6f;
+        [SerializeField] private float _initialDecisionDelaySeconds;
         [SerializeField] private float _moveSpeed = 2.4f;
         [SerializeField] private float _patrolRadius = 5f;
         [SerializeField] private float _talkIntervalSeconds = 7.5f;
@@ -49,6 +50,8 @@ namespace SecondSpawn.AI
         private bool _useNakamaFallbackOnGatewayFailure = true;
 
         [SerializeField] private int _gatewayFailureErrorThreshold = 3;
+        [SerializeField, Tooltip("When the model gateway reports a daily token budget exhaustion, use Nakama fallback only for this long before probing the gateway again.")]
+        private float _gatewayBudgetBackoffSeconds = 60f;
 
         private SecondSpawnGatewayClient _gateway;
         private AgentContextDto _context;
@@ -66,6 +69,8 @@ namespace SecondSpawn.AI
         private int _pendingFootAlignFrames;
         private int _loopSequence;
         private int _consecutiveGatewayFailures;
+        private float _gatewayBudgetBackoffUntil;
+        private ActorProfileDto _configuredActorProfile;
         private readonly List<string> _phaseTrace = new List<string>();
 
         private void Awake()
@@ -136,9 +141,51 @@ namespace SecondSpawn.AI
             LogPhase(BrainPhase.Idle, "brain stopped");
         }
 
+        public void ConfigureActorProfile(
+            ActorProfileDto profile,
+            string zoneId,
+            float patrolRadius,
+            float decisionIntervalSeconds,
+            float initialDecisionDelaySeconds)
+        {
+            if (profile == null)
+            {
+                return;
+            }
+
+            _configuredActorProfile = profile;
+            _agentId = string.IsNullOrWhiteSpace(profile.actor_id) ? _agentId : profile.actor_id.Trim();
+            _displayName = string.IsNullOrWhiteSpace(profile.display_name) ? _displayName : profile.display_name.Trim();
+            _zoneId = string.IsNullOrWhiteSpace(zoneId) ? _zoneId : zoneId.Trim();
+            _patrolRadius = Mathf.Max(0.5f, patrolRadius);
+            _decisionIntervalSeconds = Mathf.Max(0.25f, decisionIntervalSeconds);
+            _initialDecisionDelaySeconds = Mathf.Max(0f, initialDecisionDelaySeconds);
+            _seedSoulOnStart = false;
+            _context = BuildContextFromActorProfile(profile);
+
+            var resolvedVariant = ResolveActorVisualVariant(profile);
+            if (VisualPrefabCatalog.NormalizeVariant(resolvedVariant) != VisualPrefabCatalog.NormalizeVariant(_visualVariant))
+            {
+                _visualVariant = resolvedVariant;
+                ReloadVisual();
+            }
+            else
+            {
+                _visualVariant = resolvedVariant;
+            }
+
+            ApplyContextToPrototypeBody();
+        }
+
         private IEnumerator BrainLoop()
         {
             yield return BootstrapContext();
+            if (_initialDecisionDelaySeconds > 0f)
+            {
+                LogPhase(BrainPhase.Cooldown, $"initial stagger {_initialDecisionDelaySeconds:0.00}s");
+                yield return new WaitForSeconds(_initialDecisionDelaySeconds);
+            }
+
             _nextTalkAt = Time.time + 1.5f;
 
             while (enabled)
@@ -151,7 +198,19 @@ namespace SecondSpawn.AI
                 AgentDecisionDto decision = null;
                 string gatewayError = null;
                 string fallbackError = null;
-                yield return _gateway.Decide(request, value => decision = value, error => gatewayError = error);
+
+                if (IsGatewayBudgetBackoffActive())
+                {
+                    if (_useNakamaFallbackOnGatewayFailure)
+                    {
+                        yield return _gateway.DecideWithNakamaFallback(request, value => decision = value, error => fallbackError = error);
+                    }
+                }
+                else
+                {
+                    yield return _gateway.Decide(request, value => decision = value, error => gatewayError = error);
+                }
+
                 if (decision == null && _useNakamaFallbackOnGatewayFailure && !string.IsNullOrWhiteSpace(gatewayError))
                 {
                     yield return _gateway.DecideWithNakamaFallback(request, value => decision = value, error => fallbackError = error);
@@ -176,6 +235,14 @@ namespace SecondSpawn.AI
 
         private IEnumerator BootstrapContext()
         {
+            if (_configuredActorProfile != null)
+            {
+                _context = BuildContextFromActorProfile(_configuredActorProfile);
+                LogPhase(BrainPhase.Bootstrap, $"actor profile loaded for {_agentId}");
+                ApplyContextToPrototypeBody();
+                yield break;
+            }
+
             if (_seedSoulOnStart)
             {
                 yield return _gateway.UpdateSoulForPlayer(_agentId, BuildSoulSeed(), ctx => _context = ctx, Debug.LogWarning);
@@ -338,6 +405,12 @@ namespace SecondSpawn.AI
             if (recoveredByFallback)
             {
                 _consecutiveGatewayFailures = 0;
+                if (IsTokenBudgetExhausted(gatewayError))
+                {
+                    StartGatewayBudgetBackoff(gatewayError);
+                    return;
+                }
+
                 Debug.LogWarning($"[PrototypeAgentBrain] Gateway decision failed for agent={_agentId}, recovered_by=nakama_fallback: {gatewayError}");
                 return;
             }
@@ -349,6 +422,30 @@ namespace SecondSpawn.AI
             {
                 Debug.LogError($"[PrototypeAgentBrain] Gateway decision failure threshold reached for agent={_agentId}, threshold={_gatewayFailureErrorThreshold}{fallbackDetail}: {gatewayError}");
             }
+        }
+
+        private bool IsGatewayBudgetBackoffActive()
+        {
+            return Time.realtimeSinceStartup < _gatewayBudgetBackoffUntil;
+        }
+
+        private void StartGatewayBudgetBackoff(string gatewayError)
+        {
+            var backoffSeconds = Mathf.Max(_decisionIntervalSeconds, _gatewayBudgetBackoffSeconds);
+            var nextProbeAt = Time.realtimeSinceStartup + backoffSeconds;
+            if (nextProbeAt <= _gatewayBudgetBackoffUntil)
+            {
+                return;
+            }
+
+            _gatewayBudgetBackoffUntil = nextProbeAt;
+            Debug.LogWarning($"[PrototypeAgentBrain] Gateway decision budget exhausted for agent={_agentId}; using Nakama fallback for {backoffSeconds:0}s before retrying: {gatewayError}");
+        }
+
+        private static bool IsTokenBudgetExhausted(string gatewayError)
+        {
+            return !string.IsNullOrWhiteSpace(gatewayError)
+                && gatewayError.IndexOf("token_budget_exhausted", System.StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private void ApplyDecision(AgentDecisionDto decision)
@@ -475,6 +572,16 @@ namespace SecondSpawn.AI
 #if UNITY_EDITOR
             var cleanPath = VisualPrefabCatalog.GetCleanAssetPath(_visualVariant);
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(cleanPath);
+            if (prefab == null)
+            {
+                var sourcePath = VisualPrefabCatalog.GetSourceAssetPath(_visualVariant);
+                prefab = AssetDatabase.LoadAssetAtPath<GameObject>(sourcePath);
+                if (prefab != null)
+                {
+                    Debug.LogWarning($"[PrototypeAgentBrain] Generated visual missing for variant {_visualVariant}. Falling back to source asset '{sourcePath}'.");
+                }
+            }
+
             if (prefab != null)
             {
                 visualRoot = Instantiate(prefab, transform);
@@ -505,6 +612,66 @@ namespace SecondSpawn.AI
             if (_intentDriver == null && _animator != null)
             {
                 _intentDriver = _animator.gameObject.AddComponent<VisualAnimationIntentDriver>();
+            }
+        }
+
+        private void ReloadVisual()
+        {
+            if (_visualRoot != null)
+            {
+                _visualRoot.name = "PrototypeAgentVisual_Old";
+                Destroy(_visualRoot);
+                _visualRoot = null;
+            }
+
+            _animator = null;
+            _intentDriver = null;
+            EnsureVisual();
+        }
+
+        private static AgentContextDto BuildContextFromActorProfile(ActorProfileDto profile)
+        {
+            return new AgentContextDto
+            {
+                player = new PlayerProfileDto
+                {
+                    player_id = profile.actor_id,
+                    display_name = profile.display_name,
+                    second_balance_seconds = 0,
+                    reincarnation_count = 0
+                },
+                body = profile.body
+            };
+        }
+
+        private static int ResolveActorVisualVariant(ActorProfileDto profile)
+        {
+            if (profile?.body != null && profile.body.visual_variant >= 0)
+            {
+                return VisualPrefabCatalog.NormalizeVariant(profile.body.visual_variant);
+            }
+
+            return StableVisualVariant(profile?.actor_id);
+        }
+
+        private static int StableVisualVariant(string seed)
+        {
+            if (VisualPrefabCatalog.Count <= 0)
+            {
+                return 0;
+            }
+
+            unchecked
+            {
+                var hash = 2166136261u;
+                var value = string.IsNullOrWhiteSpace(seed) ? "prototype-agent" : seed.Trim();
+                for (var index = 0; index < value.Length; index++)
+                {
+                    hash ^= value[index];
+                    hash *= 16777619u;
+                }
+
+                return (int)(hash % VisualPrefabCatalog.Count);
             }
         }
 

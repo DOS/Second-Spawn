@@ -226,6 +226,10 @@ assert.equal(seededNpcs.npcs[0].actor_id, "npc-synthetic-sentinel-0101");
 assert.equal(seededNpcs.npcs[0].actor_type, "npc");
 assert.equal(seededNpcs.npcs[0].owner_player_id, "user-1");
 assert.equal(seededNpcs.npcs[0].body.identity.public_name, "Gate Sentinel 0101");
+assert.equal(seededNpcs.npcs[0].body.visual_variant, 7);
+assert.equal(seededNpcs.npcs[5].body.visual_variant, 16);
+assert.equal(seededNpcs.npcs[6].body.visual_variant, 14);
+assert.equal(seededNpcs.npcs[8].body.visual_variant, 15);
 assert.ok(harness.storage.get(storageKey("user-1", "secondspawn_actor", "world_profile:npc-synthetic-sentinel-0101")));
 
 const listedNpcs = JSON.parse(harness.registeredRpcs.get("secondspawn_npc_list")(
