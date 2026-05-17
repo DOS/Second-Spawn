@@ -48,6 +48,9 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   equipment visuals, visual variants, and animation capability flags.
 - Nakama now persists the source NPC-like Frame actor profile when a player
   first receives a body or reincarnates into a new body.
+- Nakama now has a prototype permanent NPC Frame pool. New player bodies and
+  reincarnated bodies are assigned from this server-owned pool instead of
+  generating only ad-hoc source actor IDs.
 
 ### Changed
 

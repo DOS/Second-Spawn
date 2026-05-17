@@ -389,9 +389,13 @@ Server-side systems decide which parts are editable, inherited, generated, or re
 Prototype body-model decisions:
 
 - A new account spawns into a server-selected NPC-like Frame from the
-  approved body archetype pool.
+  permanent NPC Frame pool. The pool entries reference approved body archetypes
+  and provide stable source actor IDs such as `npc-crossline-hunter-5104`.
 - Each body can carry pre-existing story hooks, traits, stat bias, weapon
   visual, soul defaults, and a seed memory before the player enters it.
+- When a player enters one of these Frames, Nakama persists the chosen source
+  Frame as a `player_body` actor profile so it can keep body-level stats,
+  memory, activity history, and identity metadata.
 - Reincarnation currently selects a fresh body archetype after death and SECOND
   payment. Candidate rejection is deferred until the reincarnation UI exists.
 - The body profile also stores animation capability flags so a model without a
