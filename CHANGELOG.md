@@ -74,6 +74,8 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   capability flags for prototype attack and cast actions.
 - Prototype HUD now includes a Frame Identity debug section for source actor,
   role, archetype, weapon stance, animation capabilities, soul, and story hook.
+- Nakama and gateway profile contracts now carry prototype Frame core layers:
+  identity, skills, agent playbooks, server-validated tools, and heartbeat.
 - Current visible progression baseline is level and body-bound stats. Advanced
   body progression, cultivation tiers, and Nibiru-derived XP remain deferred.
 - Gateway config now supports `AGENT_DECISION_MODEL`.

@@ -21,7 +21,7 @@ namespace SecondSpawn.UI
         [SerializeField] private bool _showPrototypeStats = true;
         [SerializeField] private bool _showFrameIdentity = true;
         [SerializeField] private Vector2 _panelPosition = new Vector2(16f, 16f);
-        [SerializeField] private Vector2 _panelSize = new Vector2(420f, 360f);
+        [SerializeField] private Vector2 _panelSize = new Vector2(440f, 420f);
         [SerializeField] private int _maxStoryCharacters = 110;
 
         private NetworkPlayer _cachedPlayer;
@@ -86,12 +86,15 @@ namespace SecondSpawn.UI
 
             var inhabitation = body.inhabitation;
             var equipment = body.equipment;
+            var identity = body.identity;
             var soul = body.soul;
             var story = body.story;
 
             GUILayout.Label($"Frame: {Fallback(body.body_id, "unknown")}", _labelStyle);
+            GUILayout.Label($"Identity: {Fallback(identity?.public_name, soul?.name, context?.player?.display_name, "unknown")} | {Fallback(identity?.callsign, "no callsign")}", _labelStyle);
             GUILayout.Label($"Source: {Fallback(inhabitation?.source_actor_id, "unassigned")}", _labelStyle);
-            GUILayout.Label($"Role: {Fallback(inhabitation?.previous_role, story?.role, "unknown")}", _labelStyle);
+            GUILayout.Label($"Role: {Fallback(identity?.public_role, inhabitation?.previous_role, story?.role, "unknown")}", _labelStyle);
+            GUILayout.Label($"Profession: {Fallback(identity?.profession, "unknown")} | {Fallback(identity?.faction_title, "unaffiliated")}", _labelStyle);
             GUILayout.Label($"Archetype: {Fallback(body.archetype_id, "unknown")} | Visual {body.visual_variant}", _labelStyle);
             GUILayout.Label($"Weapon: {FormatWeapon(equipment)} | {Fallback(equipment?.combat_stance, "relaxed")}", _labelStyle);
             GUILayout.Label($"Caps: {FormatCapabilities(body.animation_capabilities)}", _labelStyle);

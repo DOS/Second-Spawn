@@ -611,6 +611,11 @@ namespace SecondSpawn.AI
             public BodyStoryDto story;
             public AnimationCapabilitiesDto animation_capabilities;
             public BodyTimeDto time;
+            public FrameIdentityDto identity;
+            public FrameSkillDto[] skills;
+            public FrameAgentDto[] agents;
+            public FrameToolDto[] tools;
+            public FrameHeartbeatDto heartbeat;
             public AgentPolicyDto agent_policy;
             public SoulProfileDto soul;
             public MemoryRecordDto[] memory;
@@ -636,6 +641,11 @@ namespace SecondSpawn.AI
                     story = body.story,
                     animation_capabilities = body.animation_capabilities,
                     time = body.time,
+                    identity = body.identity,
+                    skills = body.skills,
+                    agents = body.agents,
+                    tools = body.tools,
+                    heartbeat = body.heartbeat,
                     agent_policy = body.agent_policy,
                     soul = body.soul,
                     memory = body.memory

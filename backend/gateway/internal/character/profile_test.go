@@ -74,6 +74,36 @@ func TestBuildAgentContextPromptSortsAndBoundsMemories(t *testing.T) {
 				RemainingSeconds: 3600,
 				MaxSeconds:       7200,
 			},
+			Identity: FrameIdentity{
+				PublicName:        "Crossline Surveyor 4445",
+				Callsign:          "npc-crossline-hunter-4445",
+				PublicRole:        "Ranged survey body",
+				FactionTitle:      "Relay Runner",
+				Profession:        "Perimeter scout",
+				ReputationSummary: "Known for safe route work.",
+			},
+			Skills: []FrameSkill{
+				{ID: "skill-scout", Name: "Perimeter Scout", Category: "profession", Rank: 2, Summary: "Can read threat patterns around the hub."},
+			},
+			Agents: []FrameAgent{
+				{
+					ID:                  "agent-offline-player",
+					Mode:                "offline_player_agent",
+					Priority:            1,
+					Routine:             "Scout low-risk routes and preserve BodyTime.",
+					AllowedActivities:   []string{"explore", "safe_farming"},
+					ForbiddenActivities: []string{"start_pvp"},
+				},
+			},
+			Tools: []FrameTool{
+				{Name: "move", Category: "intent", Intent: "move", RequiresValidation: true},
+			},
+			Heartbeat: FrameHeartbeat{
+				CadenceSeconds:      60,
+				OfflineSessionState: "online",
+				LastActionSummary:   "Standing near the hub gate.",
+				FallbackState:       "none",
+			},
 			AgentPolicy: AgentPolicy{
 				Enabled:               true,
 				Mode:                  "farm_safe_area",
@@ -131,6 +161,21 @@ func TestBuildAgentContextPromptSortsAndBoundsMemories(t *testing.T) {
 	}
 	if !strings.Contains(prompt, "stats: level=2 vitality=12 force=9 agility=11 focus=8 resilience=10 max_health=140 max_energy=60 attack_power=15 defense_power=7") {
 		t.Fatalf("expected body stats in prompt, got %s", prompt)
+	}
+	if !strings.Contains(prompt, "frame_identity: public_name=Crossline Surveyor 4445; callsign=npc-crossline-hunter-4445; role=Ranged survey body; faction_title=Relay Runner; profession=Perimeter scout; reputation=Known for safe route work.") {
+		t.Fatalf("expected frame identity in prompt, got %s", prompt)
+	}
+	if !strings.Contains(prompt, "frame_skills: Perimeter Scout(profession,r2): Can read threat patterns around the hub.") {
+		t.Fatalf("expected frame skills in prompt, got %s", prompt)
+	}
+	if !strings.Contains(prompt, "frame_agents: offline_player_agent priority=1 routine=Scout low-risk routes and preserve BodyTime.") {
+		t.Fatalf("expected frame agents in prompt, got %s", prompt)
+	}
+	if !strings.Contains(prompt, "frame_tools: move->move validation=true") {
+		t.Fatalf("expected frame tools in prompt, got %s", prompt)
+	}
+	if !strings.Contains(prompt, "frame_heartbeat: cadence=60s; state=online; last_action=Standing near the hub gate.; fallback=none") {
+		t.Fatalf("expected frame heartbeat in prompt, got %s", prompt)
 	}
 	if !strings.Contains(prompt, "memory_02_summary: Recent preference memory") {
 		t.Fatalf("expected second bounded memory, got %s", prompt)

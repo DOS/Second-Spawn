@@ -33,6 +33,11 @@ type BodyProfile struct {
 	AnimationCapabilities AnimationCapabilities `json:"animation_capabilities"`
 	Time                  BodyTimeState         `json:"time"`
 	Lifecycle             BodyLifecycle         `json:"lifecycle"`
+	Identity              FrameIdentity         `json:"identity"`
+	Skills                []FrameSkill          `json:"skills"`
+	Agents                []FrameAgent          `json:"agents"`
+	Tools                 []FrameTool           `json:"tools"`
+	Heartbeat             FrameHeartbeat        `json:"heartbeat"`
 	AgentPolicy           AgentPolicy           `json:"agent_policy"`
 	Soul                  SoulProfile           `json:"soul"`
 	Memory                []MemoryRecord        `json:"memory"`
@@ -123,6 +128,52 @@ type BodyTimeState struct {
 	RemainingSeconds int64 `json:"remaining_seconds"`
 	MaxSeconds       int64 `json:"max_seconds"`
 	DangerDrainRate  int64 `json:"danger_drain_rate"`
+}
+
+// FrameIdentity is the public face of the current body in the world.
+type FrameIdentity struct {
+	PublicName        string `json:"public_name"`
+	Callsign          string `json:"callsign"`
+	PublicRole        string `json:"public_role"`
+	FactionTitle      string `json:"faction_title"`
+	Profession        string `json:"profession"`
+	ReputationSummary string `json:"reputation_summary"`
+}
+
+// FrameSkill is a small prototype surface for combat and profession capability.
+type FrameSkill struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Category string `json:"category"`
+	Rank     int    `json:"rank"`
+	Summary  string `json:"summary"`
+}
+
+// FrameAgent is a behavior playbook for offline player or NPC routines.
+type FrameAgent struct {
+	ID                  string   `json:"id"`
+	Mode                string   `json:"mode"`
+	Priority            int      `json:"priority"`
+	Routine             string   `json:"routine"`
+	AllowedActivities   []string `json:"allowed_activities"`
+	ForbiddenActivities []string `json:"forbidden_activities"`
+}
+
+// FrameTool is a requestable intent surface. Server validation owns outcomes.
+type FrameTool struct {
+	Name               string `json:"name"`
+	Category           string `json:"category"`
+	Intent             string `json:"intent"`
+	RequiresValidation bool   `json:"requires_validation"`
+}
+
+// FrameHeartbeat mirrors the HEARTBEAT.md agent layer for runtime status.
+type FrameHeartbeat struct {
+	CadenceSeconds      int64  `json:"cadence_seconds"`
+	LastSeenAt          string `json:"last_seen_at"`
+	OfflineSessionState string `json:"offline_session_state"`
+	LastActionSummary   string `json:"last_action_summary"`
+	FallbackState       string `json:"fallback_state"`
 }
 
 type BodyLifecycle string
@@ -264,6 +315,11 @@ func BuildAgentContextPrompt(ctx AgentContext, maxMemories int) string {
 		ctx.Body.Stats.AttackPower,
 		ctx.Body.Stats.DefensePower,
 	))
+	writeKV(&b, "frame_identity", formatFrameIdentity(ctx.Body.Identity))
+	writeKV(&b, "frame_skills", formatFrameSkills(ctx.Body.Skills))
+	writeKV(&b, "frame_agents", formatFrameAgents(ctx.Body.Agents))
+	writeKV(&b, "frame_tools", formatFrameTools(ctx.Body.Tools))
+	writeKV(&b, "frame_heartbeat", formatFrameHeartbeat(ctx.Body.Heartbeat))
 	writeKV(&b, "body_lifecycle", string(ctx.Body.Lifecycle))
 	writeKV(&b, "body_time_seconds", fmt.Sprintf("%d/%d", ctx.Body.Time.RemainingSeconds, ctx.Body.Time.MaxSeconds))
 	writeKV(&b, "traits", fmt.Sprintf("curiosity=%d courage=%d empathy=%d discipline=%d aggression=%d sociability=%d",
@@ -372,6 +428,85 @@ func formatAnimationCapabilities(capabilities AnimationCapabilities) string {
 	}
 	if stance != "" {
 		parts = append(parts, "stance="+stance)
+	}
+	return strings.Join(parts, "; ")
+}
+
+func formatFrameIdentity(identity FrameIdentity) string {
+	parts := []string{}
+	appendKV := func(key string, value string) {
+		if strings.TrimSpace(value) != "" {
+			parts = append(parts, key+"="+strings.TrimSpace(value))
+		}
+	}
+	appendKV("public_name", identity.PublicName)
+	appendKV("callsign", identity.Callsign)
+	appendKV("role", identity.PublicRole)
+	appendKV("faction_title", identity.FactionTitle)
+	appendKV("profession", identity.Profession)
+	appendKV("reputation", identity.ReputationSummary)
+	return strings.Join(parts, "; ")
+}
+
+func formatFrameSkills(skills []FrameSkill) string {
+	parts := make([]string, 0, len(skills))
+	for _, skill := range skills {
+		if strings.TrimSpace(skill.Name) == "" {
+			continue
+		}
+		parts = append(parts, fmt.Sprintf("%s(%s,r%d): %s",
+			strings.TrimSpace(skill.Name),
+			strings.TrimSpace(skill.Category),
+			skill.Rank,
+			strings.TrimSpace(skill.Summary),
+		))
+	}
+	return strings.Join(parts, "; ")
+}
+
+func formatFrameAgents(agents []FrameAgent) string {
+	parts := make([]string, 0, len(agents))
+	for _, agent := range agents {
+		if strings.TrimSpace(agent.Mode) == "" && strings.TrimSpace(agent.Routine) == "" {
+			continue
+		}
+		parts = append(parts, fmt.Sprintf("%s priority=%d routine=%s",
+			strings.TrimSpace(agent.Mode),
+			agent.Priority,
+			strings.TrimSpace(agent.Routine),
+		))
+	}
+	return strings.Join(parts, "; ")
+}
+
+func formatFrameTools(tools []FrameTool) string {
+	parts := make([]string, 0, len(tools))
+	for _, tool := range tools {
+		if strings.TrimSpace(tool.Name) == "" {
+			continue
+		}
+		parts = append(parts, fmt.Sprintf("%s->%s validation=%t",
+			strings.TrimSpace(tool.Name),
+			strings.TrimSpace(tool.Intent),
+			tool.RequiresValidation,
+		))
+	}
+	return strings.Join(parts, "; ")
+}
+
+func formatFrameHeartbeat(heartbeat FrameHeartbeat) string {
+	parts := []string{}
+	if heartbeat.CadenceSeconds > 0 {
+		parts = append(parts, fmt.Sprintf("cadence=%ds", heartbeat.CadenceSeconds))
+	}
+	if strings.TrimSpace(heartbeat.OfflineSessionState) != "" {
+		parts = append(parts, "state="+strings.TrimSpace(heartbeat.OfflineSessionState))
+	}
+	if strings.TrimSpace(heartbeat.LastActionSummary) != "" {
+		parts = append(parts, "last_action="+strings.TrimSpace(heartbeat.LastActionSummary))
+	}
+	if strings.TrimSpace(heartbeat.FallbackState) != "" {
+		parts = append(parts, "fallback="+strings.TrimSpace(heartbeat.FallbackState))
 	}
 	return strings.Join(parts, "; ")
 }
