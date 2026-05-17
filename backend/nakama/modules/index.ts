@@ -7,6 +7,7 @@
 var collectionAgent = "secondspawn_agent";
 var keyAgentContext = "context";
 var collectionActor = "secondspawn_actor";
+var collectionOpenClaw = "secondspawn_openclaw";
 
 var rpcIdHealth = "secondspawn_health";
 var rpcIdProfileGet = "secondspawn_profile_get";
@@ -18,6 +19,10 @@ var rpcIdActorProfileGet = "secondspawn_actor_profile_get";
 var rpcIdActorMemoryAdd = "secondspawn_actor_memory_add";
 var rpcIdBodyTimeEvent = "secondspawn_bodytime_event";
 var rpcIdReincarnate = "secondspawn_reincarnate";
+var rpcIdOpenClawBind = "secondspawn_openclaw_bind";
+var rpcIdOpenClawContextGet = "secondspawn_openclaw_context_get";
+var rpcIdOpenClawIntentSubmit = "secondspawn_openclaw_intent_submit";
+var rpcIdOpenClawHeartbeat = "secondspawn_openclaw_heartbeat";
 var agentActivityLogLimit = 32;
 var agentRuntimeMetricMax = 1000000000;
 var actorIdMaxLength = 56;
@@ -248,6 +253,10 @@ let InitModule: nkruntime.InitModule = function (
   initializer.registerRpc(rpcIdActorMemoryAdd, rpcActorMemoryAdd);
   initializer.registerRpc(rpcIdBodyTimeEvent, rpcBodyTimeEvent);
   initializer.registerRpc(rpcIdReincarnate, rpcReincarnate);
+  initializer.registerRpc(rpcIdOpenClawBind, rpcOpenClawBind);
+  initializer.registerRpc(rpcIdOpenClawContextGet, rpcOpenClawContextGet);
+  initializer.registerRpc(rpcIdOpenClawIntentSubmit, rpcOpenClawIntentSubmit);
+  initializer.registerRpc(rpcIdOpenClawHeartbeat, rpcOpenClawHeartbeat);
   initializer.registerBeforeAuthenticateCustom(beforeAuthenticateCustom);
   logger.info("Second Spawn Nakama runtime loaded.");
 };
@@ -507,6 +516,113 @@ function rpcReincarnate(
   writeAgentContext(nk, context, state.version);
   ensureSourceBodyActorProfile(nk, context);
   return JSON.stringify(context);
+}
+
+function rpcOpenClawBind(
+  ctx: nkruntime.Context,
+  logger: nkruntime.Logger,
+  nk: nkruntime.Nakama,
+  payload: string
+): string {
+  var ownerId = requireUserId(ctx);
+  var request = parseJson(payload || "{}", "OpenClaw bind payload");
+  var actorState = getOrCreateActorProfileState(ctx, nk, {
+    actor_id: request.frame_actor_id || request.actor_id,
+    display_name: request.display_name,
+    actor_type: "openclaw_agent"
+  });
+  var binding = normalizeOpenClawBinding(request, ownerId, actorState.profile.actor_id);
+  var existing = readOpenClawBinding(nk, ownerId, binding.connected_agent_id);
+  writeOpenClawBinding(nk, binding, existing ? existing.version : "*");
+  return JSON.stringify(binding);
+}
+
+function rpcOpenClawContextGet(
+  ctx: nkruntime.Context,
+  logger: nkruntime.Logger,
+  nk: nkruntime.Nakama,
+  payload: string
+): string {
+  var ownerId = requireUserId(ctx);
+  var request = parseJson(payload || "{}", "OpenClaw context payload");
+  var bindingState = requireOpenClawBindingState(nk, ownerId, request);
+  var actorState = getOrCreateActorProfileState(ctx, nk, { actor_id: bindingState.binding.frame_actor_id });
+  return JSON.stringify(openClawContextResponse(bindingState.binding, actorState.profile));
+}
+
+function rpcOpenClawIntentSubmit(
+  ctx: nkruntime.Context,
+  logger: nkruntime.Logger,
+  nk: nkruntime.Nakama,
+  payload: string
+): string {
+  var ownerId = requireUserId(ctx);
+  var request = parseJson(payload || "{}", "OpenClaw intent payload");
+  var bindingState = requireOpenClawBindingState(nk, ownerId, request);
+  ensureOpenClawBindingCanAct(bindingState.binding);
+  var actorState = getOrCreateActorProfileState(ctx, nk, { actor_id: bindingState.binding.frame_actor_id });
+  var intent = normalizeOpenClawIntent(request, actorState.profile, bindingState.binding);
+  var activity = {
+    id: intent.id,
+    kind: "openclaw_intent",
+    summary: "OpenClaw requested " + intent.intent + " for Frame " + bindingState.binding.frame_actor_id + ".",
+    occurred_at: intent.requested_at,
+    source: "openclaw",
+    openclaw_agent_id: bindingState.binding.connected_agent_id,
+    intent: intent
+  };
+
+  addActorActivity(actorState.profile, activity);
+  actorState.profile.updated_at = intent.requested_at;
+  writeActorProfile(nk, actorState.profile, actorState.version);
+
+  return JSON.stringify({
+    accepted: true,
+    status: "pending_validation",
+    binding: bindingState.binding,
+    intent: intent,
+    activity: activity
+  });
+}
+
+function rpcOpenClawHeartbeat(
+  ctx: nkruntime.Context,
+  logger: nkruntime.Logger,
+  nk: nkruntime.Nakama,
+  payload: string
+): string {
+  var ownerId = requireUserId(ctx);
+  var request = parseJson(payload || "{}", "OpenClaw heartbeat payload");
+  var bindingState = requireOpenClawBindingState(nk, ownerId, request);
+  var timestamp = normalizeTimestamp(request.occurred_at);
+  var summary = trimString(request.summary) || "OpenClaw heartbeat received.";
+  bindingState.binding.connection_status = normalizeOpenClawConnectionStatus(request.connection_status || bindingState.binding.connection_status);
+  bindingState.binding.last_seen_at = timestamp;
+  bindingState.binding.updated_at = timestamp;
+  writeOpenClawBinding(nk, bindingState.binding, bindingState.version);
+
+  var actorState = getOrCreateActorProfileState(ctx, nk, { actor_id: bindingState.binding.frame_actor_id });
+  actorState.profile.body.heartbeat = normalizeFrameHeartbeat(actorState.profile.body.heartbeat || {}, timestamp, bindingState.binding.connection_status);
+  actorState.profile.body.heartbeat.last_seen_at = timestamp;
+  actorState.profile.body.heartbeat.offline_session_state = bindingState.binding.connection_status;
+  actorState.profile.body.heartbeat.last_action_summary = summary;
+  var activity = {
+    id: trimString(request.id) || "openclaw-heartbeat-" + bindingState.binding.connected_agent_id + "-" + timestamp,
+    kind: "openclaw_heartbeat",
+    summary: summary,
+    occurred_at: timestamp,
+    source: "openclaw",
+    openclaw_agent_id: bindingState.binding.connected_agent_id
+  };
+  addActorActivity(actorState.profile, activity);
+  actorState.profile.updated_at = timestamp;
+  writeActorProfile(nk, actorState.profile, actorState.version);
+
+  return JSON.stringify({
+    binding: bindingState.binding,
+    context: openClawFrameContext(actorState.profile),
+    activity: activity
+  });
 }
 
 function beforeAuthenticateCustom(
@@ -884,6 +1000,195 @@ function writeActorProfile(nk: nkruntime.Nakama, profile: any, version: string):
     write.version = version;
   }
   nk.storageWrite([write]);
+}
+
+function readOpenClawBinding(nk: nkruntime.Nakama, ownerId: string, connectedAgentId: string): any {
+  var objects = nk.storageRead([{
+    collection: collectionOpenClaw,
+    key: openClawBindingStorageKey(connectedAgentId),
+    userId: ownerId
+  }]);
+
+  if (!objects || objects.length === 0) {
+    return null;
+  }
+
+  return {
+    binding: objects[0].value,
+    value: objects[0].value,
+    version: objects[0].version || null
+  };
+}
+
+function writeOpenClawBinding(nk: nkruntime.Nakama, binding: any, version: string): void {
+  var write: any = {
+    collection: collectionOpenClaw,
+    key: openClawBindingStorageKey(binding.connected_agent_id),
+    userId: binding.owner_player_id,
+    value: binding,
+    permissionRead: 0,
+    permissionWrite: 0
+  };
+  if (typeof version === "string" && version.length > 0) {
+    write.version = version;
+  }
+  nk.storageWrite([write]);
+}
+
+function requireOpenClawBindingState(nk: nkruntime.Nakama, ownerId: string, request: any): any {
+  var connectedAgentId = normalizeOpenClawAgentId(request.connected_agent_id || request.agent_id);
+  var bindingState = readOpenClawBinding(nk, ownerId, connectedAgentId);
+  if (!bindingState) {
+    throw new Error("OpenClaw binding not found");
+  }
+  bindingState.binding = normalizeExistingOpenClawBinding(bindingState.binding || {}, ownerId);
+  return bindingState;
+}
+
+function normalizeOpenClawBinding(request: any, ownerId: string, frameActorId: string): any {
+  var timestamp = new Date().toISOString();
+  return {
+    frame_actor_id: normalizeActorId(frameActorId || request.frame_actor_id || request.actor_id),
+    controller_type: "openclaw",
+    connected_agent_id: normalizeOpenClawAgentId(request.connected_agent_id || request.agent_id),
+    owner_player_id: ownerId,
+    connection_status: normalizeOpenClawConnectionStatus(request.connection_status || "connected"),
+    agent_kind: normalizeOpenClawAgentKind(request.agent_kind),
+    consent_scope: normalizeStringArray(request.consent_scope, ["dialogue", "heartbeat", "intent:say"]),
+    moderation_state: normalizeOpenClawModerationState(request.moderation_state || "active"),
+    rate_limit_profile: normalizeOpenClawRateLimit(request.rate_limit_profile || {}),
+    created_at: trimString(request.created_at) || timestamp,
+    updated_at: timestamp,
+    last_seen_at: trimString(request.last_seen_at) || timestamp
+  };
+}
+
+function normalizeExistingOpenClawBinding(binding: any, ownerId: string): any {
+  var timestamp = new Date().toISOString();
+  return {
+    frame_actor_id: normalizeActorId(binding.frame_actor_id),
+    controller_type: "openclaw",
+    connected_agent_id: normalizeOpenClawAgentId(binding.connected_agent_id),
+    owner_player_id: ownerId,
+    connection_status: normalizeOpenClawConnectionStatus(binding.connection_status),
+    agent_kind: normalizeOpenClawAgentKind(binding.agent_kind),
+    consent_scope: normalizeStringArray(binding.consent_scope, ["dialogue", "heartbeat", "intent:say"]),
+    moderation_state: normalizeOpenClawModerationState(binding.moderation_state),
+    rate_limit_profile: normalizeOpenClawRateLimit(binding.rate_limit_profile || {}),
+    created_at: trimString(binding.created_at) || timestamp,
+    updated_at: trimString(binding.updated_at) || timestamp,
+    last_seen_at: trimString(binding.last_seen_at) || timestamp
+  };
+}
+
+function openClawContextResponse(binding: any, actorProfile: any): any {
+  return {
+    binding: binding,
+    context: openClawFrameContext(actorProfile)
+  };
+}
+
+function openClawFrameContext(actorProfile: any): any {
+  var body = actorProfile.body || {};
+  return {
+    identity: cloneJson(body.identity || {}),
+    soul: cloneJson(body.soul || {}),
+    body: {
+      body_id: trimString(body.body_id),
+      archetype_id: trimString(body.archetype_id),
+      visual_prefab_key: trimString(body.visual_prefab_key),
+      visual_variant: normalizeVisualVariant(body.visual_variant),
+      appearance: cloneJson(body.appearance || {}),
+      inhabitation: cloneJson(body.inhabitation || {}),
+      equipment: cloneJson(body.equipment || {}),
+      stats: cloneJson(body.stats || {}),
+      characteristics: cloneJson(body.characteristics || {}),
+      story: cloneJson(body.story || {}),
+      animation_capabilities: cloneJson(body.animation_capabilities || {}),
+      time: cloneJson(body.time || {}),
+      lifecycle: trimString(body.lifecycle) || "alive"
+    },
+    memory: cloneJson(actorProfile.memory || []),
+    policy: cloneJson(body.agent_policy || {}),
+    tools: cloneJson(body.tools || []),
+    heartbeat: cloneJson(body.heartbeat || {})
+  };
+}
+
+function ensureOpenClawBindingCanAct(binding: any): void {
+  if (binding.connection_status !== "connected" && binding.connection_status !== "degraded") {
+    throw new Error("OpenClaw binding is not connected");
+  }
+  if (binding.moderation_state !== "active" && binding.moderation_state !== "limited") {
+    throw new Error("OpenClaw binding is not allowed by moderation state");
+  }
+}
+
+function normalizeOpenClawIntent(request: any, actorProfile: any, binding: any): any {
+  var intentName = trimString(request.intent || request.action);
+  if (!intentName) {
+    throw new Error("intent is required");
+  }
+  if (!frameAllowsIntent(actorProfile, intentName)) {
+    throw new Error("intent is not allowed for this Frame");
+  }
+  if (!openClawConsentAllowsIntent(binding, intentName)) {
+    throw new Error("intent is outside consent scope");
+  }
+
+  var timestamp = normalizeTimestamp(request.requested_at || request.occurred_at);
+  return {
+    id: trimString(request.id) || "openclaw-intent-" + normalizeActorId(actorProfile.actor_id) + "-" + timestamp,
+    intent: intentName,
+    payload: cloneJson(request.payload || {}),
+    reason: trimString(request.reason) || "OpenClaw intent request.",
+    requested_at: timestamp
+  };
+}
+
+function openClawConsentAllowsIntent(binding: any, intentName: string): boolean {
+  var scopes = binding && binding.consent_scope;
+  if (!scopes || typeof scopes.length !== "number") {
+    return false;
+  }
+
+  for (var i = 0; i < scopes.length; i += 1) {
+    var scope = trimString(scopes[i]);
+    if (scope === "all_intents" || scope === "intent:*" || scope === "intent:" + intentName) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function frameAllowsIntent(actorProfile: any, intentName: string): boolean {
+  var tools = actorProfile && actorProfile.body && actorProfile.body.tools;
+  if (!tools || typeof tools.length !== "number") {
+    return false;
+  }
+
+  for (var i = 0; i < tools.length; i += 1) {
+    var tool = tools[i] || {};
+    if (trimString(tool.intent) === intentName || trimString(tool.name) === intentName) {
+      return tool.requires_validation !== false;
+    }
+  }
+  return false;
+}
+
+function addActorActivity(profile: any, activity: any): boolean {
+  profile.agent_runtime = profile.agent_runtime || defaultAgentRuntime(new Date().toISOString());
+  profile.agent_activity = profile.agent_activity || [];
+  if (activity.id && hasAgentActivityId(profile.agent_activity, activity.id)) {
+    return false;
+  }
+  profile.agent_activity.unshift(activity);
+  if (profile.agent_activity.length > agentActivityLogLimit) {
+    profile.agent_activity = profile.agent_activity.slice(0, agentActivityLogLimit);
+  }
+  profile.agent_runtime.activity_count = addRuntimeMetric(profile.agent_runtime.activity_count, 1);
+  profile.agent_runtime.last_activity_at = activity.occurred_at;
+  return true;
 }
 
 function defaultActorProfile(ownerId: string, actorId: string, request: any): any {
@@ -1603,6 +1908,8 @@ function normalizeAgentActivityKind(kind: any): string {
     value === "body_time" ||
     value === "reincarnation" ||
     value === "memory_sync" ||
+    value === "openclaw_intent" ||
+    value === "openclaw_heartbeat" ||
     value === "manual_note"
   ) {
     return value;
@@ -2117,6 +2424,61 @@ function normalizeActorType(actorType: any): string {
   return "npc";
 }
 
+function normalizeOpenClawAgentId(agentId: any): string {
+  var normalized = sanitizeNakamaIdentifier(trimString(agentId), "");
+  if (!normalized) {
+    throw new Error("connected_agent_id is required");
+  }
+  if (normalized.length > 96) {
+    throw new Error("connected_agent_id is too long");
+  }
+  return normalized;
+}
+
+function normalizeOpenClawConnectionStatus(status: any): string {
+  var value = trimString(status);
+  if (
+    value === "connected" ||
+    value === "disconnected" ||
+    value === "degraded" ||
+    value === "suspended" ||
+    value === "blocked"
+  ) {
+    return value;
+  }
+  return "connected";
+}
+
+function normalizeOpenClawModerationState(state: any): string {
+  var value = trimString(state);
+  if (value === "active" || value === "limited" || value === "suspended" || value === "blocked") {
+    return value;
+  }
+  return "active";
+}
+
+function normalizeOpenClawAgentKind(kind: any): string {
+  var value = trimString(kind);
+  if (
+    value === "companion" ||
+    value === "hub_npc" ||
+    value === "merchant_persona" ||
+    value === "quest_actor" ||
+    value === "social_actor"
+  ) {
+    return value;
+  }
+  return "companion";
+}
+
+function normalizeOpenClawRateLimit(profile: any): any {
+  return {
+    requests_per_minute: clampNumber(profile.requests_per_minute || 30, 1, 600),
+    intents_per_minute: clampNumber(profile.intents_per_minute || 20, 1, 300),
+    tokens_per_day: clampNumber(profile.tokens_per_day || 50000, 1000, 10000000)
+  };
+}
+
 function normalizeActorId(actorId: any): string {
   var normalized = sanitizeNakamaIdentifier(trimString(actorId), "");
   if (!normalized) {
@@ -2130,6 +2492,10 @@ function normalizeActorId(actorId: any): string {
 
 function actorStorageKey(actorId: string): string {
   return "profile:" + normalizeActorId(actorId);
+}
+
+function openClawBindingStorageKey(connectedAgentId: string): string {
+  return "binding:" + normalizeOpenClawAgentId(connectedAgentId);
 }
 
 function actorDisplayName(actorId: string): string {

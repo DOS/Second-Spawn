@@ -97,3 +97,13 @@ The current prototype module registers:
   update runtime counters for offline sessions or Unity-side bootstrap
 - `secondspawn_agent_decide` - deterministic safe fallback decision for local
   agent control when the LLM gateway is unavailable, with runtime counters
+- `secondspawn_openclaw_bind` - bind a user-owned external OpenClaw agent to a
+  server-owned Frame actor through `frame_actor_id`, `connected_agent_id`,
+  consent, moderation, connection status, and rate limit metadata
+- `secondspawn_openclaw_context_get` - return the structured Frame context an
+  OpenClaw agent may read: identity, soul, body, bounded memory, policy,
+  requestable intents, and heartbeat
+- `secondspawn_openclaw_intent_submit` - record a requested OpenClaw intent as
+  `pending_validation` without mutating authoritative game state
+- `secondspawn_openclaw_heartbeat` - update bridge connection status and Frame
+  heartbeat/audit state for the connected external agent

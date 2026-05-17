@@ -51,6 +51,9 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 - Nakama now has a prototype permanent NPC Frame pool. New player bodies and
   reincarnated bodies are assigned from this server-owned pool instead of
   generating only ad-hoc source actor IDs.
+- Nakama now exposes the first OpenClaw bridge RPCs for binding an external
+  agent to a Frame actor, reading structured Frame context, submitting
+  server-validated intent requests, and updating connection heartbeat state.
 
 ### Changed
 
