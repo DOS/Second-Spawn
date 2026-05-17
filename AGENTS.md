@@ -273,8 +273,14 @@ Cultivation Master mechanics without a new approved design update.
 - Feature work: create a separate branch/worktree from `dev`, then PR back into `dev`
 - Public repo open source from day 1
 - License: AGPL-3.0 (code) + CC-BY-NC 4.0 (assets)
-- All PRs reviewed via Claude Code review skill before merge
-- JOY is non-coder - AI agent must verify with reviewer before claiming "done"
+- Before opening a PR, run the local repo `code-review` skill or an equivalent
+  local reviewer pass and record the verdict in the PR.
+- After opening the PR, check Gemini Code Assist and Codex GitHub review results
+  if they run. If they pass, proceed. If they do not run because of quota,
+  connector limits, or transient service issues, the PR may still merge after
+  green CI plus a clean local `code-review` fallback.
+- JOY is non-coder - AI agent must verify with reviewer output and CI before
+  claiming "done".
 
 ### Open Source Targeting
 
@@ -325,7 +331,7 @@ OUT of scope for vertical slice:
 4. **NEVER use Host Mode for production.** Server Mode dedicated only.
 5. **NEVER add or replace backend / auth / social stack without an ADR and JOY approval.** Nakama OSS is the accepted game backend baseline per ADR 0010. Heroic Cloud, Hiro, Satori, OpenAuth, PlayFab, AccelByte, or a Supabase-first rollback require a new ADR.
 6. **NEVER change Unity Asset Serialization away from Force Text.** Breaks LFS + diff.
-7. **NEVER claim "done" without reviewer pass** (JOY is non-coder, cannot review code himself).
+7. **NEVER claim "done" without reviewer pass** (JOY is non-coder, cannot review code himself). Use local `code-review` as the required fallback. Cloud reviewers such as Gemini Code Assist and Codex GitHub review are best-effort; if they fail to run due to quota or connector limits, check their comments, document the failure in the PR, and merge only after local reviewer fallback plus green CI.
 8. **ALWAYS edit BOTH `.claude/CLAUDE.md` and `AGENTS.md` together when updating project context.** They are sister files - Claude Code auto-loads CLAUDE.md, Codex CLI / Cursor / Copilot auto-load AGENTS.md. Edit one without the other = drift; the un-updated file lies to whichever agent reads it. Both files MUST be identical except for the sister-file comment header at line 1.
 
 ## Open Decision Points (need JOY input later)
