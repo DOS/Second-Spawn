@@ -108,8 +108,9 @@ Recommended views:
   context read, pending intent submission, and heartbeat/audit updates.
 - [x] Unity Play Mode has an OpenClaw bridge debug panel for binding, context
   read, pending `say` intent, and heartbeat smoke testing.
-- [x] `_AgentNPC_Prototype` can bind to an actor profile, patrol, speak, and use
-  the model-backed gateway decision path with deterministic fallback.
+- [x] `_AgentNPC_Prototype` can bind to an actor profile, patrol, speak, use the
+  model-backed gateway decision path, and recover through Nakama deterministic
+  fallback when the gateway is unavailable or rate-limited.
 - [ ] Real combat damage, enemy rewards, loot drops, quest progress, and player
   time-loot from other users are not implemented yet.
 
