@@ -374,6 +374,7 @@ Every important NPC-like actor should eventually resolve to a bundle with clear 
 
 | Bundle Piece | Purpose |
 | ---- | ---- |
+| `FrameIdentity` | Public-facing name, callsign, role, faction title, and reputation summary |
 | `BodyProfile` | Current vessel, archetype, visual key, lifecycle, loaded TIME, and body-bound state |
 | `CharacterStats` | Combat, movement, health, energy, attack, defense, and level values |
 | `CharacterTraits` | Personality and behavior tendencies for agent decisions |
@@ -383,8 +384,10 @@ Every important NPC-like actor should eventually resolve to a bundle with clear 
 | `AgentPolicy` or NPC policy | What the actor is allowed to attempt |
 | `AgentRuntime` | Counters, fallback visibility, and recent operational state |
 | `AgentActivity` | Player-facing or operator-facing audit summary |
+| `FrameSkill` | Gameplay abilities, profession capabilities, and usable expertise |
+| `FrameAgents` | Optional behavior playbooks for offline-agent and NPC job routines |
 
-Server-side systems decide which parts are editable, inherited, generated, or read-only for each actor type.
+Server-side systems decide which parts are editable, inherited, generated, or read-only for each actor type. Profession and social state should be split across the bundle: public role and reputation in `FrameIdentity`, usable job abilities in future `FrameSkill`, offline work routines in future `FrameAgents` playbooks, private relationships in `MemoryRecord`, and relationships that become core motivations in `SoulProfile`.
 
 Prototype body-model decisions:
 
