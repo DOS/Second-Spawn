@@ -57,6 +57,9 @@ The player should feel:
 - Death has weight because the body is gone, not because the account is erased.
 - Level and stats give readable ARPG growth while deeper body progression is redesigned later.
 - Time is not just a timer. It is life, pressure, and a resource.
+- BodyTime and SECOND can become contested resources. Future combat or zone
+  rules may let players loot time from other users, but only through validated
+  server-authoritative outcomes.
 - NPCs and agents are world citizens, not detached chatbots.
 - The world is dangerous because all gameplay state is server-authoritative and consequences persist.
 
@@ -124,6 +127,10 @@ Key lore anchors:
 - Consciousness transfer: The sci-fi basis of reincarnation.
 - Hunters: Player-controlled or agent-controlled characters who fight and survive.
 - SECOND token: Account-level time reserve denominated in seconds. The token is used for reincarnation costs and must stay distinct from current-body `BodyTime` unless a future ADR explicitly merges them.
+- Time loot: A future PvP or contested-zone rule can allow BodyTime or SECOND
+  to be taken from another user after server-validated combat, escrow, or zone
+  events. Clients, LLMs, and connected agents must never self-report or grant
+  this loot.
 
 ---
 

@@ -36,6 +36,9 @@ namespace SecondSpawn.Networking
         [Networked] public int BodyTimeRemainingSeconds { get; set; }
         [Networked] public int BodyTimeMaxSeconds { get; set; }
         [Networked] public int BodyTimeDangerDrainRate { get; set; }
+        [Networked] public NetworkBool IsBodyDead { get; set; }
+        [Networked] public int SecondBalanceSeconds { get; set; }
+        [Networked] public int ReincarnationCount { get; set; }
         [Networked] public int VisualVariant { get; set; }
         [Networked] public int EquipmentVisualId { get; set; }
 
@@ -177,7 +180,10 @@ namespace SecondSpawn.Networking
             int defensePower,
             int bodyTimeRemainingSeconds,
             int bodyTimeMaxSeconds,
-            int bodyTimeDangerDrainRate)
+            int bodyTimeDangerDrainRate,
+            string bodyLifecycle,
+            int secondBalanceSeconds,
+            int reincarnationCount)
         {
             if (!HasStateAuthority)
             {
@@ -187,7 +193,8 @@ namespace SecondSpawn.Networking
 
             var previousMaxHealth = MaxHealth;
             var previousMaxEnergy = MaxEnergy;
-            var wasDead = Hp <= 0f;
+            var profileSaysDead = IsDeadLifecycle(bodyLifecycle) || bodyTimeRemainingSeconds <= 0;
+            var wasDead = Hp <= 0f || IsBodyDead;
             var healthRatio = previousMaxHealth > 0 ? Hp / previousMaxHealth : 1f;
             var energyRatio = previousMaxEnergy > 0 ? Stamina / previousMaxEnergy : 1f;
 
@@ -204,13 +211,20 @@ namespace SecondSpawn.Networking
             BodyTimeRemainingSeconds = Mathf.Max(0, bodyTimeRemainingSeconds);
             BodyTimeMaxSeconds = Mathf.Max(0, bodyTimeMaxSeconds);
             BodyTimeDangerDrainRate = Mathf.Max(0, bodyTimeDangerDrainRate);
+            IsBodyDead = profileSaysDead;
+            SecondBalanceSeconds = Mathf.Max(0, secondBalanceSeconds);
+            ReincarnationCount = Mathf.Max(0, reincarnationCount);
 
-            Hp = wasDead
+            Hp = profileSaysDead
                 ? 0f
+                : wasDead
+                ? MaxHealth
                 : previousMaxHealth > 0
                 ? Mathf.Clamp(Mathf.Round(MaxHealth * healthRatio), 1f, MaxHealth)
                 : MaxHealth;
-            Stamina = previousMaxEnergy > 0
+            Stamina = profileSaysDead
+                ? 0f
+                : previousMaxEnergy > 0
                 ? Mathf.Clamp(Mathf.Round(MaxEnergy * energyRatio), 0f, MaxEnergy)
                 : MaxEnergy;
         }
@@ -230,8 +244,18 @@ namespace SecondSpawn.Networking
             BodyTimeRemainingSeconds = 24 * 60 * 60;
             BodyTimeMaxSeconds = 24 * 60 * 60;
             BodyTimeDangerDrainRate = 1;
+            VisualVariant = 12;
+            IsBodyDead = false;
+            SecondBalanceSeconds = 7 * 24 * 60 * 60;
+            ReincarnationCount = 0;
             Hp = MaxHealth;
             Stamina = MaxEnergy;
+        }
+
+        private static bool IsDeadLifecycle(string lifecycle)
+        {
+            return !string.IsNullOrWhiteSpace(lifecycle) &&
+                   lifecycle.Trim().Equals("dead", System.StringComparison.OrdinalIgnoreCase);
         }
 
         private float GetRunSpeed()

@@ -19,7 +19,7 @@ namespace SecondSpawn.UI
     {
         [SerializeField] private bool _showPrototypeStats = true;
         [SerializeField] private Vector2 _panelPosition = new Vector2(16f, 16f);
-        [SerializeField] private Vector2 _panelSize = new Vector2(280f, 132f);
+        [SerializeField] private Vector2 _panelSize = new Vector2(320f, 184f);
 
         private NetworkPlayer _cachedPlayer;
         private GUIStyle _labelStyle;
@@ -51,6 +51,8 @@ namespace SecondSpawn.UI
             GUILayout.Label($"HP {player.Hp:0}/{player.MaxHealth} | Energy {player.Stamina:0}/{player.MaxEnergy}", _labelStyle);
             GUILayout.Label($"ATK {player.AttackPower} | DEF {player.DefensePower} | AGI {player.Agility}", _labelStyle);
             GUILayout.Label($"BodyTime {FormatSeconds(player.BodyTimeRemainingSeconds)} / {FormatSeconds(player.BodyTimeMaxSeconds)}", _labelStyle);
+            GUILayout.Label($"Lifecycle {(player.IsBodyDead ? "dead" : "alive")} | Drain {player.BodyTimeDangerDrainRate}s/tick", _labelStyle);
+            GUILayout.Label($"SECOND {FormatSeconds(player.SecondBalanceSeconds)} | Reincarnations {player.ReincarnationCount}", _labelStyle);
             GUILayout.EndArea();
         }
 
@@ -67,7 +69,7 @@ namespace SecondSpawn.UI
             }
 
             _nextPlayerRefreshAt = Time.unscaledTime + 0.5f;
-            var players = FindObjectsByType<NetworkPlayer>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            var players = FindObjectsByType<NetworkPlayer>(FindObjectsInactive.Exclude);
             foreach (var player in players)
             {
                 if (player.HasInputAuthority)

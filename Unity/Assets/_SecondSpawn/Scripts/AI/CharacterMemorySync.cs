@@ -74,6 +74,53 @@ namespace SecondSpawn.AI
             yield return ApplyProfileToLocalPlayerWhenAvailable();
         }
 
+        public IEnumerator ApplyBodyTimeEvent(BodyTimeEventRequestDto request)
+        {
+            if (!_preferNakama || !_gateway.HasNakamaSession)
+            {
+                Debug.LogWarning("[CharacterMemorySync] BodyTime events require an authenticated Nakama session.");
+                yield break;
+            }
+
+            AgentContextDto context = null;
+            string error = null;
+            yield return _gateway.ApplyNakamaBodyTimeEvent(request, value => context = value, value => error = value);
+            if (context == null)
+            {
+                Debug.LogWarning($"[CharacterMemorySync] BodyTime event failed: {error}");
+                yield break;
+            }
+
+            _context = context;
+            yield return ApplyProfileToLocalPlayerWhenAvailable();
+        }
+
+        public IEnumerator ReincarnateCurrentBody(string reason)
+        {
+            if (!_preferNakama || !_gateway.HasNakamaSession)
+            {
+                Debug.LogWarning("[CharacterMemorySync] Reincarnation requires an authenticated Nakama session.");
+                yield break;
+            }
+
+            AgentContextDto context = null;
+            string error = null;
+            yield return _gateway.ReincarnateNakamaBody(new ReincarnationRequestDto
+            {
+                id = BuildClientEventId("reincarnation"),
+                reason = string.IsNullOrWhiteSpace(reason) ? "Unity prototype debug reincarnation." : reason.Trim()
+            }, value => context = value, value => error = value);
+
+            if (context == null)
+            {
+                Debug.LogWarning($"[CharacterMemorySync] Reincarnation failed: {error}");
+                yield break;
+            }
+
+            _context = context;
+            yield return ApplyProfileToLocalPlayerWhenAvailable();
+        }
+
         private IEnumerator WaitForAuthAttempt()
         {
             const float maxWaitSeconds = 10f;
@@ -153,10 +200,11 @@ namespace SecondSpawn.AI
             return false;
         }
 
-        private static void ApplyStats(NetworkPlayer player, BodyProfileDto body)
+        private void ApplyStats(NetworkPlayer player, BodyProfileDto body)
         {
             var stats = body.stats ?? new CharacterStatsDto();
             var time = body.time ?? new BodyTimeDto();
+            var account = _context?.player ?? new PlayerProfileDto();
             player.ApplyProfileStats(
                 stats.level,
                 stats.vitality,
@@ -170,7 +218,15 @@ namespace SecondSpawn.AI
                 stats.defense_power,
                 ToNetworkSeconds(time.remaining_seconds),
                 ToNetworkSeconds(time.max_seconds),
-                ToNetworkSeconds(time.danger_drain_rate));
+                ToNetworkSeconds(time.danger_drain_rate),
+                body.lifecycle,
+                ToNetworkSeconds(account.second_balance_seconds),
+                ToNetworkSeconds(account.reincarnation_count));
+        }
+
+        public static string BuildClientEventId(string prefix)
+        {
+            return $"{prefix}-{System.Guid.NewGuid():N}";
         }
 
         private static void ApplyEquipment(NetworkPlayer player, BodyProfileDto body)

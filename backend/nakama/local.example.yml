@@ -9,6 +9,7 @@ runtime:
   env:
     - "SUPABASE_URL=https://YOUR_PROJECT.supabase.co"
     - "SUPABASE_PUBLISHABLE_KEY=sb_publishable_YOUR_PUBLIC_KEY"
+    - "SECOND_SPAWN_ENABLE_DEBUG_BODYTIME=false"
 
 socket:
   server_key: defaultkey
