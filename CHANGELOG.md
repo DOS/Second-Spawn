@@ -59,6 +59,11 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   pending `say` intent, and updating heartbeat state.
 - Nakama now exposes bounded prototype hub chat RPCs, and Unity has a Play Mode
   debug panel for sending and refreshing hub chat messages.
+- Nakama now exposes a server-owned prototype reward claim RPC for allowlisted
+  enemy or objective rewards that grant BodyTime without trusting a
+  client-supplied amount.
+- Unity Body Lifecycle Debug now has a prototype reward claim control for
+  exercising server-owned BodyTime rewards in Play Mode.
 
 ### Changed
 
@@ -129,6 +134,8 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 
 - Real combat damage, enemy rewards, loot drops, quest progress, and player
   time-loot from other users are not implemented yet.
+- Prototype reward claims still use a debug RPC path. They are server-owned and
+  capped, but not yet wired to Fusion-validated combat or objective completion.
 - Unity UI is still prototype IMGUI, not production HUD.
 - Supabase anonymous auth can be used when configured, but the local prototype
   still supports Nakama device fallback for development.

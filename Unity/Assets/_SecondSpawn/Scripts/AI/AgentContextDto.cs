@@ -224,6 +224,13 @@ namespace SecondSpawn.AI
     }
 
     [Serializable]
+    public sealed class RewardClaimRequestDto
+    {
+        public string id;
+        public string objective_id = "prototype-training-drone";
+    }
+
+    [Serializable]
     public sealed class AgentPolicyDto
     {
         public bool enabled = true;

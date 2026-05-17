@@ -26,6 +26,7 @@ var rpcIdOpenClawIntentSubmit = "secondspawn_openclaw_intent_submit";
 var rpcIdOpenClawHeartbeat = "secondspawn_openclaw_heartbeat";
 var rpcIdChatSend = "secondspawn_chat_send";
 var rpcIdChatList = "secondspawn_chat_list";
+var rpcIdRewardClaim = "secondspawn_reward_claim";
 var agentActivityLogLimit = 32;
 var chatMessageLogLimit = 64;
 var chatMessageMaxLength = 240;
@@ -242,6 +243,21 @@ var permanentNpcFramePool = [
   { npc_id: "npc-crossline-hunter-1058", display_name: "Crossline Surveyor 1058", archetype_id: "crossline-hunter", role: "Ranged survey body" }
 ];
 
+var prototypeRewardCatalog = [
+  {
+    objective_id: "prototype-training-drone",
+    kind: "enemy_kill",
+    body_time_seconds: 120,
+    summary: "Defeated a prototype training drone."
+  },
+  {
+    objective_id: "prototype-hub-repair",
+    kind: "objective_complete",
+    body_time_seconds: 300,
+    summary: "Completed a prototype hub repair objective."
+  }
+];
+
 let InitModule: nkruntime.InitModule = function (
   ctx: nkruntime.Context,
   logger: nkruntime.Logger,
@@ -264,6 +280,7 @@ let InitModule: nkruntime.InitModule = function (
   initializer.registerRpc(rpcIdOpenClawHeartbeat, rpcOpenClawHeartbeat);
   initializer.registerRpc(rpcIdChatSend, rpcChatSend);
   initializer.registerRpc(rpcIdChatList, rpcChatList);
+  initializer.registerRpc(rpcIdRewardClaim, rpcRewardClaim);
   initializer.registerBeforeAuthenticateCustom(beforeAuthenticateCustom);
   logger.info("Second Spawn Nakama runtime loaded.");
 };
@@ -575,6 +592,33 @@ function rpcChatList(
     channel_id: channelId,
     messages: boundChatMessages(state.channel.messages || [], request.limit)
   });
+}
+
+function rpcRewardClaim(
+  ctx: nkruntime.Context,
+  logger: nkruntime.Logger,
+  nk: nkruntime.Nakama,
+  payload: string
+): string {
+  requireUserId(ctx);
+  var request = parseJson(payload || "{}", "reward claim payload");
+  var reward = requirePrototypeReward(request.objective_id || request.reward_id);
+  var state = getOrCreateAgentContextState(ctx, nk);
+  var context = state.context;
+  var eventId = normalizeRewardClaimId(request.id, reward.objective_id, nk);
+  if (hasAgentActivityId(context.body.agent_activity || [], eventId)) {
+    return JSON.stringify(context);
+  }
+
+  applyBodyTimeEvent(context, {
+    id: eventId,
+    kind: "earn",
+    source: "prototype_reward_" + reward.objective_id,
+    amount_seconds: reward.body_time_seconds,
+    note: reward.summary
+  }, nk);
+  writeAgentContext(nk, context, state.version);
+  return JSON.stringify(context);
 }
 
 function rpcOpenClawBind(
@@ -1834,6 +1878,38 @@ function normalizeChatSource(value: any): string {
   }
 
   return "player";
+}
+
+function requirePrototypeReward(objectiveId: any): any {
+  var normalized = normalizeRewardObjectiveId(objectiveId);
+  for (var index = 0; index < prototypeRewardCatalog.length; index += 1) {
+    var reward = prototypeRewardCatalog[index];
+    if (reward.objective_id === normalized) {
+      return reward;
+    }
+  }
+
+  throw new Error("unknown prototype reward objective");
+}
+
+function normalizeRewardObjectiveId(value: any): string {
+  var normalized = sanitizeNakamaIdentifier(trimString(value), "");
+  if (!normalized) {
+    throw new Error("objective_id is required");
+  }
+  if (normalized.length > 64) {
+    throw new Error("objective_id is too long");
+  }
+  return normalized;
+}
+
+function normalizeRewardClaimId(value: any, objectiveId: string, nk: nkruntime.Nakama): string {
+  var id = sanitizeNakamaIdentifier(trimString(value), "");
+  if (id) {
+    return id.length > 96 ? id.substring(0, 96) : id;
+  }
+
+  return "reward-" + normalizeRewardObjectiveId(objectiveId) + "-" + nk.uuidv4();
 }
 
 function boundChatMessages(messages: any[], limit: any): any[] {
