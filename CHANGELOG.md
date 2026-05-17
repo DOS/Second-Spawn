@@ -64,6 +64,11 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   client-supplied amount.
 - Unity Body Lifecycle Debug now has a prototype reward claim control for
   exercising server-owned BodyTime rewards in Play Mode.
+- Nakama now exposes server-owned permanent NPC seed/list RPCs and a prototype
+  NPC-to-NPC interaction RPC that records dialogue, activity, and relationship
+  memory on both actors.
+- Unity now has a Persistent NPC Debug panel for seeding, listing, and
+  triggering prototype interaction ticks between permanent NPC Frames.
 
 ### Changed
 
@@ -136,6 +141,8 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   time-loot from other users are not implemented yet.
 - Prototype reward claims still use a debug RPC path. They are server-owned and
   capped, but not yet wired to Fusion-validated combat or objective completion.
+- Permanent NPC interactions are deterministic server-side prototype ticks, not
+  final LLM dialogue, Convai dialogue, or Fusion proximity validation.
 - Unity UI is still prototype IMGUI, not production HUD.
 - Supabase anonymous auth can be used when configured, but the local prototype
   still supports Nakama device fallback for development.

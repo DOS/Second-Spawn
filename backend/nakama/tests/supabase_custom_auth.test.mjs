@@ -129,7 +129,7 @@ assert.equal(
 
 const harness = createRuntimeHarness(module);
 assert.equal(harness.registeredHooks.length, 1);
-assert.equal(harness.registeredRpcs.size, 17);
+assert.equal(harness.registeredRpcs.size, 20);
 assert.ok(harness.registeredRpcs.has("secondspawn_health"));
 assert.ok(harness.registeredRpcs.has("secondspawn_profile_get"));
 assert.ok(harness.registeredRpcs.has("secondspawn_memory_add"));
@@ -147,6 +147,9 @@ assert.ok(harness.registeredRpcs.has("secondspawn_openclaw_heartbeat"));
 assert.ok(harness.registeredRpcs.has("secondspawn_chat_send"));
 assert.ok(harness.registeredRpcs.has("secondspawn_chat_list"));
 assert.ok(harness.registeredRpcs.has("secondspawn_reward_claim"));
+assert.ok(harness.registeredRpcs.has("secondspawn_npc_seed"));
+assert.ok(harness.registeredRpcs.has("secondspawn_npc_list"));
+assert.ok(harness.registeredRpcs.has("secondspawn_npc_interact"));
 
 const createConflictHarness = createRuntimeHarness(module);
 createConflictHarness.conflictNextCreateOnlyWrite();
@@ -210,6 +213,60 @@ const chatAfterCreateRace = JSON.parse(chatCreateConflictHarness.registeredRpcs.
 ));
 assert.equal(chatAfterCreateRace.messages.length, 1);
 assert.equal(chatAfterCreateRace.messages[0].text, "Recovered after create race.");
+
+const seededNpcs = JSON.parse(harness.registeredRpcs.get("secondspawn_npc_seed")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  ""
+));
+assert.equal(seededNpcs.count, 10);
+assert.equal(seededNpcs.npcs[0].actor_id, "npc-synthetic-sentinel-0101");
+assert.equal(seededNpcs.npcs[0].actor_type, "npc");
+assert.equal(seededNpcs.npcs[0].owner_player_id, "");
+assert.equal(seededNpcs.npcs[0].body.identity.public_name, "Gate Sentinel 0101");
+assert.ok(harness.storage.get(storageKey("", "secondspawn_actor", "profile:npc-synthetic-sentinel-0101")));
+
+const listedNpcs = JSON.parse(harness.registeredRpcs.get("secondspawn_npc_list")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  ""
+));
+assert.equal(listedNpcs.count, 10);
+assert.equal(listedNpcs.npcs[3].actor_id, "npc-scrap-warden-0441");
+
+const npcInteraction = JSON.parse(harness.registeredRpcs.get("secondspawn_npc_interact")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  JSON.stringify({
+    id: "npc-talk-1",
+    actor_a_id: "npc-synthetic-sentinel-0101",
+    actor_b_id: "npc-wasteland-courier-0244",
+    topic: "patrol"
+  })
+));
+assert.equal(npcInteraction.interaction.id, "npc-talk-1");
+assert.equal(npcInteraction.interaction.actor_a_id, "npc-synthetic-sentinel-0101");
+assert.equal(npcInteraction.interaction.actor_b_id, "npc-wasteland-courier-0244");
+assert.match(npcInteraction.interaction.actor_a_line, /Route Courier 0244/);
+assert.equal(npcInteraction.actor_a.agent_activity[0].id, "npc-talk-1-a");
+assert.equal(npcInteraction.actor_b.agent_activity[0].id, "npc-talk-1-b");
+assert.ok(npcInteraction.actor_a.memory.some((memory) => memory.kind === "relationship" && /Route Courier 0244/.test(memory.summary)));
+assert.ok(npcInteraction.actor_b.memory.some((memory) => memory.kind === "relationship" && /Gate Sentinel 0101/.test(memory.summary)));
+assert.throws(
+  () => harness.registeredRpcs.get("secondspawn_npc_interact")(
+    { userId: "user-1", env: {} },
+    harness.logger,
+    harness.nk,
+    JSON.stringify({
+      actor_a_id: "npc-synthetic-sentinel-0101",
+      actor_b_id: "npc-synthetic-sentinel-0101"
+    })
+  ),
+  /two different actors/
+);
 
 const profile = JSON.parse(harness.registeredRpcs.get("secondspawn_profile_get")(
   { userId: "user-1", env: {} },

@@ -104,6 +104,13 @@ The current prototype module registers:
 - `secondspawn_reward_claim` - claim an allowlisted prototype enemy or objective
   reward from the server-owned reward catalog; Unity sends only the objective
   ID and Nakama decides the BodyTime amount
+- `secondspawn_npc_seed` - create or normalize the permanent prototype NPC Frame
+  pool as server-owned public actor profiles
+- `secondspawn_npc_list` - read the permanent prototype NPC Frame pool for
+  clients and debug tools
+- `secondspawn_npc_interact` - record a deterministic prototype interaction
+  between two permanent NPCs, updating both activity logs and relationship
+  memories
 - `secondspawn_openclaw_bind` - bind a user-owned external OpenClaw agent to a
   server-owned Frame actor through `frame_actor_id`, `connected_agent_id`,
   consent, moderation, connection status, and rate limit metadata

@@ -529,6 +529,46 @@ namespace SecondSpawn.AI
     }
 
     [Serializable]
+    public sealed class NpcWorldListResponseDto
+    {
+        public int count;
+        public ActorProfileDto[] npcs;
+    }
+
+    [Serializable]
+    public sealed class NpcInteractionRequestDto
+    {
+        public string id;
+        public string actor_a_id = "npc-synthetic-sentinel-0101";
+        public string actor_b_id = "npc-wasteland-courier-0244";
+        public string topic = "patrol";
+    }
+
+    [Serializable]
+    public sealed class NpcInteractionEventDto
+    {
+        public string id;
+        public string kind;
+        public string topic;
+        public string occurred_at;
+        public string actor_a_id;
+        public string actor_a_name;
+        public string actor_a_line;
+        public string actor_b_id;
+        public string actor_b_name;
+        public string actor_b_line;
+        public string summary;
+    }
+
+    [Serializable]
+    public sealed class NpcInteractionResponseDto
+    {
+        public NpcInteractionEventDto interaction;
+        public ActorProfileDto actor_a;
+        public ActorProfileDto actor_b;
+    }
+
+    [Serializable]
     public sealed class AgentDecisionRequestDto
     {
         public AgentContextDto context;

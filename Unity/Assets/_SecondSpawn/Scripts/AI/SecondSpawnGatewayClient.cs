@@ -226,6 +226,21 @@ namespace SecondSpawn.AI
             yield return SendNakamaRpc("secondspawn_chat_list", request, onSuccess, onError);
         }
 
+        public IEnumerator SeedPermanentNpcs(Action<NpcWorldListResponseDto> onSuccess, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_npc_seed", new EmptyPayload(), onSuccess, onError);
+        }
+
+        public IEnumerator ListPermanentNpcs(Action<NpcWorldListResponseDto> onSuccess, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_npc_list", new EmptyPayload(), onSuccess, onError);
+        }
+
+        public IEnumerator InteractPermanentNpcs(NpcInteractionRequestDto request, Action<NpcInteractionResponseDto> onSuccess, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_npc_interact", request, onSuccess, onError);
+        }
+
         public IEnumerator GetContextForPlayer(string playerId, Action<AgentContextDto> onSuccess, Action<string> onError = null)
         {
             yield return Send<AgentContextDto>(

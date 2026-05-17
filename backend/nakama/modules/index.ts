@@ -27,6 +27,9 @@ var rpcIdOpenClawHeartbeat = "secondspawn_openclaw_heartbeat";
 var rpcIdChatSend = "secondspawn_chat_send";
 var rpcIdChatList = "secondspawn_chat_list";
 var rpcIdRewardClaim = "secondspawn_reward_claim";
+var rpcIdNpcSeed = "secondspawn_npc_seed";
+var rpcIdNpcList = "secondspawn_npc_list";
+var rpcIdNpcInteract = "secondspawn_npc_interact";
 var agentActivityLogLimit = 32;
 var chatMessageLogLimit = 64;
 var chatMessageMaxLength = 240;
@@ -281,6 +284,9 @@ let InitModule: nkruntime.InitModule = function (
   initializer.registerRpc(rpcIdChatSend, rpcChatSend);
   initializer.registerRpc(rpcIdChatList, rpcChatList);
   initializer.registerRpc(rpcIdRewardClaim, rpcRewardClaim);
+  initializer.registerRpc(rpcIdNpcSeed, rpcNpcSeed);
+  initializer.registerRpc(rpcIdNpcList, rpcNpcList);
+  initializer.registerRpc(rpcIdNpcInteract, rpcNpcInteract);
   initializer.registerBeforeAuthenticateCustom(beforeAuthenticateCustom);
   logger.info("Second Spawn Nakama runtime loaded.");
 };
@@ -619,6 +625,73 @@ function rpcRewardClaim(
   }, nk);
   writeAgentContext(nk, context, state.version);
   return JSON.stringify(context);
+}
+
+function rpcNpcSeed(
+  ctx: nkruntime.Context,
+  logger: nkruntime.Logger,
+  nk: nkruntime.Nakama,
+  payload: string
+): string {
+  requireUserId(ctx);
+  var profiles = seedPermanentNpcProfiles(nk);
+  return JSON.stringify({
+    count: profiles.length,
+    npcs: profiles
+  });
+}
+
+function rpcNpcList(
+  ctx: nkruntime.Context,
+  logger: nkruntime.Logger,
+  nk: nkruntime.Nakama,
+  payload: string
+): string {
+  requireUserId(ctx);
+  var profiles = seedPermanentNpcProfiles(nk);
+  return JSON.stringify({
+    count: profiles.length,
+    npcs: profiles
+  });
+}
+
+function rpcNpcInteract(
+  ctx: nkruntime.Context,
+  logger: nkruntime.Logger,
+  nk: nkruntime.Nakama,
+  payload: string
+): string {
+  requireUserId(ctx);
+  var request = parseJson(payload || "{}", "NPC interaction payload");
+  var actorAId = normalizeActorId(request.actor_a_id || request.source_actor_id || request.npc_a_id);
+  var actorBId = normalizeActorId(request.actor_b_id || request.target_actor_id || request.npc_b_id);
+  if (actorAId === actorBId) {
+    throw new Error("NPC interaction requires two different actors");
+  }
+
+  var stateA = getOrCreateWorldNpcProfileState(nk, actorAId);
+  var stateB = getOrCreateWorldNpcProfileState(nk, actorBId);
+  var interaction = prototypeNpcInteraction(stateA.profile, stateB.profile, request, nk);
+
+  if (!hasAgentActivityId(stateA.profile.agent_activity || [], interaction.id + "-a")) {
+    addActorActivity(stateA.profile, interaction.activity_a);
+    stateA.profile.memory = upsertMemoryRecord(stateA.profile.memory || [], interaction.memory_a);
+    stateA.profile.updated_at = interaction.occurred_at;
+    writeWorldActorProfile(nk, stateA.profile, stateA.version);
+  }
+
+  if (!hasAgentActivityId(stateB.profile.agent_activity || [], interaction.id + "-b")) {
+    addActorActivity(stateB.profile, interaction.activity_b);
+    stateB.profile.memory = upsertMemoryRecord(stateB.profile.memory || [], interaction.memory_b);
+    stateB.profile.updated_at = interaction.occurred_at;
+    writeWorldActorProfile(nk, stateB.profile, stateB.version);
+  }
+
+  return JSON.stringify({
+    interaction: interaction.public_event,
+    actor_a: stateA.profile,
+    actor_b: stateB.profile
+  });
 }
 
 function rpcOpenClawBind(
@@ -1022,7 +1095,8 @@ function actorProfileNeedsNormalization(profile: any): boolean {
   return !profile ||
     !profile.actor_id ||
     !profile.actor_type ||
-    !profile.owner_player_id ||
+    profile.owner_player_id === undefined ||
+    profile.owner_player_id === null ||
     !profile.display_name ||
     !profile.body ||
     !profile.body.body_id ||
@@ -1097,6 +1171,120 @@ function writeActorProfile(nk: nkruntime.Nakama, profile: any, version: string):
     userId: profile.owner_player_id,
     value: profile,
     permissionRead: 1,
+    permissionWrite: 0
+  };
+  if (typeof version === "string" && version.length > 0) {
+    write.version = version;
+  }
+  nk.storageWrite([write]);
+}
+
+function seedPermanentNpcProfiles(nk: nkruntime.Nakama): any[] {
+  var profiles: any[] = [];
+  for (var index = 0; index < permanentNpcFramePool.length; index += 1) {
+    profiles.push(getOrCreateWorldNpcProfileState(nk, permanentNpcFramePool[index].npc_id).profile);
+  }
+  return profiles;
+}
+
+function getOrCreateWorldNpcProfileState(nk: nkruntime.Nakama, actorId: string): any {
+  var normalizedActorId = normalizeActorId(actorId);
+  var frame = findPermanentNpcFrame(normalizedActorId);
+  if (!frame) {
+    throw new Error("unknown permanent NPC actor");
+  }
+
+  var existing = readWorldActorProfile(nk, normalizedActorId);
+  if (existing) {
+    return normalizeExistingWorldNpcProfileState(nk, normalizedActorId, existing);
+  }
+
+  var profile = defaultActorProfile("", normalizedActorId, {
+    actor_id: normalizedActorId,
+    actor_type: "npc",
+    display_name: frame.display_name,
+    archetype_id: frame.archetype_id
+  });
+  try {
+    writeWorldActorProfile(nk, profile, "*");
+  } catch (err) {
+    var raced = readWorldActorProfile(nk, normalizedActorId);
+    if (raced) {
+      return normalizeExistingWorldNpcProfileState(nk, normalizedActorId, raced);
+    }
+    throw err;
+  }
+
+  var created = readWorldActorProfile(nk, normalizedActorId);
+  if (created) {
+    return {
+      profile: ensureActorProfile(created.value, "", normalizedActorId),
+      version: created.version
+    };
+  }
+
+  return {
+    profile: profile,
+    version: null
+  };
+}
+
+function normalizeExistingWorldNpcProfileState(nk: nkruntime.Nakama, actorId: string, existing: any): any {
+  var needsPersistence = actorProfileNeedsNormalization(existing.value || {});
+  var profile = ensureActorProfile(existing.value || {}, "", actorId);
+  if (needsPersistence) {
+    profile.updated_at = new Date().toISOString();
+    try {
+      writeWorldActorProfile(nk, profile, existing.version);
+    } catch (err) {
+      var raced = readWorldActorProfile(nk, actorId);
+      if (raced) {
+        return {
+          profile: ensureActorProfile(raced.value, "", actorId),
+          version: raced.version
+        };
+      }
+      throw err;
+    }
+    var rewritten = readWorldActorProfile(nk, actorId);
+    if (rewritten) {
+      return {
+        profile: ensureActorProfile(rewritten.value, "", actorId),
+        version: rewritten.version
+      };
+    }
+  }
+
+  return {
+    profile: profile,
+    version: existing.version
+  };
+}
+
+function readWorldActorProfile(nk: nkruntime.Nakama, actorId: string): any {
+  var objects = nk.storageRead([{
+    collection: collectionActor,
+    key: actorStorageKey(actorId),
+    userId: ""
+  }]);
+
+  if (!objects || objects.length === 0) {
+    return null;
+  }
+
+  return {
+    value: objects[0].value,
+    version: objects[0].version || null
+  };
+}
+
+function writeWorldActorProfile(nk: nkruntime.Nakama, profile: any, version: string): void {
+  var write: any = {
+    collection: collectionActor,
+    key: actorStorageKey(profile.actor_id),
+    userId: "",
+    value: profile,
+    permissionRead: 2,
     permissionWrite: 0
   };
   if (typeof version === "string" && version.length > 0) {
@@ -1346,6 +1534,98 @@ function addActorActivity(profile: any, activity: any): boolean {
   profile.agent_runtime.activity_count = addRuntimeMetric(profile.agent_runtime.activity_count, 1);
   profile.agent_runtime.last_activity_at = activity.occurred_at;
   return true;
+}
+
+function prototypeNpcInteraction(actorA: any, actorB: any, request: any, nk: nkruntime.Nakama): any {
+  var timestamp = new Date().toISOString();
+  var interactionId = trimString(request.id) || "npc-interaction-" + nk.uuidv4();
+  var topic = normalizeNpcInteractionTopic(request.topic || request.kind);
+  var lineA = prototypeNpcLine(actorA, actorB, topic);
+  var lineB = prototypeNpcLine(actorB, actorA, topic);
+  var summary = actorA.display_name + " and " + actorB.display_name + " discussed " + topic + ".";
+
+  return {
+    id: interactionId,
+    occurred_at: timestamp,
+    public_event: {
+      id: interactionId,
+      kind: "npc_interaction",
+      topic: topic,
+      occurred_at: timestamp,
+      actor_a_id: actorA.actor_id,
+      actor_a_name: actorA.display_name,
+      actor_a_line: lineA,
+      actor_b_id: actorB.actor_id,
+      actor_b_name: actorB.display_name,
+      actor_b_line: lineB,
+      summary: summary
+    },
+    activity_a: {
+      id: interactionId + "-a",
+      kind: "npc_interaction",
+      summary: "Spoke with " + actorB.display_name + " about " + topic + ": " + lineA,
+      occurred_at: timestamp,
+      source: "nakama",
+      target_actor_id: actorB.actor_id,
+      metrics: { social_interaction_count: 1 }
+    },
+    activity_b: {
+      id: interactionId + "-b",
+      kind: "npc_interaction",
+      summary: "Spoke with " + actorA.display_name + " about " + topic + ": " + lineB,
+      occurred_at: timestamp,
+      source: "nakama",
+      target_actor_id: actorA.actor_id,
+      metrics: { social_interaction_count: 1 }
+    },
+    memory_a: {
+      id: "mem-" + actorA.actor_id + "-" + interactionId,
+      kind: "relationship",
+      summary: "Talked with " + actorB.display_name + " about " + topic + ". " + lineB,
+      importance: 5
+    },
+    memory_b: {
+      id: "mem-" + actorB.actor_id + "-" + interactionId,
+      kind: "relationship",
+      summary: "Talked with " + actorA.display_name + " about " + topic + ". " + lineA,
+      importance: 5
+    }
+  };
+}
+
+function normalizeNpcInteractionTopic(value: any): string {
+  var topic = sanitizeNakamaIdentifier(trimString(value), "bodytime");
+  if (
+    topic === "bodytime" ||
+    topic === "patrol" ||
+    topic === "memory" ||
+    topic === "reincarnation" ||
+    topic === "hub-rumor"
+  ) {
+    return topic;
+  }
+
+  return "bodytime";
+}
+
+function prototypeNpcLine(speaker: any, listener: any, topic: string): string {
+  var soul = speaker && speaker.body && speaker.body.soul ? speaker.body.soul : {};
+  var story = speaker && speaker.body && speaker.body.story ? speaker.body.story : {};
+  var listenerName = listener && listener.display_name ? listener.display_name : "the other Frame";
+  var drive = trimString(soul.core_drive) || trimString(story.conflict) || "keep this settlement alive";
+  if (topic === "patrol") {
+    return listenerName + ", keep the route tight. " + drive;
+  }
+  if (topic === "memory") {
+    return listenerName + ", record this: " + (trimString(story.rumor) || drive);
+  }
+  if (topic === "reincarnation") {
+    return listenerName + ", every borrowed body needs a cleaner transfer plan.";
+  }
+  if (topic === "hub-rumor") {
+    return listenerName + ", I heard this again: " + (trimString(story.rumor) || drive);
+  }
+  return listenerName + ", watch the remaining SECOND. " + drive;
 }
 
 function defaultActorProfile(ownerId: string, actorId: string, request: any): any {
