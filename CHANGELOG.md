@@ -57,6 +57,8 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 - Unity now has prototype OpenClaw bridge client wrappers and a Play Mode debug
   panel for binding an external agent to a Frame, reading context, submitting a
   pending `say` intent, and updating heartbeat state.
+- Nakama now exposes bounded prototype hub chat RPCs, and Unity has a Play Mode
+  debug panel for sending and refreshing hub chat messages.
 
 ### Changed
 

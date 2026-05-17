@@ -133,6 +133,7 @@ GameObject:
   - component: {fileID: 34500815}
   - component: {fileID: 34500819}
   - component: {fileID: 34500820}
+  - component: {fileID: 34500821}
   m_Layer: 0
   m_Name: _AgentGateway
   m_TagString: Untagged
@@ -250,6 +251,25 @@ MonoBehaviour:
   _connectedAgentId: oc-local-debug-agent
   _displayName: OpenClaw Debug Guide
   _sayText: OpenClaw debug intent reached Nakama.
+--- !u!114 &34500821
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 34500814}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 05e7ee54f444466b91be22b693c78928, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.PrototypeHubChatDebugPanel
+  _showPanel: 1
+  _panelPosition: {x: 552, y: 16}
+  _panelSize: {x: 420, y: 248}
+  _channelId: prototype-hub
+  _displayName: JOY
+  _draftMessage: Hub chat is online.
+  _messageLimit: 8
 --- !u!1 &47583031
 GameObject:
   m_ObjectHideFlags: 0

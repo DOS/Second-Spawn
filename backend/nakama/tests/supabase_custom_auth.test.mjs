@@ -129,7 +129,7 @@ assert.equal(
 
 const harness = createRuntimeHarness(module);
 assert.equal(harness.registeredHooks.length, 1);
-assert.equal(harness.registeredRpcs.size, 14);
+assert.equal(harness.registeredRpcs.size, 16);
 assert.ok(harness.registeredRpcs.has("secondspawn_health"));
 assert.ok(harness.registeredRpcs.has("secondspawn_profile_get"));
 assert.ok(harness.registeredRpcs.has("secondspawn_memory_add"));
@@ -144,6 +144,8 @@ assert.ok(harness.registeredRpcs.has("secondspawn_openclaw_bind"));
 assert.ok(harness.registeredRpcs.has("secondspawn_openclaw_context_get"));
 assert.ok(harness.registeredRpcs.has("secondspawn_openclaw_intent_submit"));
 assert.ok(harness.registeredRpcs.has("secondspawn_openclaw_heartbeat"));
+assert.ok(harness.registeredRpcs.has("secondspawn_chat_send"));
+assert.ok(harness.registeredRpcs.has("secondspawn_chat_list"));
 
 const createConflictHarness = createRuntimeHarness(module);
 createConflictHarness.conflictNextCreateOnlyWrite();
@@ -170,6 +172,43 @@ assert.equal(actorCreateRaceProfile.body.body_id, "body-npc-race");
 
 const healthPayload = harness.registeredRpcs.get("secondspawn_health")({ userId: "user-1", env: {} }, harness.logger, harness.nk, "");
 assert.equal(JSON.parse(healthPayload).service, "second-spawn-nakama");
+
+const sentChat = JSON.parse(harness.registeredRpcs.get("secondspawn_chat_send")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  JSON.stringify({
+    channel_id: "prototype-hub",
+    sender_display_name: "JOY",
+    message: "Hub chat is online.",
+  })
+));
+assert.equal(sentChat.channel_id, "prototype-hub");
+assert.equal(sentChat.message.sender_player_id, "user-1");
+assert.equal(sentChat.message.sender_display_name, "JOY");
+assert.equal(sentChat.message.text, "Hub chat is online.");
+assert.equal(sentChat.message.source, "player");
+
+const listedChat = JSON.parse(harness.registeredRpcs.get("secondspawn_chat_list")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  JSON.stringify({ channel_id: "prototype-hub", limit: 8 })
+));
+assert.equal(listedChat.messages.length, 1);
+assert.equal(listedChat.messages[0].id, sentChat.message.id);
+assert.equal(listedChat.messages[0].text, "Hub chat is online.");
+
+const chatCreateConflictHarness = createRuntimeHarness(module);
+chatCreateConflictHarness.conflictNextCreateOnlyWrite();
+const chatAfterCreateRace = JSON.parse(chatCreateConflictHarness.registeredRpcs.get("secondspawn_chat_send")(
+  { userId: "chat-race-user", env: {} },
+  chatCreateConflictHarness.logger,
+  chatCreateConflictHarness.nk,
+  JSON.stringify({ channel_id: "prototype-hub", message: "Recovered after create race." })
+));
+assert.equal(chatAfterCreateRace.messages.length, 1);
+assert.equal(chatAfterCreateRace.messages[0].text, "Recovered after create race.");
 
 const profile = JSON.parse(harness.registeredRpcs.get("secondspawn_profile_get")(
   { userId: "user-1", env: {} },

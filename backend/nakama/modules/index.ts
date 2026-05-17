@@ -8,6 +8,7 @@ var collectionAgent = "secondspawn_agent";
 var keyAgentContext = "context";
 var collectionActor = "secondspawn_actor";
 var collectionOpenClaw = "secondspawn_openclaw";
+var collectionChat = "secondspawn_chat";
 
 var rpcIdHealth = "secondspawn_health";
 var rpcIdProfileGet = "secondspawn_profile_get";
@@ -23,7 +24,11 @@ var rpcIdOpenClawBind = "secondspawn_openclaw_bind";
 var rpcIdOpenClawContextGet = "secondspawn_openclaw_context_get";
 var rpcIdOpenClawIntentSubmit = "secondspawn_openclaw_intent_submit";
 var rpcIdOpenClawHeartbeat = "secondspawn_openclaw_heartbeat";
+var rpcIdChatSend = "secondspawn_chat_send";
+var rpcIdChatList = "secondspawn_chat_list";
 var agentActivityLogLimit = 32;
+var chatMessageLogLimit = 64;
+var chatMessageMaxLength = 240;
 var agentRuntimeMetricMax = 1000000000;
 var actorIdMaxLength = 56;
 var bodyTimeMaxSeconds = 86400 * 30;
@@ -257,6 +262,8 @@ let InitModule: nkruntime.InitModule = function (
   initializer.registerRpc(rpcIdOpenClawContextGet, rpcOpenClawContextGet);
   initializer.registerRpc(rpcIdOpenClawIntentSubmit, rpcOpenClawIntentSubmit);
   initializer.registerRpc(rpcIdOpenClawHeartbeat, rpcOpenClawHeartbeat);
+  initializer.registerRpc(rpcIdChatSend, rpcChatSend);
+  initializer.registerRpc(rpcIdChatList, rpcChatList);
   initializer.registerBeforeAuthenticateCustom(beforeAuthenticateCustom);
   logger.info("Second Spawn Nakama runtime loaded.");
 };
@@ -516,6 +523,58 @@ function rpcReincarnate(
   writeAgentContext(nk, context, state.version);
   ensureSourceBodyActorProfile(nk, context);
   return JSON.stringify(context);
+}
+
+function rpcChatSend(
+  ctx: nkruntime.Context,
+  logger: nkruntime.Logger,
+  nk: nkruntime.Nakama,
+  payload: string
+): string {
+  var userId = requireUserId(ctx);
+  var request = parseJson(payload || "{}", "chat send payload");
+  var channelId = normalizeChatChannelId(request.channel_id || request.channel);
+  var state = getOrCreateChatChannelState(nk, channelId);
+  var message = normalizeChatMessage(request, userId, nk);
+  message.channel_id = channelId;
+
+  addChatMessage(state.channel, message);
+  try {
+    writeChatChannel(nk, state.channel, state.version);
+  } catch (err) {
+    var raced = readChatChannel(nk, channelId);
+    if (!isStorageVersionConflict(err) && !(state.version === "*" && raced)) {
+      throw err;
+    }
+
+    state = raced
+      ? { channel: normalizeChatChannel(raced.value || {}, channelId), version: raced.version }
+      : getOrCreateChatChannelState(nk, channelId);
+    addChatMessage(state.channel, message);
+    writeChatChannel(nk, state.channel, state.version);
+  }
+
+  return JSON.stringify({
+    channel_id: channelId,
+    message: message,
+    messages: state.channel.messages || []
+  });
+}
+
+function rpcChatList(
+  ctx: nkruntime.Context,
+  logger: nkruntime.Logger,
+  nk: nkruntime.Nakama,
+  payload: string
+): string {
+  requireUserId(ctx);
+  var request = parseJson(payload || "{}", "chat list payload");
+  var channelId = normalizeChatChannelId(request.channel_id || request.channel);
+  var state = getOrCreateChatChannelState(nk, channelId);
+  return JSON.stringify({
+    channel_id: channelId,
+    messages: boundChatMessages(state.channel.messages || [], request.limit)
+  });
 }
 
 function rpcOpenClawBind(
@@ -1033,6 +1092,60 @@ function writeOpenClawBinding(nk: nkruntime.Nakama, binding: any, version: strin
     write.version = version;
   }
   nk.storageWrite([write]);
+}
+
+function getOrCreateChatChannelState(nk: nkruntime.Nakama, channelId: string): any {
+  var existing = readChatChannel(nk, channelId);
+  if (existing) {
+    return {
+      channel: normalizeChatChannel(existing.value || {}, channelId),
+      version: existing.version
+    };
+  }
+
+  return {
+    channel: normalizeChatChannel({}, channelId),
+    version: "*"
+  };
+}
+
+function readChatChannel(nk: nkruntime.Nakama, channelId: string): any {
+  var objects = nk.storageRead([{
+    collection: collectionChat,
+    key: chatChannelStorageKey(channelId),
+    userId: ""
+  }]);
+
+  if (!objects || objects.length === 0) {
+    return null;
+  }
+
+  return {
+    value: objects[0].value,
+    version: objects[0].version || null
+  };
+}
+
+function writeChatChannel(nk: nkruntime.Nakama, channel: any, version: string): void {
+  var write: any = {
+    collection: collectionChat,
+    key: chatChannelStorageKey(channel.channel_id),
+    userId: "",
+    value: channel,
+    permissionRead: 2,
+    permissionWrite: 0
+  };
+  if (typeof version === "string" && version.length > 0) {
+    write.version = version;
+  }
+  nk.storageWrite([write]);
+}
+
+function addChatMessage(channel: any, message: any): void {
+  channel.messages = channel.messages || [];
+  channel.messages.push(message);
+  channel.messages = boundChatMessages(channel.messages, chatMessageLogLimit);
+  channel.updated_at = message.sent_at;
 }
 
 function requireOpenClawBindingState(nk: nkruntime.Nakama, ownerId: string, request: any): any {
@@ -1667,6 +1780,84 @@ function normalizeBodyTimeEventKind(kind: any): string {
     return value;
   }
   throw new Error("body time event kind must be earn, spend, or drain");
+}
+
+function normalizeChatChannelId(value: any): string {
+  var normalized = sanitizeNakamaIdentifier(trimString(value), "prototype-hub");
+  return normalized.length > 48 ? normalized.substring(0, 48) : normalized;
+}
+
+function normalizeChatChannel(channel: any, channelId: string): any {
+  var timestamp = new Date().toISOString();
+  return {
+    channel_id: channelId,
+    messages: boundChatMessages(channel.messages || [], chatMessageLogLimit),
+    created_at: trimString(channel.created_at) || timestamp,
+    updated_at: trimString(channel.updated_at) || timestamp
+  };
+}
+
+function normalizeChatMessage(request: any, userId: string, nk: nkruntime.Nakama): any {
+  var text = trimString(request.text || request.message);
+  if (!text) {
+    throw new Error("chat message text is required");
+  }
+
+  if (text.length > chatMessageMaxLength) {
+    text = text.substring(0, chatMessageMaxLength).trim();
+  }
+
+  return {
+    id: trimString(request.id) || "chat-" + nk.uuidv4(),
+    channel_id: "prototype-hub",
+    sender_player_id: userId,
+    sender_display_name: normalizeChatSenderName(request.sender_display_name || request.display_name, userId),
+    text: text,
+    sent_at: new Date().toISOString(),
+    source: normalizeChatSource(request.source)
+  };
+}
+
+function normalizeChatSenderName(value: any, userId: string): string {
+  var name = trimString(value);
+  if (!name) {
+    return userId;
+  }
+
+  return name.length > 32 ? name.substring(0, 32).trim() : name;
+}
+
+function normalizeChatSource(value: any): string {
+  var source = trimString(value);
+  if (source === "player" || source === "agent" || source === "npc" || source === "system") {
+    return source;
+  }
+
+  return "player";
+}
+
+function boundChatMessages(messages: any[], limit: any): any[] {
+  var max = clampNumber(limit || chatMessageLogLimit, 1, chatMessageLogLimit);
+  var normalized: any[] = [];
+  if (!messages || typeof messages.length !== "number") {
+    return normalized;
+  }
+
+  var start = Math.max(0, messages.length - max);
+  for (var index = start; index < messages.length; index++) {
+    var message = messages[index] || {};
+    normalized.push({
+      id: trimString(message.id) || "chat-" + index,
+      channel_id: normalizeChatChannelId(message.channel_id || "prototype-hub"),
+      sender_player_id: trimString(message.sender_player_id) || "unknown",
+      sender_display_name: normalizeChatSenderName(message.sender_display_name, trimString(message.sender_player_id) || "unknown"),
+      text: trimString(message.text),
+      sent_at: normalizeTimestamp(message.sent_at),
+      source: normalizeChatSource(message.source)
+    });
+  }
+
+  return normalized;
 }
 
 function normalizeBodyTimeEventSource(kind: string, source: any, allowDebugFatalDrain: boolean): string {
@@ -2496,6 +2687,10 @@ function actorStorageKey(actorId: string): string {
 
 function openClawBindingStorageKey(connectedAgentId: string): string {
   return "binding:" + normalizeOpenClawAgentId(connectedAgentId);
+}
+
+function chatChannelStorageKey(channelId: string): string {
+  return "channel:" + normalizeChatChannelId(channelId);
 }
 
 function actorDisplayName(actorId: string): string {
