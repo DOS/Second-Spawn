@@ -39,5 +39,6 @@
 - [Agent Handoff](setup/agent-handoff.md)
 - [Fusion Install](setup/fusion-install.md)
 - [Game Gateway Cloud Run Deployment](setup/game-gateway-cloud-run.md)
+- [GitHub Project Tracking](setup/github-project-tracking.md)
 - [Paid Asset Setup](setup/paid-assets.md)
 - [Unity Conventions](setup/unity-conventions.md)

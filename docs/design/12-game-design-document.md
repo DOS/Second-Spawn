@@ -2,6 +2,7 @@
 
 *Status: Pre-alpha GDD*
 *Created: 2026-05-16*
+*Last updated: 2026-05-17*
 *Source of truth level: Consolidates current design decisions from `docs/design/`, `AGENTS.md`, and accepted architecture direction. Per-system docs remain authoritative for implementation details.*
 
 ---
@@ -44,6 +45,24 @@ When the player is offline, a bounded AI agent can continue controlling the char
 | AI gateway | `api.dos.ai` / Go LLM Gateway for model calls and safety |
 | Phase 1 NPC dialogue | Convai SDK for MVP NPC dialogue |
 | Chain integration | DOS Chain via thirdweb for wallet, NFT, and SECOND token surfaces |
+
+### Current Implementation Snapshot - 2026-05-17
+
+This snapshot tracks what exists in the running prototype today. It is not a
+promise that the same UI or tuning will ship.
+
+| Area | Current State |
+| ---- | ---- |
+| Unity scene | `ZoneTest_Hub` can enter Play Mode and spawn a Fusion local player. |
+| Player visible stats | The prototype HUD shows level, HP, energy, attack, defense, agility, BodyTime, lifecycle, SECOND balance, and reincarnation count. |
+| Player profile sync | Unity loads the Nakama profile and applies current-body stats, BodyTime, lifecycle, SECOND balance, reincarnation count, and visual key to the authoritative local `NetworkPlayer`. |
+| Default player body | New profiles start at level 1 with vitality 10, force 8, agility 8, focus 8, resilience 8, health 100, energy 50, attack 10, and defense 5. |
+| BodyTime loop | Nakama supports prototype earn, spend, drain, duplicate-earn cooldown, zero-time death, and activity logging. |
+| Reincarnation loop | Nakama supports dead-body reincarnation into a fresh prototype body. The current test balance is 7 days of SECOND and the current test cost is 5 days. |
+| NPC/actor profiles | NPC-like actors can have their own body, stats, traits, soul, memory, policy, runtime, and activity records. |
+| Prototype NPC brain | `_AgentNPC_Prototype` can patrol, speak, and use the gateway decision path with deterministic fallback. |
+| Backend foundation | Nakama owns durable game profile state. The Go gateway owns AI contracts and Cloud Run smoke tests. |
+| Not implemented yet | Real combat damage, enemy loot, quest rewards, production HUD, player-vs-player time loot, wallet escrow, dungeon boss, and dedicated server deployment. |
 
 ---
 
@@ -250,6 +269,8 @@ Death can be caused by combat failure, BodyTime reaching zero, or offline-agent 
 - SECOND token is denominated in seconds and is distinct from current-body `BodyTime` unless a future ADR explicitly merges them.
 - Reincarnation should consume enough SECOND to create a new playable body-time package.
 - Candidate reincarnation package is 5-7 days of playable body lifetime. The vertical-slice recommendation is 7 days by default, then tune toward 5 days only if early testing shows the loop is too forgiving.
+- Current prototype values are intentionally test-only: 7 days starting SECOND
+  balance and 5 days reincarnation cost.
 
 ### Open Reincarnation Decisions
 
@@ -284,6 +305,15 @@ Vertical slice direction:
 - Grant time from one small objective or enemy source.
 - Spend time through one useful service.
 - Trigger reincarnation placeholder when time reaches zero.
+
+Current prototype status:
+
+- The HUD meter and lifecycle fields are visible in Play Mode.
+- Nakama applies earn, spend, drain, and zero-time death through
+  `secondspawn_bodytime_event`.
+- A prototype debug panel can exercise the loop before combat rewards exist.
+- Real enemy rewards and player time-loot are still future server-authoritative
+  rules, not client-side grants.
 
 Open BodyTime decisions:
 
@@ -687,6 +717,28 @@ In scope:
 - Basic chat through Nakama channels first.
 
 The vertical slice should prove the signature hooks in one compact loop. It does not need content volume.
+
+### Current Completion Notes
+
+Already proven in prototype:
+
+- Fusion player spawn and movement in `ZoneTest_Hub`.
+- Profile-backed player stats visible on the prototype HUD.
+- Nakama profile, body, soul, memory, policy, runtime, activity, BodyTime, and
+  reincarnation storage paths.
+- Prototype NPC/agent brain loop with gateway model decision and deterministic
+  fallback.
+- BodyTime and reincarnation smoke path through debug controls.
+
+Still required before this feels like a game:
+
+- First server-authoritative combat damage path.
+- First enemy or objective that grants BodyTime.
+- First spend sink that is part of normal play instead of debug UI.
+- First death/reincarnation presentation flow.
+- First questline, dungeon, boss, and grounded dialogue beat.
+- First player-vs-player or contested-zone time-loot rule, if included in the
+  slice.
 
 ---
 

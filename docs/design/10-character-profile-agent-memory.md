@@ -3,7 +3,7 @@
 *Status: Prototype implemented*
 *Created: 2026-05-15*
 *Author: Codex*
-*Last Verified: 2026-05-16 against `AGENTS.md`, ADR 0003, ADR 0004, `08-time-as-currency.md`, Cloud Run staging gateway, and Unity C# assembly build*
+*Last Verified: 2026-05-17 against `AGENTS.md`, ADR 0003, ADR 0004, `08-time-as-currency.md`, Cloud Run staging gateway, Nakama runtime smoke, and Unity Play Mode profile sync*
 
 > **Quick reference** - Layer: `Persistence / AI Agent` - Priority: `MVP foundation` - Key deps: `Auth`, `Fusion server authority`, `LLM gateway`, `Time-as-Currency`, `Reincarnation`
 
@@ -53,7 +53,6 @@ This preserves:
 | `AgentPolicy` | Yes | Player | What the offline agent is allowed to do while player is away |
 | `BodyProfile` | No | Game server | Current synthetic body, visual archetype, BodyTime, lifecycle |
 | `CharacterStats` | Mostly no | Game server | Combat and movement-affecting numbers for current body |
-| `CharacterStats` | Mostly no | Game server | Current-body level and combat stats |
 | `MemoryRecord` | Yes, with decay | Backend | Small curated memory facts for LLM context |
 | `AgentRuntime` | Yes, across bodies until reset policy exists | Backend | Counters for profile bootstrap, activity, decisions, fallback decisions, and offline time |
 | `AgentActivity` | Yes, bounded recent history | Backend | Compact audit trail for offline-agent sessions and Unity/Nakama bootstrap events |
@@ -105,7 +104,6 @@ Required fields:
 | `body_id` | Unique current body ID |
 | `archetype_id` | Gameplay archetype or class key |
 | `visual_prefab_key` | Local Unity visual prefab key, used for random spawn visuals later |
-| `stats` | Current body combat stats |
 | `body_time` | Current BodyTime state |
 | `stats` | Current level and combat stats |
 | `lifecycle` | `alive`, `dying`, `reincarnating`, or `dead` |
@@ -387,6 +385,15 @@ Implemented surfaces:
 - Unity `SecondSpawnGatewayClient` authenticates with Nakama, reads/writes
   Nakama profile memory when a Nakama session exists, and calls the cloud
   gateway for NPC text chat, voice-session contract, and prototype LLM decision.
+- Unity `CharacterMemorySync` loads the Nakama profile and applies the current
+  body state onto the authoritative local `NetworkPlayer`.
+- The current player prototype starts at level 1 with vitality 10, force 8,
+  agility 8, focus 8, resilience 8, health 100, energy 50, attack 10, and
+  defense 5.
+- The prototype HUD shows level, HP, energy, attack, defense, agility,
+  BodyTime, lifecycle, SECOND balance, and reincarnation count.
+- The current prototype account reserve starts with 604800 SECOND seconds and
+  reincarnation costs 432000 SECOND seconds.
 - Unity `PrototypeLLMAgentDriver` can toggle prototype agent control with `P`.
 - Unity `PrototypeNPCChatClient` can trigger prototype NPC chat with `O` and
   voice-session status with `V`.
