@@ -565,24 +565,24 @@ function rpcChatSend(
   var userId = requireUserId(ctx);
   var request = parseJson(payload || "{}", "chat send payload");
   var channelId = normalizeChatChannelId(request.channel_id || request.channel);
-  var state = getOrCreateChatChannelState(nk, channelId);
+  var state = getOrCreateChatChannelState(nk, userId, channelId);
   var message = normalizeChatMessage(request, userId, nk);
   message.channel_id = channelId;
 
   addChatMessage(state.channel, message);
   try {
-    writeChatChannel(nk, state.channel, state.version);
+    writeChatChannel(nk, userId, state.channel, state.version);
   } catch (err) {
-    var raced = readChatChannel(nk, channelId);
+    var raced = readChatChannel(nk, userId, channelId);
     if (!isStorageVersionConflict(err) && !(state.version === "*" && raced)) {
       throw err;
     }
 
     state = raced
       ? { channel: normalizeChatChannel(raced.value || {}, channelId), version: raced.version }
-      : getOrCreateChatChannelState(nk, channelId);
+      : getOrCreateChatChannelState(nk, userId, channelId);
     addChatMessage(state.channel, message);
-    writeChatChannel(nk, state.channel, state.version);
+    writeChatChannel(nk, userId, state.channel, state.version);
   }
 
   return JSON.stringify({
@@ -598,10 +598,10 @@ function rpcChatList(
   nk: nkruntime.Nakama,
   payload: string
 ): string {
-  requireUserId(ctx);
+  var userId = requireUserId(ctx);
   var request = parseJson(payload || "{}", "chat list payload");
   var channelId = normalizeChatChannelId(request.channel_id || request.channel);
-  var state = getOrCreateChatChannelState(nk, channelId);
+  var state = getOrCreateChatChannelState(nk, userId, channelId);
   return JSON.stringify({
     channel_id: channelId,
     messages: boundChatMessages(state.channel.messages || [], request.limit)
@@ -641,8 +641,8 @@ function rpcNpcSeed(
   nk: nkruntime.Nakama,
   payload: string
 ): string {
-  requireUserId(ctx);
-  var profiles = seedPermanentNpcProfiles(nk);
+  var userId = requireUserId(ctx);
+  var profiles = seedPermanentNpcProfiles(nk, userId);
   return JSON.stringify({
     count: profiles.length,
     npcs: profiles
@@ -655,8 +655,8 @@ function rpcNpcList(
   nk: nkruntime.Nakama,
   payload: string
 ): string {
-  requireUserId(ctx);
-  var profiles = seedPermanentNpcProfiles(nk);
+  var userId = requireUserId(ctx);
+  var profiles = seedPermanentNpcProfiles(nk, userId);
   return JSON.stringify({
     count: profiles.length,
     npcs: profiles
@@ -669,7 +669,7 @@ function rpcNpcInteract(
   nk: nkruntime.Nakama,
   payload: string
 ): string {
-  requireUserId(ctx);
+  var userId = requireUserId(ctx);
   var request = parseJson(payload || "{}", "NPC interaction payload");
   var actorAId = normalizeActorId(request.actor_a_id || request.source_actor_id || request.npc_a_id);
   var actorBId = normalizeActorId(request.actor_b_id || request.target_actor_id || request.npc_b_id);
@@ -677,22 +677,22 @@ function rpcNpcInteract(
     throw new Error("NPC interaction requires two different actors");
   }
 
-  var stateA = getOrCreateWorldNpcProfileState(nk, actorAId);
-  var stateB = getOrCreateWorldNpcProfileState(nk, actorBId);
+  var stateA = getOrCreateWorldNpcProfileState(nk, userId, actorAId);
+  var stateB = getOrCreateWorldNpcProfileState(nk, userId, actorBId);
   var interaction = prototypeNpcInteraction(stateA.profile, stateB.profile, request, nk);
 
   if (!hasAgentActivityId(stateA.profile.agent_activity || [], interaction.id + "-a")) {
     addActorActivity(stateA.profile, interaction.activity_a);
     stateA.profile.memory = upsertMemoryRecord(stateA.profile.memory || [], interaction.memory_a);
     stateA.profile.updated_at = interaction.occurred_at;
-    writeWorldActorProfile(nk, stateA.profile, stateA.version);
+    writeWorldActorProfile(nk, userId, stateA.profile, stateA.version);
   }
 
   if (!hasAgentActivityId(stateB.profile.agent_activity || [], interaction.id + "-b")) {
     addActorActivity(stateB.profile, interaction.activity_b);
     stateB.profile.memory = upsertMemoryRecord(stateB.profile.memory || [], interaction.memory_b);
     stateB.profile.updated_at = interaction.occurred_at;
-    writeWorldActorProfile(nk, stateB.profile, stateB.version);
+    writeWorldActorProfile(nk, userId, stateB.profile, stateB.version);
   }
 
   return JSON.stringify({
@@ -708,13 +708,13 @@ function rpcNpcContextGet(
   nk: nkruntime.Nakama,
   payload: string
 ): string {
-  requireUserId(ctx);
+  var userId = requireUserId(ctx);
   var request = parseJson(payload || "{}", "NPC context payload");
   var actorId = normalizeActorId(request.actor_id || request.npc_id);
-  var state = getOrCreateWorldNpcProfileState(nk, actorId);
+  var state = getOrCreateWorldNpcProfileState(nk, userId, actorId);
   return JSON.stringify({
     actor: state.profile,
-    nearby_actors: nearbyPermanentNpcProfiles(nk, actorId, request.nearby_actor_ids),
+    nearby_actors: nearbyPermanentNpcProfiles(nk, userId, actorId, request.nearby_actor_ids),
     allowed_intents: ["say"],
     interaction_rules: npcInteractionRules(),
     intent_boundary: "LLM chooses intent text; Nakama validates and records only allowed intent requests."
@@ -727,16 +727,16 @@ function rpcNpcIntentSubmit(
   nk: nkruntime.Nakama,
   payload: string
 ): string {
-  requireUserId(ctx);
+  var userId = requireUserId(ctx);
   var request = parseJson(payload || "{}", "NPC intent payload");
-  var state = getOrCreateWorldNpcProfileState(nk, request.actor_id || request.npc_id);
+  var state = getOrCreateWorldNpcProfileState(nk, userId, request.actor_id || request.npc_id);
   var intent = normalizeNpcIntent(request, nk);
   if (intent.intent !== "say") {
     throw new Error("NPC intent is not allowed");
   }
 
   var targetState = intent.target_actor_id
-    ? getOrCreateWorldNpcProfileState(nk, intent.target_actor_id)
+    ? getOrCreateWorldNpcProfileState(nk, userId, intent.target_actor_id)
     : null;
   validateNpcIntentRules(state.profile, targetState ? targetState.profile : null, request);
   var timestamp = intent.requested_at;
@@ -765,7 +765,7 @@ function rpcNpcIntentSubmit(
     );
   }
   state.profile.updated_at = timestamp;
-  writeWorldActorProfile(nk, state.profile, state.version);
+  writeWorldActorProfile(nk, userId, state.profile, state.version);
 
   if (targetState) {
     addActorActivity(targetState.profile, {
@@ -790,7 +790,7 @@ function rpcNpcIntentSubmit(
       0
     );
     targetState.profile.updated_at = timestamp;
-    writeWorldActorProfile(nk, targetState.profile, targetState.version);
+    writeWorldActorProfile(nk, userId, targetState.profile, targetState.version);
   }
 
   return JSON.stringify({
@@ -1287,22 +1287,22 @@ function writeActorProfile(nk: nkruntime.Nakama, profile: any, version: string):
   nk.storageWrite([write]);
 }
 
-function seedPermanentNpcProfiles(nk: nkruntime.Nakama): any[] {
+function seedPermanentNpcProfiles(nk: nkruntime.Nakama, ownerId: string): any[] {
   var profiles: any[] = [];
   for (var index = 0; index < permanentNpcFramePool.length; index += 1) {
-    profiles.push(getOrCreateWorldNpcProfileState(nk, permanentNpcFramePool[index].npc_id).profile);
+    profiles.push(getOrCreateWorldNpcProfileState(nk, ownerId, permanentNpcFramePool[index].npc_id).profile);
   }
   return profiles;
 }
 
-function nearbyPermanentNpcProfiles(nk: nkruntime.Nakama, actorId: string, requestedActorIds: any): any[] {
+function nearbyPermanentNpcProfiles(nk: nkruntime.Nakama, ownerId: string, actorId: string, requestedActorIds: any): any[] {
   var profiles: any[] = [];
   var ids = normalizeNearbyNpcIds(requestedActorIds);
   if (ids.length === 0) {
     for (var index = 0; index < permanentNpcFramePool.length && profiles.length < 4; index += 1) {
       var candidateId = permanentNpcFramePool[index].npc_id;
       if (candidateId !== actorId) {
-        profiles.push(getOrCreateWorldNpcProfileState(nk, candidateId).profile);
+        profiles.push(getOrCreateWorldNpcProfileState(nk, ownerId, candidateId).profile);
       }
     }
     return profiles;
@@ -1310,7 +1310,7 @@ function nearbyPermanentNpcProfiles(nk: nkruntime.Nakama, actorId: string, reque
 
   for (var i = 0; i < ids.length && profiles.length < 8; i += 1) {
     if (ids[i] !== actorId) {
-      profiles.push(getOrCreateWorldNpcProfileState(nk, ids[i]).profile);
+      profiles.push(getOrCreateWorldNpcProfileState(nk, ownerId, ids[i]).profile);
     }
   }
   return profiles;
@@ -1331,38 +1331,38 @@ function normalizeNearbyNpcIds(values: any): string[] {
   return ids;
 }
 
-function getOrCreateWorldNpcProfileState(nk: nkruntime.Nakama, actorId: string): any {
+function getOrCreateWorldNpcProfileState(nk: nkruntime.Nakama, ownerId: string, actorId: string): any {
   var normalizedActorId = normalizeActorId(actorId);
   var frame = findPermanentNpcFrame(normalizedActorId);
   if (!frame) {
     throw new Error("unknown permanent NPC actor");
   }
 
-  var existing = readWorldActorProfile(nk, normalizedActorId);
+  var existing = readWorldActorProfile(nk, ownerId, normalizedActorId);
   if (existing) {
-    return normalizeExistingWorldNpcProfileState(nk, normalizedActorId, existing);
+    return normalizeExistingWorldNpcProfileState(nk, ownerId, normalizedActorId, existing);
   }
 
-  var profile = defaultActorProfile("", normalizedActorId, {
+  var profile = defaultActorProfile(ownerId, normalizedActorId, {
     actor_id: normalizedActorId,
     actor_type: "npc",
     display_name: frame.display_name,
     archetype_id: frame.archetype_id
   });
   try {
-    writeWorldActorProfile(nk, profile, "*");
+    writeWorldActorProfile(nk, ownerId, profile, "*");
   } catch (err) {
-    var raced = readWorldActorProfile(nk, normalizedActorId);
+    var raced = readWorldActorProfile(nk, ownerId, normalizedActorId);
     if (raced) {
-      return normalizeExistingWorldNpcProfileState(nk, normalizedActorId, raced);
+      return normalizeExistingWorldNpcProfileState(nk, ownerId, normalizedActorId, raced);
     }
     throw err;
   }
 
-  var created = readWorldActorProfile(nk, normalizedActorId);
+  var created = readWorldActorProfile(nk, ownerId, normalizedActorId);
   if (created) {
     return {
-      profile: ensureActorProfile(created.value, "", normalizedActorId),
+      profile: ensureActorProfile(created.value, ownerId, normalizedActorId),
       version: created.version
     };
   }
@@ -1373,27 +1373,27 @@ function getOrCreateWorldNpcProfileState(nk: nkruntime.Nakama, actorId: string):
   };
 }
 
-function normalizeExistingWorldNpcProfileState(nk: nkruntime.Nakama, actorId: string, existing: any): any {
+function normalizeExistingWorldNpcProfileState(nk: nkruntime.Nakama, ownerId: string, actorId: string, existing: any): any {
   var needsPersistence = actorProfileNeedsNormalization(existing.value || {});
-  var profile = ensureActorProfile(existing.value || {}, "", actorId);
+  var profile = ensureActorProfile(existing.value || {}, ownerId, actorId);
   if (needsPersistence) {
     profile.updated_at = new Date().toISOString();
     try {
-      writeWorldActorProfile(nk, profile, existing.version);
+      writeWorldActorProfile(nk, ownerId, profile, existing.version);
     } catch (err) {
-      var raced = readWorldActorProfile(nk, actorId);
+      var raced = readWorldActorProfile(nk, ownerId, actorId);
       if (raced) {
         return {
-          profile: ensureActorProfile(raced.value, "", actorId),
+          profile: ensureActorProfile(raced.value, ownerId, actorId),
           version: raced.version
         };
       }
       throw err;
     }
-    var rewritten = readWorldActorProfile(nk, actorId);
+    var rewritten = readWorldActorProfile(nk, ownerId, actorId);
     if (rewritten) {
       return {
-        profile: ensureActorProfile(rewritten.value, "", actorId),
+        profile: ensureActorProfile(rewritten.value, ownerId, actorId),
         version: rewritten.version
       };
     }
@@ -1405,11 +1405,11 @@ function normalizeExistingWorldNpcProfileState(nk: nkruntime.Nakama, actorId: st
   };
 }
 
-function readWorldActorProfile(nk: nkruntime.Nakama, actorId: string): any {
+function readWorldActorProfile(nk: nkruntime.Nakama, ownerId: string, actorId: string): any {
   var objects = nk.storageRead([{
     collection: collectionActor,
-    key: actorStorageKey(actorId),
-    userId: ""
+    key: worldActorStorageKey(actorId),
+    userId: ownerId
   }]);
 
   if (!objects || objects.length === 0) {
@@ -1422,11 +1422,11 @@ function readWorldActorProfile(nk: nkruntime.Nakama, actorId: string): any {
   };
 }
 
-function writeWorldActorProfile(nk: nkruntime.Nakama, profile: any, version: string): void {
+function writeWorldActorProfile(nk: nkruntime.Nakama, ownerId: string, profile: any, version: string): void {
   var write: any = {
     collection: collectionActor,
-    key: actorStorageKey(profile.actor_id),
-    userId: "",
+    key: worldActorStorageKey(profile.actor_id),
+    userId: ownerId,
     value: profile,
     permissionRead: 2,
     permissionWrite: 0
@@ -1470,8 +1470,8 @@ function writeOpenClawBinding(nk: nkruntime.Nakama, binding: any, version: strin
   nk.storageWrite([write]);
 }
 
-function getOrCreateChatChannelState(nk: nkruntime.Nakama, channelId: string): any {
-  var existing = readChatChannel(nk, channelId);
+function getOrCreateChatChannelState(nk: nkruntime.Nakama, ownerId: string, channelId: string): any {
+  var existing = readChatChannel(nk, ownerId, channelId);
   if (existing) {
     return {
       channel: normalizeChatChannel(existing.value || {}, channelId),
@@ -1485,11 +1485,11 @@ function getOrCreateChatChannelState(nk: nkruntime.Nakama, channelId: string): a
   };
 }
 
-function readChatChannel(nk: nkruntime.Nakama, channelId: string): any {
+function readChatChannel(nk: nkruntime.Nakama, ownerId: string, channelId: string): any {
   var objects = nk.storageRead([{
     collection: collectionChat,
     key: chatChannelStorageKey(channelId),
-    userId: ""
+    userId: ownerId
   }]);
 
   if (!objects || objects.length === 0) {
@@ -1502,11 +1502,11 @@ function readChatChannel(nk: nkruntime.Nakama, channelId: string): any {
   };
 }
 
-function writeChatChannel(nk: nkruntime.Nakama, channel: any, version: string): void {
+function writeChatChannel(nk: nkruntime.Nakama, ownerId: string, channel: any, version: string): void {
   var write: any = {
     collection: collectionChat,
     key: chatChannelStorageKey(channel.channel_id),
-    userId: "",
+    userId: ownerId,
     value: channel,
     permissionRead: 2,
     permissionWrite: 0
@@ -3354,6 +3354,10 @@ function normalizeActorId(actorId: any): string {
 
 function actorStorageKey(actorId: string): string {
   return "profile:" + normalizeActorId(actorId);
+}
+
+function worldActorStorageKey(actorId: string): string {
+  return "world_profile:" + normalizeActorId(actorId);
 }
 
 function openClawBindingStorageKey(connectedAgentId: string): string {

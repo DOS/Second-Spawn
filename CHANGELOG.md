@@ -137,6 +137,10 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 
 - Prototype debug panel hotkeys now use Unity Input System keyboard polling
   instead of the disabled legacy input API, stopping Play Mode console spam.
+- Prototype Nakama world storage now scopes permanent NPC profiles and hub chat
+  to the authenticated local session owner, allowing local seed/list RPCs to run.
+- Permanent NPC world profile storage now uses a separate key prefix so it does
+  not overwrite player source-body actor profiles with the same actor ID.
 
 ### Verification
 
