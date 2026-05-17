@@ -129,7 +129,7 @@ assert.equal(
 
 const harness = createRuntimeHarness(module);
 assert.equal(harness.registeredHooks.length, 1);
-assert.equal(harness.registeredRpcs.size, 9);
+assert.equal(harness.registeredRpcs.size, 10);
 assert.ok(harness.registeredRpcs.has("secondspawn_health"));
 assert.ok(harness.registeredRpcs.has("secondspawn_profile_get"));
 assert.ok(harness.registeredRpcs.has("secondspawn_memory_add"));
@@ -139,6 +139,7 @@ assert.ok(harness.registeredRpcs.has("secondspawn_agent_activity_add"));
 assert.ok(harness.registeredRpcs.has("secondspawn_actor_profile_get"));
 assert.ok(harness.registeredRpcs.has("secondspawn_actor_memory_add"));
 assert.ok(harness.registeredRpcs.has("secondspawn_bodytime_event"));
+assert.ok(harness.registeredRpcs.has("secondspawn_reincarnate"));
 
 const createConflictHarness = createRuntimeHarness(module);
 createConflictHarness.conflictNextCreateOnlyWrite();
@@ -174,6 +175,8 @@ const profile = JSON.parse(harness.registeredRpcs.get("secondspawn_profile_get")
 ));
 assert.equal(profile.player.player_id, "user-1");
 assert.equal(profile.body.soul.name, "user-1");
+assert.equal(profile.player.second_balance_seconds, 604800);
+assert.equal(profile.player.reincarnation_count, 0);
 assert.equal(profile.body.memory.length, 1);
 assert.equal(profile.body.equipment.primary_weapon, "none");
 assert.equal(profile.body.equipment.equipment_visual_id, 0);
@@ -588,6 +591,92 @@ assert.throws(
     })
   ),
   /source is not allowed/
+);
+
+const reincarnationHarness = createRuntimeHarness(module);
+reincarnationHarness.registeredRpcs.get("secondspawn_profile_get")(
+  { userId: "reincarnation-user", env: {} },
+  reincarnationHarness.logger,
+  reincarnationHarness.nk,
+  ""
+);
+const reincarnationStoredProfile = reincarnationHarness.storage.get(storageKey("reincarnation-user", "secondspawn_agent", "context"));
+reincarnationStoredProfile.value.body.time.remaining_seconds = 60;
+reincarnationHarness.registeredRpcs.get("secondspawn_bodytime_event")(
+  { userId: "reincarnation-user", env: {} },
+  reincarnationHarness.logger,
+  reincarnationHarness.nk,
+  JSON.stringify({
+    id: "reincarnation-drain-1",
+    kind: "drain",
+    source: "danger_zone_tick",
+    amount_seconds: 120
+  })
+);
+const reincarnatedProfile = JSON.parse(reincarnationHarness.registeredRpcs.get("secondspawn_reincarnate")(
+  { userId: "reincarnation-user", env: {} },
+  reincarnationHarness.logger,
+  reincarnationHarness.nk,
+  JSON.stringify({
+    id: "reincarnation-1",
+    reason: "prototype zero-time recovery"
+  })
+));
+assert.equal(reincarnatedProfile.player.second_balance_seconds, 172800);
+assert.equal(reincarnatedProfile.player.reincarnation_count, 1);
+assert.equal(reincarnatedProfile.body.body_id, "body-reincarnation-user-r1");
+assert.equal(reincarnatedProfile.body.lifecycle, "alive");
+assert.equal(reincarnatedProfile.body.time.remaining_seconds, 86400);
+assert.equal(reincarnatedProfile.body.agent_activity[0].id, "reincarnation-1");
+assert.equal(reincarnatedProfile.body.agent_activity[0].kind, "reincarnation");
+assert.match(reincarnatedProfile.body.memory[0].summary, /Consciousness transferred/);
+
+const retriedReincarnation = JSON.parse(reincarnationHarness.registeredRpcs.get("secondspawn_reincarnate")(
+  { userId: "reincarnation-user", env: {} },
+  reincarnationHarness.logger,
+  reincarnationHarness.nk,
+  JSON.stringify({
+    id: "reincarnation-1",
+    reason: "retry should not spend twice"
+  })
+));
+assert.equal(retriedReincarnation.player.second_balance_seconds, 172800);
+assert.equal(retriedReincarnation.player.reincarnation_count, 1);
+assert.equal(retriedReincarnation.body.agent_activity.filter((activity) => activity.id === "reincarnation-1").length, 1);
+assert.throws(
+  () => reincarnationHarness.registeredRpcs.get("secondspawn_reincarnate")(
+    { userId: "reincarnation-user", env: {} },
+    reincarnationHarness.logger,
+    reincarnationHarness.nk,
+    JSON.stringify({
+      id: "reincarnation-2",
+      reason: "alive bodies cannot reincarnate"
+    })
+  ),
+  /body must be dead/
+);
+
+const insufficientReincarnationHarness = createRuntimeHarness(module);
+insufficientReincarnationHarness.registeredRpcs.get("secondspawn_profile_get")(
+  { userId: "insufficient-second-user", env: {} },
+  insufficientReincarnationHarness.logger,
+  insufficientReincarnationHarness.nk,
+  ""
+);
+const insufficientProfile = insufficientReincarnationHarness.storage.get(storageKey("insufficient-second-user", "secondspawn_agent", "context"));
+insufficientProfile.value.player.second_balance_seconds = 100;
+insufficientProfile.value.body.lifecycle = "dead";
+insufficientProfile.value.body.time.remaining_seconds = 0;
+assert.throws(
+  () => insufficientReincarnationHarness.registeredRpcs.get("secondspawn_reincarnate")(
+    { userId: "insufficient-second-user", env: {} },
+    insufficientReincarnationHarness.logger,
+    insufficientReincarnationHarness.nk,
+    JSON.stringify({
+      id: "reincarnation-insufficient-1"
+    })
+  ),
+  /insufficient SECOND balance/
 );
 
 const interactHarness = createRuntimeHarness(module);

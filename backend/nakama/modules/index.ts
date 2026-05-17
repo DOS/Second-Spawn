@@ -17,6 +17,7 @@ var rpcIdAgentActivityAdd = "secondspawn_agent_activity_add";
 var rpcIdActorProfileGet = "secondspawn_actor_profile_get";
 var rpcIdActorMemoryAdd = "secondspawn_actor_memory_add";
 var rpcIdBodyTimeEvent = "secondspawn_bodytime_event";
+var rpcIdReincarnate = "secondspawn_reincarnate";
 var agentActivityLogLimit = 32;
 var agentRuntimeMetricMax = 1000000000;
 var actorIdMaxLength = 56;
@@ -25,6 +26,9 @@ var bodyTimeEarnCapSeconds = 3600;
 var bodyTimeSpendCapSeconds = 600;
 var bodyTimeDrainCapSeconds = 300;
 var bodyTimeEarnCooldownSeconds = 60;
+var secondPrototypeMaxBalanceSeconds = 86400 * 365;
+var secondPrototypeStartingBalanceSeconds = 86400 * 7;
+var secondPrototypeReincarnationCostSeconds = 86400 * 5;
 
 let InitModule: nkruntime.InitModule = function (
   ctx: nkruntime.Context,
@@ -41,6 +45,7 @@ let InitModule: nkruntime.InitModule = function (
   initializer.registerRpc(rpcIdActorProfileGet, rpcActorProfileGet);
   initializer.registerRpc(rpcIdActorMemoryAdd, rpcActorMemoryAdd);
   initializer.registerRpc(rpcIdBodyTimeEvent, rpcBodyTimeEvent);
+  initializer.registerRpc(rpcIdReincarnate, rpcReincarnate);
   initializer.registerBeforeAuthenticateCustom(beforeAuthenticateCustom);
   logger.info("Second Spawn Nakama runtime loaded.");
 };
@@ -249,6 +254,33 @@ function rpcBodyTimeEvent(
   }
 
   applyBodyTimeEvent(context, event, nk);
+  writeAgentContext(nk, context, state.version);
+  return JSON.stringify(context);
+}
+
+function rpcReincarnate(
+  ctx: nkruntime.Context,
+  logger: nkruntime.Logger,
+  nk: nkruntime.Nakama,
+  payload: string
+): string {
+  var state = getOrCreateAgentContextState(ctx, nk);
+  var context = state.context;
+  var request = parseJson(payload || "{}", "reincarnation payload");
+
+  ensureSecondBalance(context);
+  ensureBodyTime(context);
+  if (request.id && hasAgentActivityId(context.body.agent_activity || [], trimString(request.id))) {
+    return JSON.stringify(context);
+  }
+  if (context.body.lifecycle !== "dead") {
+    throw new Error("body must be dead before reincarnation");
+  }
+  if (context.player.second_balance_seconds < secondPrototypeReincarnationCostSeconds) {
+    throw new Error("insufficient SECOND balance for reincarnation");
+  }
+
+  reincarnateBody(context, request, nk);
   writeAgentContext(nk, context, state.version);
   return JSON.stringify(context);
 }
@@ -569,39 +601,45 @@ function defaultAgentContext(playerId: string): any {
     player: {
       player_id: playerId,
       display_name: displayName,
+      second_balance_seconds: secondPrototypeStartingBalanceSeconds,
+      reincarnation_count: 0,
       created_at: timestamp
     },
-    body: {
-      body_id: "body-" + playerId,
-      archetype_id: "prototype-hunter",
-      visual_prefab_key: "prototype-random",
-      equipment: normalizeEquipment({}),
-      stats: defaultCharacterStats(),
-      characteristics: normalizeTraits({}),
-      time: {
-        remaining_seconds: 86400,
-        max_seconds: 86400,
-        danger_drain_rate: 1
-      },
-      lifecycle: "alive",
-      agent_policy: normalizePolicy({}),
-      soul: normalizeSoul({}, displayName),
-      memory: [{
-        id: "seed-origin",
-        kind: "system",
-        summary: "The character is a Second Spawn prototype body controlled by the player or their offline agent.",
-        importance: 6
-      }],
-      agent_runtime: defaultAgentRuntime(timestamp),
-      agent_activity: [{
-        id: "activity-bootstrap",
-        kind: "profile_bootstrap",
-        summary: "Initial Nakama profile and prototype body stats were created.",
-        occurred_at: timestamp,
-        source: "nakama"
-      }],
-      created_at: timestamp
-    }
+    body: defaultBodyProfile(playerId, displayName, timestamp)
+  };
+}
+
+function defaultBodyProfile(playerId: string, displayName: string, timestamp: string): any {
+  return {
+    body_id: "body-" + playerId,
+    archetype_id: "prototype-hunter",
+    visual_prefab_key: "prototype-random",
+    equipment: normalizeEquipment({}),
+    stats: defaultCharacterStats(),
+    characteristics: normalizeTraits({}),
+    time: {
+      remaining_seconds: 86400,
+      max_seconds: 86400,
+      danger_drain_rate: 1
+    },
+    lifecycle: "alive",
+    agent_policy: normalizePolicy({}),
+    soul: normalizeSoul({}, displayName),
+    memory: [{
+      id: "seed-origin",
+      kind: "system",
+      summary: "The character is a Second Spawn prototype body controlled by the player or their offline agent.",
+      importance: 6
+    }],
+    agent_runtime: defaultAgentRuntime(timestamp),
+    agent_activity: [{
+      id: "activity-bootstrap",
+      kind: "profile_bootstrap",
+      summary: "Initial Nakama profile and prototype body stats were created.",
+      occurred_at: timestamp,
+      source: "nakama"
+    }],
+    created_at: timestamp
   };
 }
 
@@ -611,6 +649,7 @@ function ensureAgentContext(context: any, playerId: string): any {
   context.player.player_id = trimString(context.player.player_id) || playerId;
   context.player.display_name = trimString(context.player.display_name) || context.player.player_id;
   context.player.created_at = trimString(context.player.created_at) || timestamp;
+  ensureSecondBalance(context);
   context.body = context.body || {};
   context.body.body_id = trimString(context.body.body_id) || "body-" + context.player.player_id;
   context.body.archetype_id = trimString(context.body.archetype_id) || "prototype-hunter";
@@ -668,6 +707,22 @@ function ensureAgentRuntime(context: any): boolean {
   context.body.agent_runtime.offline_seconds = clampNumber(context.body.agent_runtime.offline_seconds || 0, 0, agentRuntimeMetricMax);
   context.body.agent_runtime.activity_count = clampNumber(context.body.agent_runtime.activity_count || context.body.agent_activity.length, 0, agentRuntimeMetricMax);
   return changed;
+}
+
+function ensureSecondBalance(context: any): void {
+  if (!context.player) {
+    context.player = {};
+  }
+  context.player.second_balance_seconds = clampNumber(
+    Math.floor(finiteNumberOrDefault(context.player.second_balance_seconds, secondPrototypeStartingBalanceSeconds)),
+    0,
+    secondPrototypeMaxBalanceSeconds
+  );
+  context.player.reincarnation_count = clampNumber(
+    Math.floor(finiteNumberOrDefault(context.player.reincarnation_count, 0)),
+    0,
+    agentRuntimeMetricMax
+  );
 }
 
 function defaultAgentRuntime(timestamp: string): any {
@@ -833,6 +888,49 @@ function applyBodyTimeEvent(context: any, event: any, nk: nkruntime.Nakama): voi
   }, nk);
 }
 
+function reincarnateBody(context: any, request: any, nk: nkruntime.Nakama): void {
+  var timestamp = new Date().toISOString();
+  var previousBody = context.body || {};
+  var durableSoul = previousBody.soul || normalizeSoul({}, context.player.display_name || context.player.player_id);
+  var durableMemory = previousBody.memory || [];
+  var durablePolicy = previousBody.agent_policy || normalizePolicy({});
+  var durableTraits = previousBody.characteristics || normalizeTraits({});
+  var nextCount = Math.floor(context.player.reincarnation_count || 0) + 1;
+  var nextBody = defaultBodyProfile(context.player.player_id, context.player.display_name || context.player.player_id, timestamp);
+
+  nextBody.body_id = "body-" + sanitizeNakamaIdentifier(context.player.player_id || "player", "player") + "-r" + nextCount;
+  nextBody.soul = durableSoul;
+  nextBody.memory = sortAndBoundMemories(durableMemory.concat([{
+    id: newMemoryId({ player: context.player, body: { memory: durableMemory } }, nk),
+    kind: "system",
+    summary: "Consciousness transferred into a fresh prototype body through reincarnation.",
+    importance: 8
+  }]));
+  nextBody.agent_policy = normalizePolicy(durablePolicy);
+  nextBody.characteristics = normalizeTraits(durableTraits);
+  nextBody.agent_runtime = previousBody.agent_runtime || defaultAgentRuntime(timestamp);
+  nextBody.agent_activity = previousBody.agent_activity || [];
+  nextBody.reincarnated_from_body_id = trimString(previousBody.body_id);
+  nextBody.reincarnated_at = timestamp;
+
+  context.player.second_balance_seconds -= secondPrototypeReincarnationCostSeconds;
+  context.player.reincarnation_count = nextCount;
+  context.body = nextBody;
+
+  addAgentActivity(context, {
+    id: trimString(request.id) || "",
+    kind: "reincarnation",
+    summary: "Reincarnated into a fresh prototype body for " + secondPrototypeReincarnationCostSeconds + " SECOND seconds.",
+    occurred_at: timestamp,
+    source: "nakama",
+    metrics: {
+      second_cost_seconds: secondPrototypeReincarnationCostSeconds,
+      second_balance_after_seconds: context.player.second_balance_seconds,
+      reincarnation_count: context.player.reincarnation_count
+    }
+  }, nk);
+}
+
 function hasRecentBodyTimeEvent(context: any, event: any, cooldownSeconds: number): boolean {
   var activities = context.body.agent_activity || [];
   var nowMs = new Date().getTime();
@@ -955,6 +1053,7 @@ function normalizeAgentActivityKind(kind: any): string {
     value === "offline_session" ||
     value === "agent_decision" ||
     value === "body_time" ||
+    value === "reincarnation" ||
     value === "memory_sync" ||
     value === "manual_note"
   ) {
