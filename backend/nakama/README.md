@@ -109,8 +109,14 @@ The current prototype module registers:
 - `secondspawn_npc_list` - read the permanent prototype NPC Frame pool for
   clients and debug tools
 - `secondspawn_npc_interact` - record a deterministic prototype interaction
-  between two permanent NPCs, updating both activity logs and relationship
-  memories
+  between two permanent NPCs for fallback smoke testing only; this is not the
+  main NPC brain
+- `secondspawn_npc_context_get` - return server-owned NPC context and nearby
+  actor context for an LLM worker or gateway decision call, including hard
+  interaction limits and soft prompt guidance
+- `secondspawn_npc_intent_submit` - accept a validated NPC intent selected by
+  the LLM path, currently limited to bounded `say` intent records; validates
+  distance, hostility, and repeated low-affinity interactions
 - `secondspawn_openclaw_bind` - bind a user-owned external OpenClaw agent to a
   server-owned Frame actor through `frame_actor_id`, `connected_agent_id`,
   consent, moderation, connection status, and rate limit metadata

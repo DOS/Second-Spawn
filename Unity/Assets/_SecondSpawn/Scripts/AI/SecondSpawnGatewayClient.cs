@@ -241,6 +241,16 @@ namespace SecondSpawn.AI
             yield return SendNakamaRpc("secondspawn_npc_interact", request, onSuccess, onError);
         }
 
+        public IEnumerator GetPermanentNpcContext(NpcContextRequestDto request, Action<NpcContextResponseDto> onSuccess, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_npc_context_get", request, onSuccess, onError);
+        }
+
+        public IEnumerator SubmitPermanentNpcIntent(NpcIntentSubmitRequestDto request, Action<NpcIntentSubmitResponseDto> onSuccess, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_npc_intent_submit", request, onSuccess, onError);
+        }
+
         public IEnumerator GetContextForPlayer(string playerId, Action<AgentContextDto> onSuccess, Action<string> onError = null)
         {
             yield return Send<AgentContextDto>(

@@ -129,7 +129,7 @@ assert.equal(
 
 const harness = createRuntimeHarness(module);
 assert.equal(harness.registeredHooks.length, 1);
-assert.equal(harness.registeredRpcs.size, 20);
+assert.equal(harness.registeredRpcs.size, 22);
 assert.ok(harness.registeredRpcs.has("secondspawn_health"));
 assert.ok(harness.registeredRpcs.has("secondspawn_profile_get"));
 assert.ok(harness.registeredRpcs.has("secondspawn_memory_add"));
@@ -150,6 +150,8 @@ assert.ok(harness.registeredRpcs.has("secondspawn_reward_claim"));
 assert.ok(harness.registeredRpcs.has("secondspawn_npc_seed"));
 assert.ok(harness.registeredRpcs.has("secondspawn_npc_list"));
 assert.ok(harness.registeredRpcs.has("secondspawn_npc_interact"));
+assert.ok(harness.registeredRpcs.has("secondspawn_npc_context_get"));
+assert.ok(harness.registeredRpcs.has("secondspawn_npc_intent_submit"));
 
 const createConflictHarness = createRuntimeHarness(module);
 createConflictHarness.conflictNextCreateOnlyWrite();
@@ -235,6 +237,73 @@ const listedNpcs = JSON.parse(harness.registeredRpcs.get("secondspawn_npc_list")
 ));
 assert.equal(listedNpcs.count, 10);
 assert.equal(listedNpcs.npcs[3].actor_id, "npc-scrap-warden-0441");
+
+const npcContext = JSON.parse(harness.registeredRpcs.get("secondspawn_npc_context_get")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  JSON.stringify({
+    actor_id: "npc-synthetic-sentinel-0101",
+    nearby_actor_ids: ["npc-wasteland-courier-0244"]
+  })
+));
+assert.equal(npcContext.actor.actor_id, "npc-synthetic-sentinel-0101");
+assert.equal(npcContext.nearby_actors.length, 1);
+assert.equal(npcContext.nearby_actors[0].actor_id, "npc-wasteland-courier-0244");
+assert.ok(npcContext.allowed_intents.includes("say"));
+assert.equal(npcContext.interaction_rules.max_distance_meters, 12);
+assert.ok(npcContext.interaction_rules.soft_prompt_guidance.some((rule) => /affinity/.test(rule)));
+
+const npcIntent = JSON.parse(harness.registeredRpcs.get("secondspawn_npc_intent_submit")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  JSON.stringify({
+    id: "npc-intent-1",
+    actor_id: "npc-synthetic-sentinel-0101",
+    target_actor_id: "npc-wasteland-courier-0244",
+    intent: "say",
+    source: "llm",
+    text: "Route check complete. Keep the eastern gate quiet."
+  })
+));
+assert.equal(npcIntent.accepted, true);
+assert.equal(npcIntent.intent.intent, "say");
+assert.equal(npcIntent.actor.agent_activity[0].id, "npc-intent-1-actor");
+assert.equal(npcIntent.target_actor.agent_activity[0].id, "npc-intent-1-target");
+assert.equal(npcIntent.actor.relationships[0].actor_id, "npc-wasteland-courier-0244");
+assert.equal(npcIntent.actor.relationships[0].affinity, 4);
+assert.equal(npcIntent.actor.relationships[0].familiarity_count, 1);
+assert.ok(npcIntent.actor.memory.some((memory) => /Route check complete/.test(memory.summary)));
+assert.ok(npcIntent.target_actor.memory.some((memory) => /Route check complete/.test(memory.summary)));
+assert.throws(
+  () => harness.registeredRpcs.get("secondspawn_npc_intent_submit")(
+    { userId: "user-1", env: {} },
+    harness.logger,
+    harness.nk,
+    JSON.stringify({
+      actor_id: "npc-synthetic-sentinel-0101",
+      target_actor_id: "npc-wasteland-courier-0244",
+      intent: "say",
+      text: "Too far.",
+      distance_meters: 13
+    })
+  ),
+  /too far away/
+);
+assert.throws(
+  () => harness.registeredRpcs.get("secondspawn_npc_intent_submit")(
+    { userId: "user-1", env: {} },
+    harness.logger,
+    harness.nk,
+    JSON.stringify({
+      actor_id: "npc-synthetic-sentinel-0101",
+      intent: "grant_item",
+      text: "Give me loot."
+    })
+  ),
+  /NPC intent is not allowed/
+);
 
 const npcInteraction = JSON.parse(harness.registeredRpcs.get("secondspawn_npc_interact")(
   { userId: "user-1", env: {} },

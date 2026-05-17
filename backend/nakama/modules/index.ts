@@ -30,9 +30,15 @@ var rpcIdRewardClaim = "secondspawn_reward_claim";
 var rpcIdNpcSeed = "secondspawn_npc_seed";
 var rpcIdNpcList = "secondspawn_npc_list";
 var rpcIdNpcInteract = "secondspawn_npc_interact";
+var rpcIdNpcContextGet = "secondspawn_npc_context_get";
+var rpcIdNpcIntentSubmit = "secondspawn_npc_intent_submit";
 var agentActivityLogLimit = 32;
 var chatMessageLogLimit = 64;
 var chatMessageMaxLength = 240;
+var npcInteractionMaxDistanceMeters = 12;
+var npcRelationshipMinAffinityForFrequent = 20;
+var npcHostilityBlockThreshold = 80;
+var npcFrequentInteractionCount = 3;
 var agentRuntimeMetricMax = 1000000000;
 var actorIdMaxLength = 56;
 var bodyTimeMaxSeconds = 86400 * 30;
@@ -287,6 +293,8 @@ let InitModule: nkruntime.InitModule = function (
   initializer.registerRpc(rpcIdNpcSeed, rpcNpcSeed);
   initializer.registerRpc(rpcIdNpcList, rpcNpcList);
   initializer.registerRpc(rpcIdNpcInteract, rpcNpcInteract);
+  initializer.registerRpc(rpcIdNpcContextGet, rpcNpcContextGet);
+  initializer.registerRpc(rpcIdNpcIntentSubmit, rpcNpcIntentSubmit);
   initializer.registerBeforeAuthenticateCustom(beforeAuthenticateCustom);
   logger.info("Second Spawn Nakama runtime loaded.");
 };
@@ -691,6 +699,106 @@ function rpcNpcInteract(
     interaction: interaction.public_event,
     actor_a: stateA.profile,
     actor_b: stateB.profile
+  });
+}
+
+function rpcNpcContextGet(
+  ctx: nkruntime.Context,
+  logger: nkruntime.Logger,
+  nk: nkruntime.Nakama,
+  payload: string
+): string {
+  requireUserId(ctx);
+  var request = parseJson(payload || "{}", "NPC context payload");
+  var actorId = normalizeActorId(request.actor_id || request.npc_id);
+  var state = getOrCreateWorldNpcProfileState(nk, actorId);
+  return JSON.stringify({
+    actor: state.profile,
+    nearby_actors: nearbyPermanentNpcProfiles(nk, actorId, request.nearby_actor_ids),
+    allowed_intents: ["say"],
+    interaction_rules: npcInteractionRules(),
+    intent_boundary: "LLM chooses intent text; Nakama validates and records only allowed intent requests."
+  });
+}
+
+function rpcNpcIntentSubmit(
+  ctx: nkruntime.Context,
+  logger: nkruntime.Logger,
+  nk: nkruntime.Nakama,
+  payload: string
+): string {
+  requireUserId(ctx);
+  var request = parseJson(payload || "{}", "NPC intent payload");
+  var state = getOrCreateWorldNpcProfileState(nk, request.actor_id || request.npc_id);
+  var intent = normalizeNpcIntent(request, nk);
+  if (intent.intent !== "say") {
+    throw new Error("NPC intent is not allowed");
+  }
+
+  var targetState = intent.target_actor_id
+    ? getOrCreateWorldNpcProfileState(nk, intent.target_actor_id)
+    : null;
+  validateNpcIntentRules(state.profile, targetState ? targetState.profile : null, request);
+  var timestamp = intent.requested_at;
+  var targetName = targetState ? targetState.profile.display_name : "the hub";
+  addActorActivity(state.profile, {
+    id: intent.id + "-actor",
+    kind: "npc_intent",
+    summary: state.profile.display_name + " said to " + targetName + ": " + intent.payload.text,
+    occurred_at: timestamp,
+    source: intent.source,
+    target_actor_id: intent.target_actor_id,
+    intent: intent
+  });
+  state.profile.memory = upsertMemoryRecord(state.profile.memory || [], {
+    id: "mem-" + state.profile.actor_id + "-" + intent.id,
+    kind: "relationship",
+    summary: "Said to " + targetName + ": " + intent.payload.text,
+    importance: 5
+  });
+  if (targetState) {
+    state.profile.relationships = upsertRelationshipRecord(
+      state.profile.relationships || [],
+      targetState.profile,
+      4,
+      0
+    );
+  }
+  state.profile.updated_at = timestamp;
+  writeWorldActorProfile(nk, state.profile, state.version);
+
+  if (targetState) {
+    addActorActivity(targetState.profile, {
+      id: intent.id + "-target",
+      kind: "npc_intent_observed",
+      summary: state.profile.display_name + " said: " + intent.payload.text,
+      occurred_at: timestamp,
+      source: intent.source,
+      target_actor_id: state.profile.actor_id,
+      intent: intent
+    });
+    targetState.profile.memory = upsertMemoryRecord(targetState.profile.memory || [], {
+      id: "mem-" + targetState.profile.actor_id + "-" + intent.id,
+      kind: "relationship",
+      summary: state.profile.display_name + " said: " + intent.payload.text,
+      importance: 5
+    });
+    targetState.profile.relationships = upsertRelationshipRecord(
+      targetState.profile.relationships || [],
+      state.profile,
+      2,
+      0
+    );
+    targetState.profile.updated_at = timestamp;
+    writeWorldActorProfile(nk, targetState.profile, targetState.version);
+  }
+
+  return JSON.stringify({
+    accepted: true,
+    status: "recorded",
+    intent: intent,
+    actor: state.profile,
+    target_actor: targetState ? targetState.profile : null
   });
 }
 
@@ -1187,6 +1295,42 @@ function seedPermanentNpcProfiles(nk: nkruntime.Nakama): any[] {
   return profiles;
 }
 
+function nearbyPermanentNpcProfiles(nk: nkruntime.Nakama, actorId: string, requestedActorIds: any): any[] {
+  var profiles: any[] = [];
+  var ids = normalizeNearbyNpcIds(requestedActorIds);
+  if (ids.length === 0) {
+    for (var index = 0; index < permanentNpcFramePool.length && profiles.length < 4; index += 1) {
+      var candidateId = permanentNpcFramePool[index].npc_id;
+      if (candidateId !== actorId) {
+        profiles.push(getOrCreateWorldNpcProfileState(nk, candidateId).profile);
+      }
+    }
+    return profiles;
+  }
+
+  for (var i = 0; i < ids.length && profiles.length < 8; i += 1) {
+    if (ids[i] !== actorId) {
+      profiles.push(getOrCreateWorldNpcProfileState(nk, ids[i]).profile);
+    }
+  }
+  return profiles;
+}
+
+function normalizeNearbyNpcIds(values: any): string[] {
+  var ids: string[] = [];
+  if (!values || typeof values.length !== "number") {
+    return ids;
+  }
+
+  for (var index = 0; index < values.length; index += 1) {
+    var id = normalizeActorId(values[index]);
+    if (findPermanentNpcFrame(id)) {
+      ids.push(id);
+    }
+  }
+  return ids;
+}
+
 function getOrCreateWorldNpcProfileState(nk: nkruntime.Nakama, actorId: string): any {
   var normalizedActorId = normalizeActorId(actorId);
   var frame = findPermanentNpcFrame(normalizedActorId);
@@ -1593,6 +1737,46 @@ function prototypeNpcInteraction(actorA: any, actorB: any, request: any, nk: nkr
   };
 }
 
+function npcInteractionRules(): any {
+  return {
+    max_distance_meters: npcInteractionMaxDistanceMeters,
+    relationship_min_affinity_for_frequent_interaction: npcRelationshipMinAffinityForFrequent,
+    hostility_block_threshold: npcHostilityBlockThreshold,
+    frequent_interaction_count: npcFrequentInteractionCount,
+    hard_limits: [
+      "NPCs may only interact when server or Fusion context says they are nearby.",
+      "NPCs may not repeatedly seek low-affinity actors once familiarity is high.",
+      "NPCs may not voluntarily socialize with actors above the hostility block threshold."
+    ],
+    soft_prompt_guidance: [
+      "Prefer NPCs with higher affinity and shared memories.",
+      "Use hostility, familiarity, role, soul, and recent activity to choose tone.",
+      "When affinity is low, keep exchanges short unless a quest, danger, or duty reason exists."
+    ]
+  };
+}
+
+function validateNpcIntentRules(actor: any, target: any, request: any): void {
+  var distanceMeters = finiteNumberOrDefault(firstDefined(request.distance_meters, request.distance), 0);
+  if (distanceMeters > npcInteractionMaxDistanceMeters) {
+    throw new Error("NPC target is too far away for interaction");
+  }
+  if (!target) {
+    return;
+  }
+
+  var relationship = findRelationshipRecord(actor.relationships || [], target.actor_id);
+  if (relationship.hostility >= npcHostilityBlockThreshold) {
+    throw new Error("NPC relationship hostility blocks voluntary interaction");
+  }
+  if (
+    relationship.familiarity_count >= npcFrequentInteractionCount &&
+    relationship.affinity < npcRelationshipMinAffinityForFrequent
+  ) {
+    throw new Error("NPC relationship affinity is too low for frequent interaction");
+  }
+}
+
 function normalizeNpcInteractionTopic(value: any): string {
   var topic = sanitizeNakamaIdentifier(trimString(value), "bodytime");
   if (
@@ -1626,6 +1810,135 @@ function prototypeNpcLine(speaker: any, listener: any, topic: string): string {
     return listenerName + ", I heard this again: " + (trimString(story.rumor) || drive);
   }
   return listenerName + ", watch the remaining SECOND. " + drive;
+}
+
+function normalizeNpcIntent(request: any, nk: nkruntime.Nakama): any {
+  var timestamp = new Date().toISOString();
+  var intent = trimString(request.intent || "say");
+  var payload = request.payload || {};
+  var text = trimString(payload.text || request.text || request.say);
+  if (!text) {
+    throw new Error("NPC say intent text is required");
+  }
+  if (text.length > chatMessageMaxLength) {
+    text = text.substring(0, chatMessageMaxLength).trim();
+  }
+
+  var targetActorId = trimString(payload.target_actor_id || request.target_actor_id || request.target_id);
+  if (targetActorId) {
+    targetActorId = normalizeActorId(targetActorId);
+    if (!findPermanentNpcFrame(targetActorId)) {
+      throw new Error("unknown target NPC actor");
+    }
+  }
+
+  return {
+    id: normalizeNpcIntentId(request.id, nk),
+    intent: intent,
+    source: normalizeNpcIntentSource(request.source),
+    reason: trimString(request.reason) || "LLM-driven NPC intent.",
+    requested_at: timestamp,
+    target_actor_id: targetActorId,
+    payload: {
+      text: text,
+      target_actor_id: targetActorId
+    }
+  };
+}
+
+function normalizeNpcIntentId(value: any, nk: nkruntime.Nakama): string {
+  var id = sanitizeNakamaIdentifier(trimString(value), "");
+  if (id) {
+    return id.length > 96 ? id.substring(0, 96) : id;
+  }
+  return "npc-intent-" + nk.uuidv4();
+}
+
+function normalizeNpcIntentSource(value: any): string {
+  var source = trimString(value);
+  if (source === "llm" || source === "gateway" || source === "debug" || source === "fallback") {
+    return source;
+  }
+  return "llm";
+}
+
+function findRelationshipRecord(relationships: any[], actorId: string): any {
+  var normalizedActorId = normalizeActorId(actorId);
+  if (relationships && typeof relationships.length === "number") {
+    for (var index = 0; index < relationships.length; index += 1) {
+      var relationship = normalizeRelationshipRecord(relationships[index] || {});
+      if (relationship.actor_id === normalizedActorId) {
+        return relationship;
+      }
+    }
+  }
+
+  return normalizeRelationshipRecord({ actor_id: normalizedActorId });
+}
+
+function upsertRelationshipRecord(relationships: any[], target: any, affinityDelta: number, hostilityDelta: number): any[] {
+  var normalizedTargetId = normalizeActorId(target.actor_id);
+  var now = new Date().toISOString();
+  var updated = false;
+  var records: any[] = [];
+  if (relationships && typeof relationships.length === "number") {
+    for (var index = 0; index < relationships.length; index += 1) {
+      var record = normalizeRelationshipRecord(relationships[index] || {});
+      if (record.actor_id === normalizedTargetId) {
+        record.display_name = trimString(target.display_name) || record.display_name;
+        record.affinity = clampNumber(record.affinity + affinityDelta, -100, 100);
+        record.hostility = clampNumber(record.hostility + hostilityDelta, 0, 100);
+        record.familiarity_count = clampNumber(record.familiarity_count + 1, 0, 1000000);
+        record.last_interaction_at = now;
+        updated = true;
+      }
+      records.push(record);
+    }
+  }
+
+  if (!updated) {
+    records.push(normalizeRelationshipRecord({
+      actor_id: normalizedTargetId,
+      display_name: target.display_name,
+      affinity: affinityDelta,
+      hostility: hostilityDelta,
+      familiarity_count: 1,
+      last_interaction_at: now
+    }));
+  }
+
+  records.sort(function (a: any, b: any): number {
+    var familiarityDelta = Number(b.familiarity_count || 0) - Number(a.familiarity_count || 0);
+    if (familiarityDelta !== 0) {
+      return familiarityDelta;
+    }
+    return Number(b.affinity || 0) - Number(a.affinity || 0);
+  });
+  return records.length > 64 ? records.slice(0, 64) : records;
+}
+
+function normalizeRelationshipRecord(record: any): any {
+  var actorId = normalizeActorId(record.actor_id || "unknown-actor");
+  return {
+    actor_id: actorId,
+    display_name: trimString(record.display_name) || actorDisplayName(actorId),
+    affinity: clampNumber(numberOrDefault(record.affinity, 0), -100, 100),
+    hostility: clampNumber(numberOrDefault(record.hostility, 0), 0, 100),
+    familiarity_count: clampNumber(numberOrDefault(record.familiarity_count, 0), 0, 1000000),
+    last_interaction_at: trimString(record.last_interaction_at)
+  };
+}
+
+function normalizeRelationshipRecords(records: any[]): any[] {
+  var normalized: any[] = [];
+  if (!records || typeof records.length !== "number") {
+    return normalized;
+  }
+
+  for (var index = 0; index < records.length; index += 1) {
+    normalized.push(normalizeRelationshipRecord(records[index] || {}));
+  }
+  return normalized.length > 64 ? normalized.slice(0, 64) : normalized;
 }
 
 function defaultActorProfile(ownerId: string, actorId: string, request: any): any {
@@ -1676,6 +1989,7 @@ function defaultActorProfile(ownerId: string, actorId: string, request: any): an
       summary: trimString(archetype.seed_memory_summary) || "This actor is an NPC-like body profile with separate memory, stats, traits, soul, and policy.",
       importance: 6
     }],
+    relationships: normalizeRelationshipRecords(request.relationships || []),
     agent_runtime: defaultAgentRuntime(timestamp),
     agent_activity: [{
       id: "activity-bootstrap",
@@ -1722,6 +2036,7 @@ function ensureActorProfile(profile: any, ownerId: string, actorId: string): any
   profile.body.agent_policy = normalizePolicy(profile.body.agent_policy || {});
   profile.body.soul = normalizeSoulWithDefaults(profile.body.soul || { name: profile.display_name }, archetype.soul || {}, profile.display_name);
   profile.memory = sortAndBoundMemories(profile.memory || []);
+  profile.relationships = normalizeRelationshipRecords(profile.relationships || []);
   profile.agent_runtime = profile.agent_runtime || defaultAgentRuntime(timestamp);
   profile.agent_activity = profile.agent_activity || [];
   profile.created_at = trimString(profile.created_at) || timestamp;

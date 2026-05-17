@@ -67,8 +67,15 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 - Nakama now exposes server-owned permanent NPC seed/list RPCs and a prototype
   NPC-to-NPC interaction RPC that records dialogue, activity, and relationship
   memory on both actors.
+- Nakama now exposes the LLM-driven NPC context and intent boundary:
+  `secondspawn_npc_context_get` returns context plus interaction rules, and
+  `secondspawn_npc_intent_submit` validates bounded `say` intents against
+  distance, hostility, affinity, and repeated-interaction rules.
 - Unity now has a Persistent NPC Debug panel for seeding, listing, and
-  triggering prototype interaction ticks between permanent NPC Frames.
+  smoke-testing LLM-style NPC context and say-intent submission between
+  permanent NPC Frames.
+- Prototype debug panels now default to hidden hotkey toggles so they no longer
+  overlap the main HUD in Play Mode.
 
 ### Changed
 
@@ -141,8 +148,9 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   time-loot from other users are not implemented yet.
 - Prototype reward claims still use a debug RPC path. They are server-owned and
   capped, but not yet wired to Fusion-validated combat or objective completion.
-- Permanent NPC interactions are deterministic server-side prototype ticks, not
-  final LLM dialogue, Convai dialogue, or Fusion proximity validation.
+- Deterministic permanent NPC interaction ticks are fallback smoke tests only.
+  The intended NPC brain path is LLM context -> LLM-selected intent -> Nakama or
+  Fusion validation -> activity and memory persistence.
 - Unity UI is still prototype IMGUI, not production HUD.
 - Supabase anonymous auth can be used when configured, but the local prototype
   still supports Nakama device fallback for development.

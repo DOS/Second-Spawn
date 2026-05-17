@@ -13,6 +13,7 @@ namespace SecondSpawn.AI
     public sealed class PrototypeOpenClawDebugPanel : MonoBehaviour
     {
         [SerializeField] private bool _showPanel = true;
+        [SerializeField] private KeyCode _toggleKey = KeyCode.F4;
         [SerializeField] private Vector2 _panelPosition = new Vector2(16f, 424f);
         [SerializeField] private Vector2 _panelSize = new Vector2(360f, 248f);
         [SerializeField] private string _frameActorId = "npc-openclaw-guide";
@@ -32,6 +33,14 @@ namespace SecondSpawn.AI
         private void Awake()
         {
             _gateway = GetComponent<SecondSpawnGatewayClient>();
+        }
+
+        private void Update()
+        {
+            if (Input.GetKeyDown(_toggleKey))
+            {
+                _showPanel = !_showPanel;
+            }
         }
 
         private void OnGUI()
