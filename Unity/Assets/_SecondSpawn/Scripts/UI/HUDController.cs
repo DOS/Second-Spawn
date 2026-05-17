@@ -21,7 +21,7 @@ namespace SecondSpawn.UI
         [SerializeField] private bool _showFrameIdentity = true;
         [SerializeField] private bool _showAgentActivity = true;
         [SerializeField] private Vector2 _panelPosition = new Vector2(16f, 16f);
-        [SerializeField] private Vector2 _panelSize = new Vector2(520f, 580f);
+        [SerializeField] private Vector2 _panelSize = new Vector2(360f, 320f);
         [SerializeField] private int _maxStoryCharacters = 110;
         [SerializeField] private int _maxActivityRows = 4;
         [SerializeField] private int _maxActivitySummaryCharacters = 92;
@@ -46,7 +46,7 @@ namespace SecondSpawn.UI
             var player = ResolvePlayer();
             EnsureStyles();
 
-            var rect = new Rect(_panelPosition.x, _panelPosition.y, _panelSize.x, _panelSize.y);
+            var rect = ResponsiveRect(_panelPosition, _panelSize);
             GUI.Box(rect, "SECOND SPAWN");
             GUILayout.BeginArea(new Rect(rect.x + 12f, rect.y + 24f, rect.width - 24f, rect.height - 32f));
             _scrollPosition = GUILayout.BeginScrollView(_scrollPosition, false, false);
@@ -232,6 +232,16 @@ namespace SecondSpawn.UI
             {
                 wordWrap = true
             };
+        }
+
+        private static Rect ResponsiveRect(Vector2 position, Vector2 requestedSize)
+        {
+            const float margin = 12f;
+            var x = Mathf.Clamp(position.x, margin, Mathf.Max(margin, Screen.width - margin));
+            var y = Mathf.Clamp(position.y, margin, Mathf.Max(margin, Screen.height - margin));
+            var width = Mathf.Clamp(requestedSize.x, 260f, Mathf.Max(260f, Screen.width - x - margin));
+            var height = Mathf.Clamp(requestedSize.y, 220f, Mathf.Max(220f, Screen.height - y - margin));
+            return new Rect(x, y, width, height);
         }
 
         private static string FormatSeconds(int seconds)

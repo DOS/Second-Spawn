@@ -11,11 +11,14 @@ namespace SecondSpawn.AI
     public sealed class PrototypeNpcWorldDebugPanel : MonoBehaviour
     {
         [SerializeField] private bool _showPanel = true;
+        [SerializeField] private KeyCode _toggleKey = KeyCode.F5;
         [SerializeField] private Vector2 _panelPosition = new Vector2(552f, 280f);
         [SerializeField] private Vector2 _panelSize = new Vector2(420f, 292f);
         [SerializeField] private string _actorAId = "npc-synthetic-sentinel-0101";
         [SerializeField] private string _actorBId = "npc-wasteland-courier-0244";
         [SerializeField] private string _topic = "patrol";
+        [SerializeField] private string _intentText = "Route check complete. Keep the eastern gate quiet.";
+        [SerializeField] private float _distanceMeters = 2f;
 
         private SecondSpawnGatewayClient _gateway;
         private GUIStyle _labelStyle;
@@ -23,11 +26,21 @@ namespace SecondSpawn.AI
         private bool _busy;
         private string _status = "Ready";
         private ActorProfileDto[] _npcs;
+        private NpcContextResponseDto _context;
+        private NpcIntentSubmitResponseDto _lastIntent;
         private NpcInteractionEventDto _lastInteraction;
 
         private void Awake()
         {
             _gateway = GetComponent<SecondSpawnGatewayClient>();
+        }
+
+        private void Update()
+        {
+            if (Input.GetKeyDown(_toggleKey))
+            {
+                _showPanel = !_showPanel;
+            }
         }
 
         private void OnGUI()
@@ -59,13 +72,28 @@ namespace SecondSpawn.AI
             _actorAId = LabeledTextField("A", _actorAId);
             _actorBId = LabeledTextField("B", _actorBId);
             _topic = LabeledTextField("Topic", _topic);
+            _intentText = LabeledTextField("Say", _intentText);
+            _distanceMeters = Mathf.Max(0f, LabeledFloatField("Meters", _distanceMeters));
 
-            if (GUILayout.Button("Interact"))
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Get Context"))
+            {
+                StartOperation(GetContext(), "Context");
+            }
+
+            if (GUILayout.Button("Submit Say Intent"))
+            {
+                StartOperation(SubmitIntent(), "Intent");
+            }
+            GUILayout.EndHorizontal();
+
+            if (GUILayout.Button("Fallback Smoke Tick"))
             {
                 StartOperation(Interact(), "Interact");
             }
             GUI.enabled = true;
 
+            DrawLastIntent();
             DrawLastInteraction();
             DrawNpcSummary();
             GUILayout.EndArea();
@@ -109,6 +137,52 @@ namespace SecondSpawn.AI
             _status = "Interaction recorded";
         }
 
+        private IEnumerator GetContext()
+        {
+            NpcContextResponseDto response = null;
+            string error = null;
+            yield return _gateway.GetPermanentNpcContext(new NpcContextRequestDto
+            {
+                actor_id = SafeValue(_actorAId, "npc-synthetic-sentinel-0101"),
+                nearby_actor_ids = new[] { SafeValue(_actorBId, "npc-wasteland-courier-0244") }
+            }, value => response = value, value => error = value);
+
+            if (response == null)
+            {
+                _status = $"Context failed: {error}";
+                yield break;
+            }
+
+            _context = response;
+            _status = $"Context loaded for {response.actor?.display_name ?? "NPC"}";
+        }
+
+        private IEnumerator SubmitIntent()
+        {
+            NpcIntentSubmitResponseDto response = null;
+            string error = null;
+            yield return _gateway.SubmitPermanentNpcIntent(new NpcIntentSubmitRequestDto
+            {
+                id = CharacterMemorySync.BuildClientEventId("npc-intent"),
+                actor_id = SafeValue(_actorAId, "npc-synthetic-sentinel-0101"),
+                target_actor_id = SafeValue(_actorBId, "npc-wasteland-courier-0244"),
+                intent = "say",
+                source = "debug",
+                text = SafeValue(_intentText, "Route check complete."),
+                reason = "Unity debug panel simulates an LLM-selected NPC intent.",
+                distance_meters = _distanceMeters
+            }, value => response = value, value => error = value);
+
+            if (response == null)
+            {
+                _status = $"Intent failed: {error}";
+                yield break;
+            }
+
+            _lastIntent = response;
+            _status = "Say intent recorded";
+        }
+
         private void ApplyListResponse(NpcWorldListResponseDto response, string error, string label)
         {
             if (response == null)
@@ -121,14 +195,35 @@ namespace SecondSpawn.AI
             _status = $"{label} {response.count} NPCs";
         }
 
+        private void DrawLastIntent()
+        {
+            if (_context != null && !string.IsNullOrWhiteSpace(_context.intent_boundary))
+            {
+                GUILayout.Label(_context.intent_boundary, _mutedStyle);
+                if (_context.interaction_rules != null)
+                {
+                    GUILayout.Label($"Hard limit: {_context.interaction_rules.max_distance_meters:0.#}m", _mutedStyle);
+                }
+            }
+
+            if (_lastIntent?.intent?.payload?.text == null)
+            {
+                return;
+            }
+
+            var targetName = _lastIntent.target_actor != null ? _lastIntent.target_actor.display_name : "hub";
+            GUILayout.Label($"{_lastIntent.actor?.display_name ?? "NPC"} -> {targetName}: {_lastIntent.intent.payload.text}", _labelStyle);
+        }
+
         private void DrawLastInteraction()
         {
             if (_lastInteraction == null)
             {
-                GUILayout.Label("No interaction recorded.", _mutedStyle);
+                GUILayout.Label("Fallback smoke tick has not run.", _mutedStyle);
                 return;
             }
 
+            GUILayout.Label("Fallback smoke tick:", _mutedStyle);
             GUILayout.Label($"{_lastInteraction.actor_a_name}: {_lastInteraction.actor_a_line}", _labelStyle);
             GUILayout.Label($"{_lastInteraction.actor_b_name}: {_lastInteraction.actor_b_line}", _labelStyle);
         }
@@ -187,6 +282,15 @@ namespace SecondSpawn.AI
             var next = GUILayout.TextField(value);
             GUILayout.EndHorizontal();
             return next;
+        }
+
+        private static float LabeledFloatField(string label, float value)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(label, GUILayout.Width(44f));
+            var text = GUILayout.TextField(value.ToString("0.##"));
+            GUILayout.EndHorizontal();
+            return float.TryParse(text, out var parsed) ? parsed : value;
         }
 
         private static string SafeValue(string value, string fallback)

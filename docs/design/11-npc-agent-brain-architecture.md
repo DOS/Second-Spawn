@@ -217,6 +217,42 @@ Disallowed until later:
 
 ---
 
+## NPC Interaction Rules
+
+NPC behavior is LLM-selected, but interaction permission is not left to the LLM.
+The server exposes rule context to the prompt and enforces hard limits before an
+intent is recorded or applied.
+
+Hard backend or Fusion limits:
+
+- NPCs may only interact when the authoritative world state says they are
+  nearby. The current prototype uses a 12 meter debug limit until Fusion
+  proximity is wired.
+- NPCs may not repeatedly seek low-affinity actors once familiarity is high.
+- NPCs may not voluntarily socialize with actors above the hostility block
+  threshold.
+- NPC intents are allowlisted. The current persistent NPC prototype accepts only
+  bounded `say` intents.
+
+Soft prompt guidance:
+
+- Prefer NPCs with higher affinity and shared memories.
+- Use hostility, familiarity, role, soul, and recent activity to choose tone.
+- When affinity is low, keep exchanges short unless a quest, danger, or duty
+  reason exists.
+
+Current prototype boundary:
+
+1. `secondspawn_npc_context_get` returns server-owned NPC context, nearby actor
+   context, relationship records, allowed intents, and interaction rules.
+2. The LLM worker or gateway chooses the NPC intent.
+3. `secondspawn_npc_intent_submit` validates the intent shape and interaction
+   rules, then records activity and relationship memory.
+4. Deterministic NPC interaction ticks remain fallback smoke tests only, not the
+   primary NPC brain.
+
+---
+
 ## Implementation Rule
 
 Every brain implementation must keep these boundaries:

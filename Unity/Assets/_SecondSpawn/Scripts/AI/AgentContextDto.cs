@@ -18,6 +18,7 @@ namespace SecondSpawn.AI
         public string display_name;
         public BodyProfileDto body;
         public MemoryRecordDto[] memory;
+        public RelationshipRecordDto[] relationships;
         public AgentRuntimeDto agent_runtime;
         public AgentActivityRecordDto[] agent_activity;
         public string created_at;
@@ -566,6 +567,87 @@ namespace SecondSpawn.AI
         public NpcInteractionEventDto interaction;
         public ActorProfileDto actor_a;
         public ActorProfileDto actor_b;
+    }
+
+    [Serializable]
+    public sealed class NpcContextRequestDto
+    {
+        public string actor_id = "npc-synthetic-sentinel-0101";
+        public string[] nearby_actor_ids;
+    }
+
+    [Serializable]
+    public sealed class NpcContextResponseDto
+    {
+        public ActorProfileDto actor;
+        public ActorProfileDto[] nearby_actors;
+        public string[] allowed_intents;
+        public NpcInteractionRulesDto interaction_rules;
+        public string intent_boundary;
+    }
+
+    [Serializable]
+    public sealed class NpcIntentSubmitRequestDto
+    {
+        public string id;
+        public string actor_id = "npc-synthetic-sentinel-0101";
+        public string target_actor_id = "npc-wasteland-courier-0244";
+        public string intent = "say";
+        public string source = "debug";
+        public string text;
+        public string reason;
+        public float distance_meters = 2f;
+    }
+
+    [Serializable]
+    public sealed class NpcIntentDto
+    {
+        public string id;
+        public string intent;
+        public string source;
+        public string reason;
+        public string requested_at;
+        public string target_actor_id;
+        public NpcIntentPayloadDto payload;
+    }
+
+    [Serializable]
+    public sealed class NpcIntentPayloadDto
+    {
+        public string text;
+        public string target_actor_id;
+    }
+
+    [Serializable]
+    public sealed class NpcIntentSubmitResponseDto
+    {
+        public bool accepted;
+        public string status;
+        public NpcIntentDto intent;
+        public ActorProfileDto actor;
+        public ActorProfileDto target_actor;
+    }
+
+    [Serializable]
+    public sealed class RelationshipRecordDto
+    {
+        public string actor_id;
+        public string display_name;
+        public int affinity;
+        public int hostility;
+        public int familiarity_count;
+        public string last_interaction_at;
+    }
+
+    [Serializable]
+    public sealed class NpcInteractionRulesDto
+    {
+        public float max_distance_meters;
+        public int relationship_min_affinity_for_frequent_interaction;
+        public int hostility_block_threshold;
+        public int frequent_interaction_count;
+        public string[] hard_limits;
+        public string[] soft_prompt_guidance;
     }
 
     [Serializable]

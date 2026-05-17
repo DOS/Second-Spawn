@@ -227,7 +227,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 47e3e1f6f17c4f5a87dbd4b0c70b321d, type: 3}
   m_Name:
   m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.PrototypeBodyLifecycleDebugPanel
-  _showPanel: 1
+  _showPanel: 0
+  _toggleKey: 283
   _panelPosition: {x: 16, y: 212}
   _panelSize: {x: 320, y: 224}
   _earnSeconds: 300
@@ -246,7 +247,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8a55307e31634ffeab83b6ffb30c84cc, type: 3}
   m_Name:
   m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.PrototypeOpenClawDebugPanel
-  _showPanel: 1
+  _showPanel: 0
+  _toggleKey: 285
   _panelPosition: {x: 16, y: 424}
   _panelSize: {x: 360, y: 248}
   _frameActorId: npc-openclaw-guide
@@ -265,7 +267,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 05e7ee54f444466b91be22b693c78928, type: 3}
   m_Name:
   m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.PrototypeHubChatDebugPanel
-  _showPanel: 1
+  _showPanel: 0
+  _toggleKey: 284
   _panelPosition: {x: 552, y: 16}
   _panelSize: {x: 420, y: 248}
   _channelId: prototype-hub
@@ -284,12 +287,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b5f84b1d2d3499fb377e18e36cbfb39, type: 3}
   m_Name:
   m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.PrototypeNpcWorldDebugPanel
-  _showPanel: 1
+  _showPanel: 0
+  _toggleKey: 286
   _panelPosition: {x: 552, y: 280}
-  _panelSize: {x: 420, y: 292}
+  _panelSize: {x: 420, y: 344}
   _actorAId: npc-synthetic-sentinel-0101
   _actorBId: npc-wasteland-courier-0244
   _topic: patrol
+  _intentText: Route check complete. Keep the eastern gate quiet.
+  _distanceMeters: 2
 --- !u!1 &47583031
 GameObject:
   m_ObjectHideFlags: 0
@@ -861,7 +867,7 @@ MonoBehaviour:
   _showFrameIdentity: 1
   _showAgentActivity: 1
   _panelPosition: {x: 16, y: 16}
-  _panelSize: {x: 520, y: 580}
+  _panelSize: {x: 360, y: 320}
   _maxStoryCharacters: 110
   _maxActivityRows: 4
   _maxActivitySummaryCharacters: 92

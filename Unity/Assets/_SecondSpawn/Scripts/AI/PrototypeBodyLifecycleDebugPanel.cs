@@ -17,6 +17,7 @@ namespace SecondSpawn.AI
         private const string DebugFatalDrainSource = "prototype_reincarnation_debug";
 
         [SerializeField] private bool _showPanel = true;
+        [SerializeField] private KeyCode _toggleKey = KeyCode.F2;
         [SerializeField] private Vector2 _panelPosition = new Vector2(16f, 212f);
         [SerializeField] private Vector2 _panelSize = new Vector2(320f, 224f);
         [SerializeField] private long _earnSeconds = 300;
@@ -32,6 +33,14 @@ namespace SecondSpawn.AI
         private void Awake()
         {
             _memorySync = GetComponent<CharacterMemorySync>();
+        }
+
+        private void Update()
+        {
+            if (Input.GetKeyDown(_toggleKey))
+            {
+                _showPanel = !_showPanel;
+            }
         }
 
         private void OnGUI()

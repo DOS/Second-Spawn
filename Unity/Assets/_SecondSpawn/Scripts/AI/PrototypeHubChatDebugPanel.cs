@@ -12,6 +12,7 @@ namespace SecondSpawn.AI
     public sealed class PrototypeHubChatDebugPanel : MonoBehaviour
     {
         [SerializeField] private bool _showPanel = true;
+        [SerializeField] private KeyCode _toggleKey = KeyCode.F3;
         [SerializeField] private Vector2 _panelPosition = new Vector2(552f, 16f);
         [SerializeField] private Vector2 _panelSize = new Vector2(420f, 248f);
         [SerializeField] private string _channelId = "prototype-hub";
@@ -29,6 +30,14 @@ namespace SecondSpawn.AI
         private void Awake()
         {
             _gateway = GetComponent<SecondSpawnGatewayClient>();
+        }
+
+        private void Update()
+        {
+            if (Input.GetKeyDown(_toggleKey))
+            {
+                _showPanel = !_showPanel;
+            }
         }
 
         private void OnGUI()
