@@ -133,6 +133,11 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 - Nakama storage writes now use create/update version handling compatible with
   refreshed local runtime state.
 
+### Fixed
+
+- Prototype debug panel hotkeys now use Unity Input System keyboard polling
+  instead of the disabled legacy input API, stopping Play Mode console spam.
+
 ### Verification
 
 - `go test -count=1 ./...` and `go vet ./...` in `backend/gateway`.

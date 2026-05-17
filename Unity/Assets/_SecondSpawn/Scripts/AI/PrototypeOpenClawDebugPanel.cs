@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace SecondSpawn.AI
 {
@@ -13,7 +14,7 @@ namespace SecondSpawn.AI
     public sealed class PrototypeOpenClawDebugPanel : MonoBehaviour
     {
         [SerializeField] private bool _showPanel = true;
-        [SerializeField] private KeyCode _toggleKey = KeyCode.F4;
+        [SerializeField] private Key _toggleKey = Key.F4;
         [SerializeField] private Vector2 _panelPosition = new Vector2(16f, 424f);
         [SerializeField] private Vector2 _panelSize = new Vector2(360f, 248f);
         [SerializeField] private string _frameActorId = "npc-openclaw-guide";
@@ -37,7 +38,8 @@ namespace SecondSpawn.AI
 
         private void Update()
         {
-            if (Input.GetKeyDown(_toggleKey))
+            var keyboard = Keyboard.current;
+            if (keyboard != null && keyboard[_toggleKey].wasPressedThisFrame)
             {
                 _showPanel = !_showPanel;
             }
