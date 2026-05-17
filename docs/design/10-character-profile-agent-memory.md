@@ -374,6 +374,9 @@ Implemented surfaces:
   reincarnated bodies now receive a deterministic NPC-like body archetype with
   distinct story hook, traits, stat bias, visual variant, weapon visual, soul
   defaults, and animation capability flags.
+- Nakama also owns a prototype permanent NPC Frame pool. New player profiles and
+  reincarnated bodies are assigned from this pool, then the chosen source Frame
+  is persisted as a `player_body` actor profile under `secondspawn_actor`.
 - Nakama runtime module tests cover Supabase custom-auth rewriting, profile
   bootstrap, memory dedupe, soul update clamping, deterministic fallback agent
   decisions, runtime counters, and activity logging.

@@ -216,6 +216,7 @@ const assignedSourceActor = harness.storage.get(storageKey("user-1", "secondspaw
 assert.ok(assignedSourceActor);
 assert.equal(assignedSourceActor.value.actor_id, "npc-crossline-hunter-5104");
 assert.equal(assignedSourceActor.value.actor_type, "player_body");
+assert.equal(assignedSourceActor.value.display_name, "Crossline Surveyor 5104");
 assert.equal(assignedSourceActor.value.body.body_id, profile.body.body_id);
 assert.equal(assignedSourceActor.value.body.equipment.weapon_visual_key, "crossbow");
 assert.equal(assignedSourceActor.value.body.inhabitation.inhabited_by_player, true);
@@ -351,6 +352,19 @@ assert.equal(npcProfile.body.inhabitation.inhabited_by_player, false);
 assert.ok(npcProfile.body.appearance.body_parts.torso.length > 0);
 assert.ok(npcProfile.body.equipment.weapon_visual_key.length > 0);
 assert.equal(npcProfile.memory.length, 1);
+
+const permanentNpcProfile = JSON.parse(harness.registeredRpcs.get("secondspawn_actor_profile_get")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  JSON.stringify({ actor_id: "npc-clinic-operator-0819" })
+));
+assert.equal(permanentNpcProfile.actor_id, "npc-clinic-operator-0819");
+assert.equal(permanentNpcProfile.actor_type, "npc");
+assert.equal(permanentNpcProfile.display_name, "Clinic Operator 0819");
+assert.equal(permanentNpcProfile.body.archetype_id, "clinic-operator");
+assert.equal(permanentNpcProfile.body.inhabitation.previous_role, "Support and researcher body");
+assert.equal(permanentNpcProfile.body.inhabitation.inhabited_by_player, false);
 
 assert.throws(
   () => harness.registeredRpcs.get("secondspawn_actor_profile_get")(

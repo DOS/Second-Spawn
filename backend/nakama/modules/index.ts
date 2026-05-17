@@ -219,6 +219,19 @@ var bodyArchetypePool = [
   }
 ];
 
+var permanentNpcFramePool = [
+  { npc_id: "npc-synthetic-sentinel-0101", display_name: "Gate Sentinel 0101", archetype_id: "synthetic-sentinel", role: "Frontline guard body" },
+  { npc_id: "npc-wasteland-courier-0244", display_name: "Route Courier 0244", archetype_id: "wasteland-courier", role: "Scout and courier body" },
+  { npc_id: "npc-clinic-operator-0320", display_name: "Clinic Operator 0320", archetype_id: "clinic-operator", role: "Support and researcher body" },
+  { npc_id: "npc-scrap-warden-0441", display_name: "Scrap Warden 0441", archetype_id: "scrap-warden", role: "Heavy salvage body" },
+  { npc_id: "npc-crossline-hunter-5104", display_name: "Crossline Surveyor 5104", archetype_id: "crossline-hunter", role: "Ranged survey body" },
+  { npc_id: "npc-synthetic-sentinel-0627", display_name: "Gate Sentinel 0627", archetype_id: "synthetic-sentinel", role: "Frontline guard body" },
+  { npc_id: "npc-wasteland-courier-0733", display_name: "Route Courier 0733", archetype_id: "wasteland-courier", role: "Scout and courier body" },
+  { npc_id: "npc-clinic-operator-0819", display_name: "Clinic Operator 0819", archetype_id: "clinic-operator", role: "Support and researcher body" },
+  { npc_id: "npc-scrap-warden-0940", display_name: "Scrap Warden 0940", archetype_id: "scrap-warden", role: "Heavy salvage body" },
+  { npc_id: "npc-crossline-hunter-1058", display_name: "Crossline Surveyor 1058", archetype_id: "crossline-hunter", role: "Ranged survey body" }
+];
+
 let InitModule: nkruntime.InitModule = function (
   ctx: nkruntime.Context,
   logger: nkruntime.Logger,
@@ -667,10 +680,12 @@ function sourceBodyActorProfileFromContext(context: any, sourceActorId: string):
   var timestamp = new Date().toISOString();
   var playerId = context.player.player_id;
   var body = cloneJson(context.body || {});
+  var sourceFrame = findPermanentNpcFrame(sourceActorId);
   var archetype = selectBodyArchetype(body.archetype_id || playerId + ":initial");
   body.inhabitation = normalizeBodyInhabitation({
     source_actor_id: sourceActorId,
-    previous_role: body.inhabitation && body.inhabitation.previous_role,
+    previous_role: (sourceFrame && sourceFrame.role) ||
+      (body.inhabitation && body.inhabitation.previous_role),
     inhabited_by_player: true,
     assigned_at: body.inhabitation && body.inhabitation.assigned_at
   }, archetype, true, playerId + ":initial");
@@ -679,7 +694,9 @@ function sourceBodyActorProfileFromContext(context: any, sourceActorId: string):
     actor_id: sourceActorId,
     actor_type: "player_body",
     owner_player_id: playerId,
-    display_name: body.inhabitation.previous_role || actorDisplayName(sourceActorId),
+    display_name: (sourceFrame && sourceFrame.display_name) ||
+      body.inhabitation.previous_role ||
+      actorDisplayName(sourceActorId),
     body: body,
     memory: sortAndBoundMemories(body.memory || []),
     agent_runtime: defaultAgentRuntime(timestamp),
@@ -866,9 +883,14 @@ function writeActorProfile(nk: nkruntime.Nakama, profile: any, version: string):
 
 function defaultActorProfile(ownerId: string, actorId: string, request: any): any {
   var timestamp = new Date().toISOString();
-  var displayName = trimString(request.display_name) || actorDisplayName(actorId);
-  var actorType = normalizeActorType(request.actor_type || request.kind);
-  var archetype = selectBodyArchetype(request.archetype_id || ownerId + ":" + actorId);
+  var permanentFrame = findPermanentNpcFrame(actorId);
+  var displayName = trimString(request.display_name) ||
+    trimString(permanentFrame && permanentFrame.display_name) ||
+    actorDisplayName(actorId);
+  var actorType = normalizeActorType(request.actor_type || request.kind || (permanentFrame ? "npc" : ""));
+  var archetype = selectBodyArchetype(request.archetype_id ||
+    (permanentFrame && permanentFrame.archetype_id) ||
+    ownerId + ":" + actorId);
 
   return ensureActorProfile({
     actor_id: actorId,
@@ -883,7 +905,7 @@ function defaultActorProfile(ownerId: string, actorId: string, request: any): an
       appearance: normalizeBodyAppearance(request.appearance || archetype.appearance || {}),
       inhabitation: normalizeBodyInhabitation(request.inhabitation || {
         source_actor_id: actorId,
-        previous_role: archetype.story && archetype.story.role,
+        previous_role: (permanentFrame && permanentFrame.role) || (archetype.story && archetype.story.role),
         inhabited_by_player: false
       }, archetype, false, ownerId + ":" + actorId),
       equipment: normalizeEquipment(request.equipment || { equipment_visual_id: archetype.equipment_visual_id }),
@@ -968,7 +990,10 @@ function defaultAgentContext(playerId: string): any {
 
 function defaultBodyProfile(playerId: string, displayName: string, timestamp: string, seedSuffix?: string): any {
   var assignmentSeed = playerId + ":" + (seedSuffix || "initial");
-  var archetype = selectBodyArchetype(assignmentSeed);
+  var sourceFrame = selectPermanentNpcFrame(assignmentSeed);
+  var archetype = sourceFrame
+    ? selectBodyArchetype(sourceFrame.archetype_id)
+    : selectBodyArchetype(assignmentSeed);
   return {
     body_id: "body-" + playerId,
     archetype_id: archetype.archetype_id,
@@ -976,8 +1001,10 @@ function defaultBodyProfile(playerId: string, displayName: string, timestamp: st
     visual_variant: normalizeVisualVariant(archetype.visual_variant),
     appearance: normalizeBodyAppearance(archetype.appearance || {}),
     inhabitation: normalizeBodyInhabitation({
-      source_actor_id: sourceActorIdForArchetype(archetype, assignmentSeed),
-      previous_role: archetype.story && archetype.story.role,
+      source_actor_id: sourceFrame
+        ? sourceFrame.npc_id
+        : sourceActorIdForArchetype(archetype, assignmentSeed),
+      previous_role: (sourceFrame && sourceFrame.role) || (archetype.story && archetype.story.role),
       inhabited_by_player: true,
       assigned_at: timestamp
     }, archetype, true, assignmentSeed),
@@ -1021,14 +1048,19 @@ function ensureAgentContext(context: any, playerId: string): any {
   ensureSecondBalance(context);
   context.body = context.body || {};
   context.body.body_id = trimString(context.body.body_id) || "body-" + context.player.player_id;
-  var archetype = selectBodyArchetype(context.body.archetype_id || context.player.player_id + ":initial");
+  var sourceFrame = selectPermanentNpcFrame(context.player.player_id + ":initial");
+  var archetype = selectBodyArchetype(context.body.archetype_id ||
+    (sourceFrame && sourceFrame.archetype_id) ||
+    context.player.player_id + ":initial");
   context.body.archetype_id = trimString(context.body.archetype_id) || archetype.archetype_id;
   context.body.visual_prefab_key = trimString(context.body.visual_prefab_key) || archetype.visual_prefab_key;
   context.body.visual_variant = normalizeVisualVariant(firstDefined(context.body.visual_variant, archetype.visual_variant));
   context.body.appearance = normalizeBodyAppearance(context.body.appearance || archetype.appearance || {});
   context.body.inhabitation = normalizeBodyInhabitation(context.body.inhabitation || {
-    source_actor_id: sourceActorIdForArchetype(archetype, context.player.player_id + ":initial"),
-    previous_role: archetype.story && archetype.story.role,
+    source_actor_id: sourceFrame
+      ? sourceFrame.npc_id
+      : sourceActorIdForArchetype(archetype, context.player.player_id + ":initial"),
+    previous_role: (sourceFrame && sourceFrame.role) || (archetype.story && archetype.story.role),
     inhabited_by_player: true
   }, archetype, true, context.player.player_id + ":initial");
   context.body.equipment = normalizeEquipment(equipmentOrArchetypeDefault(context.body.equipment, archetype));
@@ -1169,6 +1201,24 @@ function findBodyArchetype(archetypeId: string): any {
   for (var i = 0; i < bodyArchetypePool.length; i++) {
     if (bodyArchetypePool[i].archetype_id === normalized) {
       return bodyArchetypePool[i];
+    }
+  }
+  return null;
+}
+
+function selectPermanentNpcFrame(seed: string): any {
+  if (!permanentNpcFramePool || permanentNpcFramePool.length === 0) {
+    return null;
+  }
+
+  return permanentNpcFramePool[stableHashIndex(seed || "default-frame", permanentNpcFramePool.length)];
+}
+
+function findPermanentNpcFrame(npcId: string): any {
+  var normalized = normalizeActorId(npcId);
+  for (var i = 0; i < permanentNpcFramePool.length; i += 1) {
+    if (permanentNpcFramePool[i].npc_id === normalized) {
+      return permanentNpcFramePool[i];
     }
   }
   return null;
