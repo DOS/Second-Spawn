@@ -50,7 +50,7 @@ var bodyTimeDebugFatalDrainSource = "prototype_reincarnation_debug";
 var secondPrototypeMaxBalanceSeconds = 86400 * 365;
 var secondPrototypeStartingBalanceSeconds = 86400 * 7;
 var secondPrototypeReincarnationCostSeconds = 86400 * 5;
-var prototypeVisualVariantMax = 12;
+var prototypeVisualVariantMax = 16;
 var bodyArchetypePool = [
   {
     archetype_id: "synthetic-sentinel",
@@ -240,16 +240,16 @@ var bodyArchetypePool = [
 ];
 
 var permanentNpcFramePool = [
-  { npc_id: "npc-synthetic-sentinel-0101", display_name: "Gate Sentinel 0101", archetype_id: "synthetic-sentinel", role: "Frontline guard body" },
-  { npc_id: "npc-wasteland-courier-0244", display_name: "Route Courier 0244", archetype_id: "wasteland-courier", role: "Scout and courier body" },
-  { npc_id: "npc-clinic-operator-0320", display_name: "Clinic Operator 0320", archetype_id: "clinic-operator", role: "Support and researcher body" },
-  { npc_id: "npc-scrap-warden-0441", display_name: "Scrap Warden 0441", archetype_id: "scrap-warden", role: "Heavy salvage body" },
-  { npc_id: "npc-crossline-hunter-5104", display_name: "Crossline Surveyor 5104", archetype_id: "crossline-hunter", role: "Ranged survey body" },
-  { npc_id: "npc-synthetic-sentinel-0627", display_name: "Gate Sentinel 0627", archetype_id: "synthetic-sentinel", role: "Frontline guard body" },
-  { npc_id: "npc-wasteland-courier-0733", display_name: "Route Courier 0733", archetype_id: "wasteland-courier", role: "Scout and courier body" },
-  { npc_id: "npc-clinic-operator-0819", display_name: "Clinic Operator 0819", archetype_id: "clinic-operator", role: "Support and researcher body" },
-  { npc_id: "npc-scrap-warden-0940", display_name: "Scrap Warden 0940", archetype_id: "scrap-warden", role: "Heavy salvage body" },
-  { npc_id: "npc-crossline-hunter-1058", display_name: "Crossline Surveyor 1058", archetype_id: "crossline-hunter", role: "Ranged survey body" }
+  { npc_id: "npc-synthetic-sentinel-0101", display_name: "Gate Sentinel 0101", archetype_id: "synthetic-sentinel", role: "Frontline guard body", visual_variant: 7, visual_prefab_key: "generated_visual_07_knight", equipment_visual_id: 2 },
+  { npc_id: "npc-wasteland-courier-0244", display_name: "Route Courier 0244", archetype_id: "wasteland-courier", role: "Scout and courier body", visual_variant: 3, visual_prefab_key: "generated_visual_03_ninja", equipment_visual_id: 2 },
+  { npc_id: "npc-clinic-operator-0320", display_name: "Clinic Operator 0320", archetype_id: "clinic-operator", role: "Support and researcher body", visual_variant: 8, visual_prefab_key: "generated_visual_08_mage", equipment_visual_id: 8 },
+  { npc_id: "npc-scrap-warden-0441", display_name: "Scrap Warden 0441", archetype_id: "scrap-warden", role: "Heavy salvage body", visual_variant: 10, visual_prefab_key: "generated_visual_10_hammer", equipment_visual_id: 9 },
+  { npc_id: "npc-crossline-hunter-5104", display_name: "Crossline Surveyor 5104", archetype_id: "crossline-hunter", role: "Ranged survey body", visual_variant: 9, visual_prefab_key: "generated_visual_09_crossbow", equipment_visual_id: 7 },
+  { npc_id: "npc-synthetic-sentinel-0627", display_name: "Gate Sentinel 0627", archetype_id: "synthetic-sentinel", role: "Frontline guard body", visual_variant: 16, visual_prefab_key: "generated_visual_16_male_fighter", equipment_visual_id: 2 },
+  { npc_id: "npc-wasteland-courier-0733", display_name: "Route Courier 0733", archetype_id: "wasteland-courier", role: "Scout and courier body", visual_variant: 14, visual_prefab_key: "generated_visual_14_female_fighter", equipment_visual_id: 2 },
+  { npc_id: "npc-clinic-operator-0819", display_name: "Clinic Operator 0819", archetype_id: "clinic-operator", role: "Support and researcher body", visual_variant: 0, visual_prefab_key: "generated_visual_00_rpg_character", equipment_visual_id: 0 },
+  { npc_id: "npc-scrap-warden-0940", display_name: "Scrap Warden 0940", archetype_id: "scrap-warden", role: "Heavy salvage body", visual_variant: 15, visual_prefab_key: "generated_visual_15_heavy_fighter", equipment_visual_id: 9 },
+  { npc_id: "npc-crossline-hunter-1058", display_name: "Crossline Surveyor 1058", archetype_id: "crossline-hunter", role: "Ranged survey body", visual_variant: 6, visual_prefab_key: "generated_visual_06_archer", equipment_visual_id: 6 }
 ];
 
 var prototypeRewardCatalog = [
@@ -1347,7 +1347,10 @@ function getOrCreateWorldNpcProfileState(nk: nkruntime.Nakama, ownerId: string, 
     actor_id: normalizedActorId,
     actor_type: "npc",
     display_name: frame.display_name,
-    archetype_id: frame.archetype_id
+    archetype_id: frame.archetype_id,
+    visual_prefab_key: frame.visual_prefab_key,
+    visual_variant: frame.visual_variant,
+    equipment: { equipment_visual_id: frame.equipment_visual_id }
   });
   try {
     writeWorldActorProfile(nk, ownerId, profile, "*");
@@ -1376,6 +1379,10 @@ function getOrCreateWorldNpcProfileState(nk: nkruntime.Nakama, ownerId: string, 
 function normalizeExistingWorldNpcProfileState(nk: nkruntime.Nakama, ownerId: string, actorId: string, existing: any): any {
   var needsPersistence = actorProfileNeedsNormalization(existing.value || {});
   var profile = ensureActorProfile(existing.value || {}, ownerId, actorId);
+  var frame = findPermanentNpcFrame(actorId);
+  if (frame && applyPermanentNpcFrameVisual(profile, frame)) {
+    needsPersistence = true;
+  }
   if (needsPersistence) {
     profile.updated_at = new Date().toISOString();
     try {
@@ -1403,6 +1410,36 @@ function normalizeExistingWorldNpcProfileState(nk: nkruntime.Nakama, ownerId: st
     profile: profile,
     version: existing.version
   };
+}
+
+function applyPermanentNpcFrameVisual(profile: any, frame: any): boolean {
+  if (!profile || !profile.body || !frame) {
+    return false;
+  }
+
+  var changed = false;
+  if (frame.visual_variant !== undefined &&
+    normalizeVisualVariant(profile.body.visual_variant) !== normalizeVisualVariant(frame.visual_variant)) {
+    profile.body.visual_variant = normalizeVisualVariant(frame.visual_variant);
+    changed = true;
+  }
+
+  var visualKey = trimString(frame.visual_prefab_key);
+  if (visualKey && trimString(profile.body.visual_prefab_key) !== visualKey) {
+    profile.body.visual_prefab_key = visualKey;
+    changed = true;
+  }
+
+  if (frame.equipment_visual_id !== undefined) {
+    var equipment = normalizeEquipment({ equipment_visual_id: frame.equipment_visual_id });
+    if (!profile.body.equipment ||
+      Number(profile.body.equipment.equipment_visual_id || 0) !== Number(equipment.equipment_visual_id || 0)) {
+      profile.body.equipment = equipment;
+      changed = true;
+    }
+  }
+
+  return changed;
 }
 
 function readWorldActorProfile(nk: nkruntime.Nakama, ownerId: string, actorId: string): any {

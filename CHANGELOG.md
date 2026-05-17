@@ -143,6 +143,20 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   not overwrite player source-body actor profiles with the same actor ID.
 - Prototype debug hotkeys now tolerate legacy serialized `KeyCode` values still
   present in open Unity scene instances, preventing `Key` range exceptions.
+- Prototype NPC markers now display their index, name, short actor ID, level,
+  and role so dummy capsules can be matched back to Nakama permanent NPCs.
+- Permanent NPC markers can now attach prototype agent brains from their own
+  actor profiles, with staggered decision starts and fixed per-body visuals.
+- The legacy single prototype guide in `ZoneTest_Hub` no longer auto-starts,
+  so the scene focuses on the 10 persistent NPC agents.
+- Visual body catalog now includes the 4 Fighter Pack variants in addition to
+  the RPG Character and 12 Warrior variants, for 17 source body variants total.
+- Generated character prefabs now resolve from `_SecondSpawn/Prefabs` and
+  generated materials from `_SecondSpawn/Materials`, while vendor asset packs
+  remain immutable under `Assets/ExplosiveLLC`.
+- Prototype agent brain now backs off model gateway retries after daily decision
+  token budget exhaustion and uses Nakama fallback during the cooldown, reducing
+  repeated Play Mode warning spam.
 
 ### Verification
 

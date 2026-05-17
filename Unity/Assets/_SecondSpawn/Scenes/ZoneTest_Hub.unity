@@ -320,6 +320,11 @@ MonoBehaviour:
   _labelHeight: 2.2
   _refreshKey: 99
   _logStatus: 1
+  _zoneId: prototype-hub
+  _attachAgentBrains: 1
+  _agentDecisionIntervalSeconds: 12
+  _agentStartStaggerSeconds: 0.75
+  _agentPatrolRadius: 5
 --- !u!1 &47583031
 GameObject:
   m_ObjectHideFlags: 0
@@ -693,12 +698,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6a71e9236c9a38146be01a82d1767a10, type: 3}
   m_Name:
   m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.PrototypeAgentBrain
-  _startOnPlay: 1
+  _startOnPlay: 0
   _agentId: prototype-npc-guide
   _displayName: Prototype Guide
   _zoneId: prototype-hub
   _visualVariant: 10
   _decisionIntervalSeconds: 1.6
+  _initialDecisionDelaySeconds: 0
   _moveSpeed: 2.4
   _patrolRadius: 5
   _talkIntervalSeconds: 7.5
@@ -706,6 +712,7 @@ MonoBehaviour:
   _alignFeetToGround: 1
   _logPhaseTransitions: 1
   _gatewayFailureErrorThreshold: 3
+  _gatewayBudgetBackoffSeconds: 60
 --- !u!4 &529322320
 Transform:
   m_ObjectHideFlags: 0

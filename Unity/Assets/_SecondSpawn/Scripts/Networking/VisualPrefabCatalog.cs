@@ -2,8 +2,8 @@ namespace SecondSpawn.Networking
 {
     public static class VisualPrefabCatalog
     {
-        public const string CleanVisualFolder = "Assets/_SecondSpawn/Art/Characters/GeneratedVisualsV2";
-        public const string CleanMaterialFolder = "Assets/_SecondSpawn/Art/Characters/GeneratedVisualsV2/Materials";
+        public const string CleanVisualFolder = "Assets/_SecondSpawn/Prefabs/Characters/GeneratedVisualsV2";
+        public const string CleanMaterialFolder = "Assets/_SecondSpawn/Materials/GeneratedVisualsV2";
 
         public static readonly string[] SourceAssetPaths =
         {
@@ -20,6 +20,10 @@ namespace SecondSpawn.Networking
             "Assets/ExplosiveLLC/Warrior Pack Bundle 3 FREE/Hammer Warrior Mecanim Animation Pack/Prefabs/Hammer Warrior.prefab",
             "Assets/ExplosiveLLC/Warrior Pack Bundle 3 FREE/Spearman Warrior Mecanim Animation Pack/Prefabs/Spearman Warrior.prefab",
             "Assets/ExplosiveLLC/Warrior Pack Bundle 3 FREE/Swordsman Warrior Mecanim Animation Pack/Prefabs/Swordsman Warrior.prefab",
+            "Assets/ExplosiveLLC/Fighter Pack Bundle FREE/Fighters/Berserker Fighter Mecanim Animation Pack FREE/Prefabs/Berserker.prefab",
+            "Assets/ExplosiveLLC/Fighter Pack Bundle FREE/Fighters/Female Fighter Mecanim Animation Pack FREE/Prefabs/Female.prefab",
+            "Assets/ExplosiveLLC/Fighter Pack Bundle FREE/Fighters/Heavy Fighter Mecanim Animation Pack FREE/Prefabs/Heavy.prefab",
+            "Assets/ExplosiveLLC/Fighter Pack Bundle FREE/Fighters/Male Fighter Mecanim Animation Pack FREE/Prefabs/Male.prefab",
         };
 
         public static int Count => SourceAssetPaths.Length;

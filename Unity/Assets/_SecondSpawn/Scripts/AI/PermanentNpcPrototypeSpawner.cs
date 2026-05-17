@@ -24,6 +24,11 @@ namespace SecondSpawn.AI
         [SerializeField, Min(0.5f)] private float _labelHeight = 2.2f;
         [SerializeField] private Key _refreshKey = Key.F6;
         [SerializeField] private bool _logStatus = true;
+        [SerializeField] private string _zoneId = "prototype-hub";
+        [SerializeField] private bool _attachAgentBrains = true;
+        [SerializeField, Min(0.25f)] private float _agentDecisionIntervalSeconds = 12f;
+        [SerializeField, Min(0f)] private float _agentStartStaggerSeconds = 0.75f;
+        [SerializeField, Min(0.5f)] private float _agentPatrolRadius = 5f;
 
         private const string RootName = "_PermanentNpcMarkers";
 
@@ -133,38 +138,41 @@ namespace SecondSpawn.AI
 
         private void SpawnNpcMarker(ActorProfileDto npc, int index)
         {
-            var marker = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            var marker = new GameObject(BuildMarkerName(npc, index));
             marker.name = BuildMarkerName(npc, index);
             marker.transform.SetParent(_root, false);
             marker.transform.localPosition = GridPosition(index);
-            marker.transform.localScale = new Vector3(_markerRadius, _markerHeight * 0.5f, _markerRadius);
 
-            var collider = marker.GetComponent<Collider>();
-            if (collider != null)
-            {
-                collider.isTrigger = true;
-            }
-
-            var renderer = marker.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                var material = CreateMarkerMaterial(npc, index);
-                if (material != null)
-                {
-                    renderer.material = material;
-                }
-            }
+            var collider = marker.AddComponent<CapsuleCollider>();
+            collider.isTrigger = true;
+            collider.radius = _markerRadius;
+            collider.height = _markerHeight;
+            collider.center = new Vector3(0f, _markerHeight * 0.5f, 0f);
 
             var markerData = marker.AddComponent<PermanentNpcPrototypeMarker>();
             markerData.Bind(npc);
             AddLabel(marker.transform, npc, index);
+
+            if (_attachAgentBrains)
+            {
+                var brain = marker.AddComponent<PrototypeAgentBrain>();
+                brain.ConfigureActorProfile(
+                    npc,
+                    _zoneId,
+                    _agentPatrolRadius,
+                    _agentDecisionIntervalSeconds,
+                    index * _agentStartStaggerSeconds);
+                return;
+            }
+
+            AddFallbackCapsule(marker.transform, npc, index);
         }
 
         private Vector3 GridPosition(int index)
         {
             var column = index % Mathf.Max(1, _columns);
             var row = index / Mathf.Max(1, _columns);
-            return _spawnOrigin + new Vector3(column * _spacing, _markerHeight * 0.5f, row * _spacing);
+            return _spawnOrigin + new Vector3(column * _spacing, 0f, row * _spacing);
         }
 
         private void AddLabel(Transform marker, ActorProfileDto npc, int index)
@@ -181,6 +189,31 @@ namespace SecondSpawn.AI
             text.fontSize = 42;
             text.characterSize = 0.12f;
             text.color = Color.white;
+        }
+
+        private void AddFallbackCapsule(Transform marker, ActorProfileDto npc, int index)
+        {
+            var capsule = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            capsule.name = "FallbackCapsule";
+            capsule.transform.SetParent(marker, false);
+            capsule.transform.localPosition = new Vector3(0f, _markerHeight * 0.5f, 0f);
+            capsule.transform.localScale = new Vector3(_markerRadius, _markerHeight * 0.5f, _markerRadius);
+
+            var collider = capsule.GetComponent<Collider>();
+            if (collider != null)
+            {
+                collider.enabled = false;
+            }
+
+            var renderer = capsule.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                var material = CreateMarkerMaterial(npc, index);
+                if (material != null)
+                {
+                    renderer.material = material;
+                }
+            }
         }
 
         private void EnsureRoot()
@@ -279,9 +312,28 @@ namespace SecondSpawn.AI
                 role = npc?.body?.archetype_id;
             }
 
+            var actorId = string.IsNullOrWhiteSpace(npc?.actor_id) ? "unknown" : npc.actor_id.Trim();
+            var shortId = ShortActorId(actorId);
             return string.IsNullOrWhiteSpace(role)
-                ? $"{displayName}\nLv {level}"
-                : $"{displayName}\nLv {level} | {role.Trim()}";
+                ? $"#{index + 1:00} {displayName}\n{shortId}\nLv {level}"
+                : $"#{index + 1:00} {displayName}\n{shortId}\nLv {level} | {role.Trim()}";
+        }
+
+        private static string ShortActorId(string actorId)
+        {
+            if (string.IsNullOrWhiteSpace(actorId))
+            {
+                return "unknown";
+            }
+
+            var normalized = actorId.Trim();
+            const int maxLabelLength = 28;
+            if (normalized.Length <= maxLabelLength)
+            {
+                return normalized;
+            }
+
+            return normalized.Substring(0, maxLabelLength - 3) + "...";
         }
 
         private static string SanitizeName(string value)
