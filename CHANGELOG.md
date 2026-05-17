@@ -80,6 +80,8 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   capability flags for prototype attack and cast actions.
 - Prototype HUD now includes a Frame Identity debug section for source actor,
   role, archetype, weapon stance, animation capabilities, soul, and story hook.
+- Prototype HUD now includes agent runtime counters and recent activity rows
+  from the synced Nakama body profile.
 - Nakama and gateway profile contracts now carry prototype Frame context fields
   for identity, policy-aware intent schema, runtime heartbeat, and debug
   visibility. Skill and agent-playbook fields remain prototype placeholders,

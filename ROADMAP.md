@@ -89,6 +89,8 @@ Recommended views:
   SECOND balance, reincarnation count, visual key, and agent-control flag.
 - [x] Unity prototype HUD shows level, HP, energy, attack, defense, agility,
   BodyTime, lifecycle, SECOND balance, and reincarnation count.
+- [x] Unity prototype HUD shows synced agent runtime counters and recent
+  activity rows from the Nakama body profile.
 - [x] Unity `CharacterMemorySync` pulls the Nakama player profile and applies
   current-body stats, BodyTime, lifecycle, SECOND balance, reincarnation count,
   and visual key onto the authoritative local `NetworkPlayer`.
@@ -142,7 +144,7 @@ MVP, and a visible offline-agent prototype.
   visual using the existing visual prefab catalog.
 - [ ] Add a proper hub NPC prefab using the prototype NPC brain contract.
 - [ ] Add Nakama channel-based basic chat for the vertical slice.
-- [ ] Surface agent runtime stats and recent activity in an in-editor or
+- [x] Surface agent runtime stats and recent activity in an in-editor or
   prototype debug UI.
 - [ ] Add route-level gateway authentication before non-local AI or voice
   playtests.
