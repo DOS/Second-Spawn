@@ -46,6 +46,10 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 
 ### Changed
 
+- GDD and concept docs now anchor SECOND SPAWN to the MetaDOS timeline, DOS
+  Labs history, Nibirium as lore material, manga/manhwa system-story
+  progression tone, and vertical-slice story hooks for the first hub, first
+  body, BodyTime pressure, NPC knowledge, and faction tension.
 - Local Unity prototype can show a player with persisted profile stats after
   joining the hub scene.
 - Current visible progression baseline is level and body-bound stats. Advanced

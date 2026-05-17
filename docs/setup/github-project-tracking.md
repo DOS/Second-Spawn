@@ -46,14 +46,45 @@ work queue visible and easier to monitor.
 - Roadmap: timeline or roadmap layout grouped by `Milestone`.
 - Risks and Blockers: filter `Status = Blocked` or `Priority = P0`.
 
+## Repository Labels and Milestones
+
+The repository mirrors the most important project fields with labels so issues
+remain useful even before they are added to Project #5.
+
+- Milestones: `Foundation`, `Vertical Slice`.
+- Area labels: `area:unity`, `area:nakama`, `area:gateway`, `area:ai-agent`,
+  `area:design`, `area:devops`, `area:economy`, `area:combat`, `area:docs`.
+- Priority labels: `priority:p0`, `priority:p1`, `priority:p2`,
+  `priority:p3`.
+- Size labels: `size:xs`, `size:s`, `size:m`, `size:l`, `size:xl`.
+
 ## Current Seed Issues
 
 Open issues that should be added to the project:
+
+### Foundation
 
 - [#6 Track gateway agent-decision rate limiting and token budget](https://github.com/DOS/Second-Spawn/issues/6)
 - [#7 Track Unity Fusion CodeGen AssetDatabase path error during Play Mode smoke](https://github.com/DOS/Second-Spawn/issues/7)
 - [#9 Track Nakama runtime UUID helper migration](https://github.com/DOS/Second-Spawn/issues/9)
 - [#13 Track distributed agent decision limiter storage](https://github.com/DOS/Second-Spawn/issues/13)
+
+### Vertical Slice
+
+- [#23 Import Opsive UCC in an isolated Unity pass](https://github.com/DOS/Second-Spawn/issues/23)
+- [#24 Import Behavior Designer in an isolated Unity pass](https://github.com/DOS/Second-Spawn/issues/24)
+- [#25 Import Convai in an isolated Unity pass](https://github.com/DOS/Second-Spawn/issues/25)
+- [#26 Implement server-authoritative combat damage prototype](https://github.com/DOS/Second-Spawn/issues/26)
+- [#27 Add first BodyTime reward source outside debug UI](https://github.com/DOS/Second-Spawn/issues/27)
+- [#28 Add first BodyTime spend sink in normal play](https://github.com/DOS/Second-Spawn/issues/28)
+- [#29 Design server-authoritative player time-loot rules](https://github.com/DOS/Second-Spawn/issues/29)
+- [#30 Build prototype reincarnation presentation flow](https://github.com/DOS/Second-Spawn/issues/30)
+- [#31 Add agent activity log prototype UI](https://github.com/DOS/Second-Spawn/issues/31)
+- [#32 Add Nakama channel chat prototype](https://github.com/DOS/Second-Spawn/issues/32)
+- [#33 Build first questline and hub NPC story beat](https://github.com/DOS/Second-Spawn/issues/33)
+- [#34 Prototype first dungeon and boss encounter plan](https://github.com/DOS/Second-Spawn/issues/34)
+- [#35 Add Hunter NFT skin equip placeholder and escrow design](https://github.com/DOS/Second-Spawn/issues/35)
+- [#36 Prepare Linux headless dedicated server build path](https://github.com/DOS/Second-Spawn/issues/36)
 
 ## Automation Notes
 
@@ -62,7 +93,7 @@ returns a missing `read:project` or project scope error, refresh auth before
 trying to inspect or mutate Project #5:
 
 ```powershell
-gh auth refresh -s read:project,project
+gh auth refresh -s project
 ```
 
 After the scope is available, use the project as the operating dashboard:
