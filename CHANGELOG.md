@@ -74,6 +74,8 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 - Unity now has a Persistent NPC Debug panel for seeding, listing, and
   smoke-testing LLM-style NPC context and say-intent submission between
   permanent NPC Frames.
+- Unity now spawns 10 visible permanent NPC prototype markers in `ZoneTest_Hub`
+  by loading the server-owned Nakama NPC Frame list on Play Mode start.
 - Prototype debug panels now default to hidden hotkey toggles so they no longer
   overlap the main HUD in Play Mode.
 

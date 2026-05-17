@@ -112,6 +112,8 @@ Recommended views:
   relationship memory, and activity logs for two permanent NPC actors.
 - [x] Permanent NPCs expose LLM decision context and accept validated `say`
   intents with backend relationship and distance rules.
+- [x] `ZoneTest_Hub` spawns 10 visible permanent NPC prototype markers from the
+  Nakama server-owned NPC Frame list on Play Mode start.
 - [x] Nakama has prototype OpenClaw bridge RPCs for Frame binding, structured
   context read, pending intent submission, and heartbeat/audit updates.
 - [x] Unity Play Mode has an OpenClaw bridge debug panel for binding, context
@@ -157,6 +159,8 @@ MVP, and a visible offline-agent prototype.
 - [x] Add server-owned permanent NPC seed/list and prototype interaction RPCs.
 - [x] Add a Unity Play Mode debug panel for permanent NPC seed/list and
   NPC-to-NPC interaction smoke testing.
+- [x] Add a Unity Play Mode spawner that makes 10 permanent NPC Frames visible
+  in the hub while proper prefabs and Fusion server spawning are pending.
 - [x] Add the LLM-driven NPC context and intent boundary so NPC brains choose
   actions while Nakama validates range, hostility, affinity, and intent shape.
 - [x] Add Nakama channel-based basic chat for the vertical slice.
