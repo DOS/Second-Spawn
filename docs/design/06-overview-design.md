@@ -45,7 +45,7 @@ The 3-6 month vertical slice must let a solo player experience the identity-defi
 | Hook | Slice Expression |
 | ---- | ---- |
 | AI agent 24/7 | The offline agent farms one designated area and produces an activity log visible when the player returns. |
-| Reincarnation | Death consumes a test SECOND token and transfers consciousness to a new body with partial cultivation carryover. |
+| Reincarnation | Death consumes a test SECOND token and transfers consciousness to a new body with selected profile carryover. |
 | Time-as-currency | The current body has a time budget that can be earned, spent, and depleted to trigger death pressure. |
 | Consciousness transfer | The death and respawn flow is framed as synthetic-body transfer, not spiritual resurrection. |
 

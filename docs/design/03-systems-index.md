@@ -15,7 +15,7 @@ SECOND SPAWN is a hybrid MMO + top-down ARPG. The mechanical scope spans:
 - LLM NPCs (Convai phase 1, api.dos.ai / Go LLM Gateway phase 2)
 - AI agent autoplay (server-side, capability-capped)
 - OpenClaw-connected NPCs (user-owned agents as server-validated world actors)
-- Cultivation 6-tier progression
+- Level/stat progression
 - Reincarnation loop (death -> SECOND token -> new body)
 - Time-as-currency body lifespan economy
 - NFT integration (DOS Chain via thirdweb)
@@ -41,8 +41,8 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 | 10 | Boss LLM dialogue (Convai grounded) | Gameplay | VS | Not started | (TDD pending) | NPC dialogue |
 | 11 | AI agent for offline players (server-side) | Gameplay | VS | Drafted | [10-character-profile-agent-memory.md](10-character-profile-agent-memory.md) | NetworkRunner, api.dos.ai / Go LLM Gateway, intent schema |
 | 37 | OpenClaw-connected NPC bridge (user-owned agents as NPC actors) | Gameplay / Meta | Alpha | Concept | [10-character-profile-agent-memory.md](10-character-profile-agent-memory.md) | Auth, Nakama, api.dos.ai / Go LLM Gateway, NPC dialogue, LLM safety |
-| 12 | Cultivation 6-tier (slice: tier 1-2) | Progression | MVP | Drafted | [04-cultivation-system.md](04-cultivation-system.md) | Persistence |
-| 13 | Reincarnation flow (death -> SECOND -> new body) | Progression | VS | Not started | (TDD pending) | Cultivation, NFT escrow, Persistence |
+| 12 | Level/stat progression | Progression | MVP | Prototype | (covered by profile/runtime contracts) | Persistence |
+| 13 | Reincarnation flow (death -> SECOND -> new body) | Progression | VS | Not started | (TDD pending) | Level/stats, NFT escrow, Persistence |
 | 14 | SECOND token economy | Economy | VS | Not designed | (GDD pending - JOY input) | DOS Chain integration |
 | 36 | Time-as-currency (`BodyTime`) | Economy | VS | Drafted | [08-time-as-currency.md](08-time-as-currency.md) | Reincarnation, Combat, Persistence |
 | 15 | NFT inventory (Hunter skin slice scope) | Economy | VS | Not started | (TDD pending) | thirdweb-api MCP, Persistence |
@@ -51,9 +51,9 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 | 18 | Profile persistence (Nakama OSS + Postgres) | Persistence | MVP | Drafted | [10-character-profile-agent-memory.md](10-character-profile-agent-memory.md) | Auth |
 | 19 | Inventory persistence | Persistence | MVP | Not started | (TDD pending) | Profile, NFT inventory |
 | 20 | Quest progress persistence | Persistence | MVP | Not started | (TDD pending) | Profile, Quest system |
-| 21 | Cultivation tier persistence (carries through reincarnation) | Persistence | MVP | Not started | (TDD pending) | Profile |
+| 21 | Level/stat persistence | Persistence | MVP | Prototype | (covered by profile/runtime contracts) | Profile |
 | 22 | Auth (Nakama + DOS Chain wallet, Supabase sidecar if useful) | Persistence | MVP | Not started | (TDD pending - reuse DOS.Me pattern as identity bridge reference) | Nakama, thirdweb |
-| 23 | HUD (combat, cultivation tier, currency) | UI | VS | Not started | (deferred template `_deferred/hud-design.md`) | Combat, Cultivation |
+| 23 | HUD (combat, level/stats, BodyTime) | UI | VS | Prototype | (deferred template `_deferred/hud-design.md`) | Combat, Profile |
 | 24 | Inventory UI | UI | VS | Not started | (deferred template `_deferred/ux-spec.md`) | Inventory persistence |
 | 25 | NPC dialogue UI | UI | VS | Not started | (deferred) | NPC dialogue |
 | 26 | Quest tracker UI | UI | VS | Not started | (deferred) | Quest system |
@@ -77,9 +77,9 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 | ---- | ---- | ---- |
 | **Core** | Foundation systems everything depends on | 5 (NetworkRunner, Controller, Camera, Input, Zone management) |
 | **Gameplay** | The systems that make the game fun | 7 (Combat, NPC dialogue, Quest, Dungeon, Boss LLM, AI agent, OpenClaw-connected NPC bridge) |
-| **Progression** | How the player grows over time | 2 (Cultivation, Reincarnation) |
+| **Progression** | How the player grows over time | 2 (Level/stats, Reincarnation) |
 | **Economy** | Resource creation and consumption | 5 (SECOND token, Time-as-currency, NFT inventory, NFT escrow, Loot) |
-| **Persistence** | Save state and continuity | 5 (Profile, Inventory, Quest, Cultivation, Auth) |
+| **Persistence** | Save state and continuity | 5 (Profile, Inventory, Quest, Level/stats, Auth) |
 | **UI** | Player-facing information displays | 6 (HUD, Inventory UI, NPC dialogue UI, Quest tracker, Reincarnation UI, Agent log) |
 | **Audio** | Sound and music systems | 1 (placeholder for slice) |
 | **Narrative** | Story / dialogue delivery | 1 (Chat - dialogue system already in Gameplay row 7) |
@@ -104,14 +104,14 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 8. Input system (#4) - depends on: Player Controller
 9. Zone scene management (#5) - depends on: NetworkRunner
 10. Inventory persistence (#19) - depends on: Profile
-11. Cultivation tier persistence (#21) - depends on: Profile
+11. Level/stat persistence (#21) - depends on: Profile
 
 ### Feature Layer (depends on core)
 
 12. Combat (#6) - depends on: Player Controller, networked state
 13. NPC dialogue (Convai + intent validation) (#7) - depends on: api.dos.ai / Go LLM Gateway
 14. OpenClaw-connected NPC bridge (#37) - depends on: Auth, Nakama, api.dos.ai / Go LLM Gateway, NPC dialogue, LLM safety
-15. Cultivation system (#12) - depends on: Cultivation persistence, Combat
+15. Level/stat progression (#12) - depends on: Profile persistence, Combat
 16. NFT inventory (#15) - depends on: Auth, thirdweb-api MCP
 17. Chat (Nakama channel first, Supabase Realtime sidecar only if useful) (#30) - depends on: Auth, Nakama
 18. Quest system (#8) - depends on: NPC dialogue, persistence
@@ -122,10 +122,10 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 20. Boss LLM dialogue (#10) - depends on: NPC dialogue, Dungeon
 21. NFT escrow (#16) - depends on: NFT inventory, DOS Chain
 22. Loot / drop tables (#17) - depends on: Combat, Persistence
-23. Reincarnation flow (#13) - depends on: Cultivation, NFT escrow, Persistence
+23. Reincarnation flow (#13) - depends on: Level/stats, NFT escrow, Persistence
 24. Time-as-currency (#36) - depends on: Reincarnation, Combat, Persistence
 25. SECOND token economy (#14) - depends on: DOS Chain integration, Reincarnation
-26. AI agent for offline players (#11) - depends on: NetworkRunner, api.dos.ai / Go LLM Gateway, intent schema, Cultivation, Combat, Time-as-currency
+26. AI agent for offline players (#11) - depends on: NetworkRunner, api.dos.ai / Go LLM Gateway, intent schema, Combat, Time-as-currency
 
 ### Presentation Layer (depends on features)
 
@@ -154,7 +154,7 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 | OpenClaw-connected NPC bridge (#37) | Product + Security | User-owned agents can create moderation, spam, prompt injection, and trust-boundary risk | Treat connected agents as untrusted external actors; require consent, identity binding, rate limit, moderation, and server validation |
 | LLM intent validation (#31) + safety (#32) | Security | Open-source codebase + LLM = injection / abuse vector | Reuse DOSafe patterns; per-NPC memory cap; per-player rate limit |
 | NFT escrow (#16) | Technical | Latency between Unity equip action and DOS Chain confirmation | Optimistic UI + reconcile-on-failure; cache lock state in Supabase |
-| Reincarnation flow (#13) | Design | Cultivation carryover too generous = no death weight; too punitive = grind | Tune cost during slice playtests |
+| Reincarnation flow (#13) | Design | Carryover too generous = no death weight; too punitive = grind | Tune cost during slice playtests |
 | Time-as-currency (#36) | Design + Economy | Constant drain can feel oppressive; weak drain can feel invisible | Start with danger-zone drain, one earn source, one spend sink |
 | Photon Fusion 2 dedicated server (#1) | Technical | Solo dev capacity to run dedicated infra | Slice uses Photon Cloud free 20 CCU; production migration is post-slice |
 | Convai SDK in Unity (#7) | Technical | 3rd-party SDK may not test against Unity 6.5 beta | Have phase 2 fallback (`api.dos.ai` / Go LLM Gateway + custom LLM) ready in design |
@@ -180,16 +180,15 @@ Aligned with [02-vertical-slice-spec.md](02-vertical-slice-spec.md) build phases
 | 11 | Quest system (#8) | Phase 4 | L | |
 | 12 | Dungeon instance (#9) | Phase 4 | L | |
 | 13 | Boss LLM dialogue (#10) | Phase 4 | M | Layered on NPC dialogue |
-| 14 | Cultivation system (#12) | Phase 5 | L | GDD already drafted at `04-cultivation-system.md` |
-| 15 | Reincarnation flow (#13) | Phase 5 | L | |
-| 16 | Time-as-currency (#36) | Phase 6 | M | BodyTime meter, one earn source, one spend sink |
-| 17 | NFT inventory (#15) + escrow (#16) | Phase 7 | L | DOS Chain test net |
-| 18 | SECOND token economy (#14) | Phase 7 | M | JOY input required first |
-| 19 | AI agent for offline players (#11) | Phase 8 | XL | Highest-risk system |
-| 20 | UI cluster (#23-#28) | Throughout phases 2-8 | XL | Build incrementally |
-| 21 | Audio placeholder (#29) | Phase 9 | S | Slice-quality only |
-| 22 | Chat (#30) | Phase 9 | M | Nakama channel first, Supabase sidecar only if useful |
-| 23 | Polish + playtest | Phase 9 | XL | |
+| 14 | Reincarnation flow (#13) | Phase 5 | L | |
+| 15 | Time-as-currency (#36) | Phase 6 | M | BodyTime meter, one earn source, one spend sink |
+| 16 | NFT inventory (#15) + escrow (#16) | Phase 7 | L | DOS Chain test net |
+| 17 | SECOND token economy (#14) | Phase 7 | M | JOY input required first |
+| 18 | AI agent for offline players (#11) | Phase 8 | XL | Highest-risk system |
+| 19 | UI cluster (#23-#28) | Throughout phases 2-8 | XL | Build incrementally |
+| 20 | Audio placeholder (#29) | Phase 9 | S | Slice-quality only |
+| 21 | Chat (#30) | Phase 9 | M | Nakama channel first, Supabase sidecar only if useful |
+| 22 | Polish + playtest | Phase 9 | XL | |
 
 Effort estimate: S = 1-3 days, M = 4-7 days, L = 1-2 weeks, XL = 2-4 weeks (solo dev + AI agent).
 
@@ -200,7 +199,7 @@ Effort estimate: S = 1-3 days, M = 4-7 days, L = 1-2 weeks, XL = 2-4 weeks (solo
 | Metric | Count |
 | ---- | ---- |
 | Total systems identified | 36 |
-| Design docs started | 6 (cultivation, overview design, player controller prototype, time-as-currency, Pirate Adventure reference review, character profile / agent memory) |
+| Design docs started | 6 (deferred advanced body progression, overview design, player controller prototype, time-as-currency, Pirate Adventure reference review, character profile / agent memory) |
 | Design docs reviewed | 0 |
 | Design docs approved | 0 |
 | MVP systems with TDD started | 0 |

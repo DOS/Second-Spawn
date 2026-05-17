@@ -28,7 +28,7 @@ The core promise is:
 
 > Your character has a life that does not pause when yours does.
 
-When the player is offline, a bounded AI agent can continue controlling the character under server authority. Death permanently destroys the current body, but consciousness can transfer to a new body through the reincarnation flow. Time is both the body's remaining operating life and a spendable resource. Cultivation is the long-term progression layer, framed through Nibirium, biotechnology, and consciousness science rather than spiritual fantasy.
+When the player is offline, a bounded AI agent can continue controlling the character under server authority. Death permanently destroys the current body, but consciousness can transfer to a new body through the reincarnation flow. Time is both the body's remaining operating life and a spendable resource. Current-body level and stats are the vertical-slice progression baseline.
 
 ### Product Shape
 
@@ -55,7 +55,7 @@ The player should feel:
 
 - Their character continues to matter even when they log off.
 - Death has weight because the body is gone, not because the account is erased.
-- Cultivation is earned mastery over Nibirium-enhanced bodies and consciousness.
+- Level and stats give readable ARPG growth while deeper body progression is redesigned later.
 - Time is not just a timer. It is life, pressure, and a resource.
 - NPCs and agents are world citizens, not detached chatbots.
 - The world is dangerous because all gameplay state is server-authoritative and consequences persist.
@@ -109,22 +109,20 @@ SECOND SPAWN is not:
 
 ## 6. Setting and Tone
 
-The setting is a near-future post-apocalyptic MetaDOS universe around 2050. Human survival is shaped by synthetic bodies, Nibirium-enhanced biotech, consciousness transfer, AI societies, and resource scarcity.
+The setting is a near-future post-apocalyptic MetaDOS universe around 2050. Human survival is shaped by synthetic bodies, biotech, consciousness transfer, AI societies, and resource scarcity.
 
 Tone requirements:
 
 - Dark sci-fi and cyberpunk.
 - Biotech and consciousness science instead of magic.
-- Cultivation language must be internationally readable and science-framed.
 - Death and reincarnation should feel clinical, costly, and narratively charged.
 - AI NPC society should feel socially alive, but still bounded by game systems.
 
 Key lore anchors:
 
-- `Nibirium`: The substance that enables body enhancement, cultivation progression, and advanced biotech.
 - Synthetic bodies: Replaceable vessels with finite operating life.
 - Consciousness transfer: The sci-fi basis of reincarnation.
-- Hunters: Player-controlled or agent-controlled characters who fight, cultivate, and survive.
+- Hunters: Player-controlled or agent-controlled characters who fight and survive.
 - SECOND token: Account-level time reserve denominated in seconds. The token is used for reincarnation costs and must stay distinct from current-body `BodyTime` unless a future ADR explicitly merges them.
 
 ---
@@ -136,20 +134,20 @@ Key lore anchors:
 1. Move through a top-down ARPG space.
 2. Read enemy threats and positioning.
 3. Attack, dodge, reposition, and use abilities.
-4. Earn combat rewards such as loot, Nibirium progress, BodyTime, or quest progress.
+4. Earn combat rewards such as loot, level/stat progress, BodyTime, or quest progress.
 5. Make tactical spend decisions around health, BodyTime, supplies, and objectives.
 
 ### Session Loop
 
 1. Enter a hub, zone, or dungeon.
-2. Pick a goal: quest step, dungeon room, cultivation progress, BodyTime recovery, NPC interaction, or agent policy adjustment.
+2. Pick a goal: quest step, dungeon room, level/stat progress, BodyTime recovery, NPC interaction, or agent policy adjustment.
 3. Fight and interact inside a server-authoritative zone.
-4. Return to the hub, upgrade, cultivate, adjust policy, or reincarnate if needed.
+4. Return to the hub, upgrade, adjust policy, or reincarnate if needed.
 5. Log out with an offline-agent policy that controls what the AI may attempt.
 
 ### Long-Term Loop
 
-1. Advance through cultivation tiers.
+1. Advance level and body-specific stats.
 2. Reincarnate across bodies while keeping selected durable identity and memories.
 3. Improve player skill and build knowledge.
 4. Collect or equip approved NFT-linked skins, weapons, or pets where applicable.
@@ -191,13 +189,12 @@ The character is split into durable identity and current-body state.
 | Agent policy | Player-approved offline behavior limits | Yes |
 | Memory records | Compact curated memories for LLM context | Yes, with decay rules later |
 | Agent runtime | Bounded operational counters, recent activity, fallback tracking | Yes, bounded |
-| Cultivation | Durable consciousness progression | Partially, exact carryover is undecided |
 | Body profile | Current synthetic body, visual archetype, BodyTime, lifecycle | No |
 | Body characteristics | Current-body tendencies such as curiosity, courage, discipline, aggression, and sociability | Mostly no |
 | Character stats | Current body combat and movement stats | Mostly no |
 | Equipment and local inventory | Body-bound owned or equipped state | Reset or reconciled through escrow rules |
 
-The gameplay design should preserve the idea that a body is temporary, but the player's cultivated consciousness and authored identity persist.
+The gameplay design should preserve the idea that a body is temporary, but the player's authored identity and selected durable profile layers persist.
 
 ### Actor Profile Bundle
 
@@ -242,7 +239,6 @@ Death can be caused by combat failure, BodyTime reaching zero, or offline-agent 
 
 - Body death must be server-authoritative.
 - LLMs and clients cannot trigger successful reincarnation directly.
-- Cultivation carries over partially, but the exact rule is [TODO: JOY input].
 - Equipment, quest state, location, and current body stats reset or reconcile according to future system rules.
 - SECOND token is denominated in seconds and is distinct from current-body `BodyTime` unless a future ADR explicitly merges them.
 - Reincarnation should consume enough SECOND to create a new playable body-time package.
@@ -253,7 +249,6 @@ Death can be caused by combat failure, BodyTime reaching zero, or offline-agent 
 - Default reincarnation package: 5 days or 7 days: [TODO: JOY input]
 - Whether the SECOND cost directly seeds the new body's `BodyTime`, or only gates body creation while `BodyTime` is assigned separately: [TODO: JOY input]
 - SECOND token source and sink design beyond reincarnation: [TODO: JOY input]
-- Cultivation carryover ratio or rule: [TODO: JOY input]
 - Faction reputation carryover: [TODO: JOY input]
 - Body selection and candidate reroll rules: [TODO: JOY input]
 - Memory decay across bodies: [TODO: JOY input]
@@ -293,35 +288,28 @@ Open BodyTime decisions:
 
 ---
 
-## 11. Cultivation
+## 11. Level and Stats Progression
 
-Cultivation is the durable long-term progression system. It is sci-fi-framed through Nibirium absorption, body enhancement, DNA evolution, and consciousness transfer.
-
-The six tiers are:
-
-| Tier | Name | Meaning | Vertical Slice |
-| ---- | ---- | ---- | ---- |
-| 1 | Awakening | Activate Nibirium absorption | In scope |
-| 2 | Enhancement | Strengthen body capabilities | In scope |
-| 3 | Core Formation | Form an internal Nibirium energy core | Out of scope |
-| 4 | Evolution | Unlock DNA or special ability evolution | Out of scope |
-| 5 | Transcendence | Move beyond normal human limits | Out of scope |
-| 6 | Ascension | Near-divine end-game state | Out of scope |
+Level and current-body stats are the only approved progression layer for the
+vertical slice.
 
 Design rules:
 
-- Cultivation is not spiritual enlightenment, qi, dao, immortal sect politics, or fantasy magic.
-- Tier-up should be an earned mastery moment, not a background stat notification.
-- Tier-up should require Nibirium progress, a mastery test, and a Cultivation Master interaction.
-- Offline agents may accumulate permitted progress, but tier-up rituals should require player presence unless explicitly changed later.
-- All tier checks and progression mutations are server-owned.
+- Level and stat mutations are server-owned.
+- Level is body-bound unless a future reincarnation design explicitly carries a
+  portion forward.
+- Stats should support readable ARPG combat first: health, energy, attack,
+  defense, speed, and survivability.
+- Advanced body or soul progression is deferred until a fresh design pass.
+- Do not implement cultivation tiers, Nibirium XP, tier-up rituals, or
+  Cultivation Master progression in the current slice.
 
-Open cultivation decisions:
+Open progression decisions:
 
-- Exact carryover on reincarnation: [TODO: JOY input]
-- Offline-agent Nibirium gain rate: [TODO: JOY input]
-- Tier 3-6 mechanics: [TODO: JOY input]
-- Whether NFT Hunter skins have tier requirements: [TODO: JOY input]
+- Level curve and stat scaling: [TODO: prototype]
+- Which stat values reset on reincarnation: [TODO: reincarnation MVP]
+- Whether any level-derived account milestone survives body death: [TODO: JOY input]
+- Future advanced body progression direction: [TODO: post-slice brainstorm]
 
 ---
 
@@ -333,7 +321,7 @@ Combat goals:
 
 - Clear top-down movement and positioning.
 - Fast, readable attacks and dodges.
-- Abilities that scale with cultivation tier.
+- Abilities that scale with level and stats.
 - Server-side damage, hit validation, cooldowns, and combat state.
 - Enemy behavior that can start simple and later move into Behavior Designer execution trees.
 - Boss encounters that can include LLM dialogue, but never LLM-owned state changes.
@@ -408,7 +396,6 @@ Design constraints:
 
 - The agent inherits the player's capability cap and rate limits.
 - The agent cannot spend BodyTime on irreversible actions unless policy allows it.
-- The agent cannot tier-up without player presence in the current design.
 - Agent death is body death and triggers reincarnation like player death.
 - The return activity log is essential. If the player cannot understand what happened offline, the feature will feel invisible or unsafe.
 
@@ -428,7 +415,7 @@ LLM-driven NPCs are world citizens with memory and intent, not authority.
 Hard boundaries:
 
 - LLM output is intent, not state.
-- LLMs cannot grant items, gold, XP, BodyTime, cultivation progress, quest completion, or token rewards directly.
+- LLMs cannot grant items, gold, XP, BodyTime, level/stat progress, quest completion, or token rewards directly.
 - Unity client never stores provider API keys.
 - All provider calls go through server-owned paths.
 - Prompt injection defense, rate limits, memory budget caps, and moderation checks are required.
@@ -439,7 +426,7 @@ Phase direction:
 - Phase 1 uses Convai for MVP NPC dialogue.
 - Phase 2 moves deeper LLM behavior to `api.dos.ai` / Go LLM Gateway.
 - Haiku-class models are candidates for fast NPC chat.
-- Sonnet-class models are candidates for bosses, quest-critical NPCs, and cultivation masters.
+- Sonnet-class models are candidates for bosses and quest-critical NPCs.
 - Voice remains deferred and must use server-minted ephemeral tokens or a server-side provider path.
 
 The intended brain pattern is:
@@ -492,7 +479,6 @@ SECOND SPAWN progression is split across body-bound and consciousness-bound laye
 
 Durable progression:
 
-- Cultivation tier and selected cultivation progress.
 - Soul profile and player-authored goals.
 - Compact memories.
 - Account identity and wallet linkage.
@@ -500,7 +486,7 @@ Durable progression:
 
 Body-bound progression:
 
-- Current body stats.
+- Current body level and stats.
 - Current BodyTime.
 - Current local equipment state.
 - Current zone and dungeon run.
@@ -509,7 +495,7 @@ Body-bound progression:
 Progression should serve three player motivations:
 
 - Autonomy: choose active play, delegation, risk, and reincarnation timing.
-- Competence: master combat, cultivation, and BodyTime tradeoffs.
+- Competence: master combat, level/stat growth, and BodyTime tradeoffs.
 - Relatedness: build relationships with players, NPCs, and agents.
 
 ---
@@ -522,7 +508,6 @@ The economy is not fully designed. This GDD only defines resource roles and boun
 | ---- | ---- | ---- |
 | `BodyTime` | Current body's remaining operating life and spendable tactical resource | Body-bound, lost on body death unless future rules say otherwise |
 | SECOND token | Account-level time reserve denominated in seconds, used for reincarnation | Account or wallet-level, exact source and sink design undecided |
-| Nibirium | Cultivation progress material | Earned through gameplay, exact rates undecided |
 | Loot and supplies | Tactical power and run support | Server-owned, no client-granted drops |
 | NFT assets | Ownership-linked skins, weapons, pets | Bound through DOS Chain and escrow rules |
 
@@ -550,7 +535,6 @@ Open economy decisions:
 - Whether SECOND directly seeds BodyTime or only gates body creation: [TODO: JOY input]
 - SECOND token earning and sink design beyond reincarnation: [TODO: JOY input]
 - BodyTime earn and spend values: [TODO: JOY input]
-- Nibirium thresholds and tuning beyond prototype values: [TODO: JOY input]
 - Marketplace design: [TODO: JOY input]
 
 ### Loot, Items, and Cosmetics
@@ -618,7 +602,7 @@ Accessibility requirements for future passes:
 Current direction:
 
 - Visual style: dark sci-fi, cyberpunk, post-apocalyptic, stylized enough for production speed.
-- Environment: ruined high-tech zones, synthetic-body facilities, Nibirium corruption, hub town contrast.
+- Environment: ruined high-tech zones, synthetic-body facilities, biotech decay, hub town contrast.
 - Character readability: silhouettes and ability effects must stay readable from top-down camera distance.
 - Audio: tense biotech/sci-fi ambience, clear combat hits, distinct BodyTime warning sounds, restrained AI/NPC voice use.
 
@@ -690,7 +674,7 @@ In scope:
 - Reincarnation MVP: die, spend test SECOND token, new body, reset selected state.
 - BodyTime MVP: meter, one earn loop, one spend loop, zero-time death.
 - Offline AI agent MVP: farm one designated area and show activity log.
-- Cultivation tiers 1 and 2: Awakening and Enhancement.
+- Basic level and stat progression for the current body.
 - NFT Hunter skin equip plus escrow on test net.
 - Multiplayer zone with 4-20 players.
 - Basic chat through Nakama channels first.
@@ -709,7 +693,7 @@ Out of scope for the vertical slice:
 - Marketplace and player trading.
 - Pet breeding.
 - Mount system.
-- Cultivation tiers 3-6.
+- Advanced body progression.
 - Voice NPC.
 - Full branching quest system.
 - Full faction system.
@@ -735,7 +719,7 @@ Before designing or implementing a feature, contributors should ask:
 
 1. Does this preserve server authority?
 2. Can the offline AI agent interact with it through bounded validated intent?
-3. Does it strengthen reincarnation, BodyTime, cultivation, or meaningful ARPG combat?
+3. Does it strengthen reincarnation, BodyTime, level/stat progression, or meaningful ARPG combat?
 4. Does it avoid pay-to-win and direct LLM authority?
 5. Does it fit the one-zone vertical slice before generalizing?
 6. Is the unknown a real design decision that needs `[TODO: JOY input]` instead of invented numbers?
@@ -746,7 +730,7 @@ Useful source documents:
 - [01-pillars.md](01-pillars.md)
 - [02-vertical-slice-spec.md](02-vertical-slice-spec.md)
 - [03-systems-index.md](03-systems-index.md)
-- [04-cultivation-system.md](04-cultivation-system.md)
+- [04-cultivation-system.md](04-cultivation-system.md) - deferred advanced body progression
 - [05-networking-architecture.md](05-networking-architecture.md)
 - [08-time-as-currency.md](08-time-as-currency.md)
 - [10-character-profile-agent-memory.md](10-character-profile-agent-memory.md)
@@ -763,7 +747,7 @@ Useful source documents:
 - Reincarnation may feel too punitive if carryover is too low.
 - Reincarnation may feel weightless if carryover is too high.
 - BodyTime may become a nuisance timer if it drains everywhere without interesting spend decisions.
-- Cultivation may feel generic if tier-up is only stat scaling.
+- Level/stat progression may feel generic if combat and reincarnation do not create meaningful decisions.
 - LLM NPCs may feel like chatbots if they ignore world state, quest state, or memory.
 
 ### Technical Risks
@@ -789,7 +773,7 @@ Useful source documents:
 | Whether SECOND directly seeds BodyTime or only gates body creation | Reincarnation MVP |
 | SECOND token sources and sinks beyond reincarnation | Reincarnation MVP |
 | BodyTime drain, earn, spend, transfer, and conversion rules | BodyTime MVP |
-| Cultivation carryover rule after reincarnation | Reincarnation MVP |
+| Future advanced body progression direction | Post-slice brainstorm |
 | Offline-agent default policy and risk threshold | Offline-agent MVP |
 | Hunter NFT integration approach | NFT equip MVP |
 | First OpenClaw-connected NPC role | OpenClaw bridge prototype |

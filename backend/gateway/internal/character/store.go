@@ -195,10 +195,6 @@ func NewDefaultAgentContext(playerID string, now time.Time) AgentContext {
 				MaxSeconds:       24 * 60 * 60,
 				DangerDrainRate:  1,
 			},
-			Cultivation: Cultivation{
-				Tier:       "Awakening",
-				ProgressXP: 0,
-			},
 			Lifecycle: BodyLifecycleAlive,
 			AgentPolicy: AgentPolicy{
 				Enabled:               true,
@@ -217,7 +213,7 @@ func NewDefaultAgentContext(playerID string, now time.Time) AgentContext {
 				CombatStyle:       "avoid risky fights, kite when threatened",
 				SocialStyle:       "brief, grounded, and helpful",
 				MoralBoundaries:   []string{"do not betray allies", "do not spend scarce resources without permission"},
-				LongTermGoals:     []string{"reach Enhancement", "build trusted relationships with NPCs"},
+				LongTermGoals:     []string{"survive the next expedition", "build trusted relationships with NPCs"},
 				PlayerNotes:       "prototype default soul",
 				ReincarnationLore: "a synthetic body carrying a persistent consciousness imprint",
 			},

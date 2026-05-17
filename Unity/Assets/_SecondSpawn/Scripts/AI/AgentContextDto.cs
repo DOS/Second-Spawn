@@ -41,7 +41,6 @@ namespace SecondSpawn.AI
         public CharacterStatsDto stats;
         public CharacterTraitsDto characteristics;
         public BodyTimeDto time;
-        public CultivationDto cultivation;
         public string lifecycle = "alive";
         public AgentPolicyDto agent_policy;
         public SoulProfileDto soul;
@@ -99,13 +98,6 @@ namespace SecondSpawn.AI
         public string source;
         public long amount_seconds;
         public string note;
-    }
-
-    [Serializable]
-    public sealed class CultivationDto
-    {
-        public string tier;
-        public long progress_xp;
     }
 
     [Serializable]
@@ -202,7 +194,6 @@ namespace SecondSpawn.AI
         public CharacterStatsDto stats;
         public CharacterTraitsDto characteristics;
         public BodyTimeDto time;
-        public CultivationDto cultivation;
         public SoulProfileDto soul;
         public AgentPolicyDto agent_policy;
     }

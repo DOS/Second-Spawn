@@ -6,7 +6,7 @@
 *Last Verified: 2026-05-14 against MetaDOS wiki and SECOND SPAWN concept docs*
 *Implements Pillar: Time is life, time is money*
 
-> **Quick reference** - Layer: `Core Economy` - Priority: `Vertical Slice` - Key deps: `Reincarnation`, `Cultivation`, `Loot`, `Supabase persistence`, `Server-authoritative gameplay`
+> **Quick reference** - Layer: `Core Economy` - Priority: `Vertical Slice` - Key deps: `Reincarnation`, `Loot`, `Profile persistence`, `Server-authoritative gameplay`
 
 ---
 
@@ -33,7 +33,7 @@ Every major decision should quietly ask:
 
 ## Player Fantasy
 
-Your body is a rented vessel with a countdown built into its biology. You can earn more time by fighting, looting, completing objectives, or extracting Nibirium energy. You can spend time to buy supplies, stabilize allies, power certain systems, or delay body failure.
+Your body is a rented vessel with a countdown built into its biology. You can earn more time by fighting, looting, or completing objectives. You can spend time to buy supplies, stabilize allies, power certain systems, or delay body failure.
 
 The fantasy is not "gold with another name." It is "your life is liquid."
 
@@ -57,7 +57,7 @@ The fantasy is not "gold with another name." It is "your life is liquid."
 | MetaDOS Battle Royale Concept | SECOND SPAWN Adaptation |
 | ---- | ---- |
 | Time is a match survival timer | Time is synthetic-body lifespan and combat pressure. |
-| Loot time from knocked-down enemies | Earn time from enemies, Nibirium nodes, quests, dungeon objectives, or cultivation events. |
+| Loot time from knocked-down enemies | Earn time from enemies, quests, or dungeon objectives. |
 | Spend time on weapons, ammo, armor, supplies | Spend time on field services, emergency stabilization, dungeon shortcuts, body repairs, or agent automation policies. |
 | Give time to knocked-down teammates | Transfer time to party members or stabilize a dying body. |
 | Running out of time means death | Running out of time triggers body death and reincarnation. |
@@ -87,7 +87,7 @@ No marketplace, tokenomics, or complex exchange rate is required for the first p
 | ---- | ---- | ---- | ---- |
 | `BodyTime` | Remaining operating life of the current body | Moment-to-moment gameplay | Dies with the body unless converted by a rule |
 | `SECOND token` | Reincarnation and economy token | Account / wallet economy | Persists across bodies |
-| Cultivation tier | Durable consciousness progression | Character identity | Partially carries across reincarnation |
+| Level and stats | Current-body progression | Body power | Reset or partially carry only if a future rule says so |
 
 Design rule: `BodyTime` creates tactical pressure. `SECOND token` gates reincarnation economy. Do not merge them unless a future ADR explicitly changes the economy.
 
@@ -112,7 +112,6 @@ Design rule: `BodyTime` creates tactical pressure. `SECOND token` gates reincarn
 | ---- | ---- | ---- |
 | Enemy kill | Yes | Keep value small and server-owned. |
 | Objective completion | Yes | Clear reward moment. |
-| Nibirium node | Later | Connects to cultivation economy. |
 | Quest reward | Later | Needs quest persistence. |
 | Party assist | Later | Needs party and contribution rules. |
 | Offline agent farming | Later | Needs abuse limits and activity log. |
@@ -184,7 +183,7 @@ Design constraints:
 | Pillar rules | `01-pillars.md` | Time-as-currency, server-authoritative gameplay | Rule dependency |
 | Slice scope | `02-vertical-slice-spec.md` | Reincarnation and AI agent acceptance | Scope dependency |
 | Systems map | `03-systems-index.md` | Economy and reincarnation systems | Build dependency |
-| Cultivation | `04-cultivation-system.md` | Durable progression across reincarnation | Data dependency |
+| Level/stat progression | `10-character-profile-agent-memory.md` | Current body profile state | Data dependency |
 
 ## External References
 

@@ -68,7 +68,7 @@ func TestCharacterContextLifecycle(t *testing.T) {
 			"combat_style": "avoid fights",
 			"social_style": "plain",
 			"moral_boundaries": ["do not spend body time"],
-			"long_term_goals": ["reach Enhancement"],
+			"long_term_goals": ["survive the next expedition"],
 			"player_notes": "test note",
 			"reincarnation_lore": "synthetic continuity"
 		},
@@ -155,10 +155,6 @@ func TestAgentDecidePrototype(t *testing.T) {
 					"max_seconds": 86400,
 					"danger_drain_rate": 1
 				},
-				"cultivation": {
-					"tier": "Awakening",
-					"progress_xp": 0
-				},
 				"lifecycle": "alive",
 				"agent_policy": {
 					"enabled": true,
@@ -177,7 +173,7 @@ func TestAgentDecidePrototype(t *testing.T) {
 					"combat_style": "avoid risky fights",
 					"social_style": "brief",
 					"moral_boundaries": ["do not betray allies"],
-					"long_term_goals": ["reach Enhancement"],
+					"long_term_goals": ["survive the next expedition"],
 					"player_notes": "prototype",
 					"reincarnation_lore": "synthetic continuity"
 				},

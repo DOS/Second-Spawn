@@ -10,7 +10,7 @@ following boundaries; the prototype has not wired every item yet:
 - Per-player rate limits + daily token budget (Redis)
 - Server-side intent validation (no LLM-driven state mutation)
 - Prompt injection defense (reuses DOSafe patterns)
-- Provider routing (Anthropic for boss / cultivation master dialogue,
+- Provider routing (Anthropic for boss / quest-critical dialogue,
   Convai for general NPC dialogue in phase 1)
 
 Reuses the operational pattern of `D:\Projects\DOSRouter` (the Go LLM

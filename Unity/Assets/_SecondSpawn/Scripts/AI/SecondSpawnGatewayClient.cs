@@ -567,7 +567,6 @@ namespace SecondSpawn.AI
             public CharacterStatsDto stats;
             public CharacterTraitsDto characteristics;
             public BodyTimeDto time;
-            public CultivationDto cultivation;
             public AgentPolicyDto agent_policy;
             public SoulProfileDto soul;
             public MemoryRecordDto[] memory;
@@ -588,7 +587,6 @@ namespace SecondSpawn.AI
                     stats = body.stats,
                     characteristics = body.characteristics,
                     time = body.time,
-                    cultivation = body.cultivation,
                     agent_policy = body.agent_policy,
                     soul = body.soul,
                     memory = body.memory

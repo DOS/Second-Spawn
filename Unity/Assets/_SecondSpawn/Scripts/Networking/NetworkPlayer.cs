@@ -12,8 +12,8 @@ namespace SecondSpawn.Networking
     /// owns every <c>[Networked]</c> property. Per Pillar 4 (Server-authoritative
     /// gameplay) and Hard Rule #2 (LLM never mutates state directly).</para>
     ///
-    /// <para>Vertical slice scope: position + rotation + cultivation tier +
-    /// HP + agent flag. Inventory, quest progress, NFT lock state are
+    /// <para>Vertical slice scope: position, rotation, level, combat stats,
+    /// BodyTime, HP, and agent flag. Inventory, quest progress, NFT lock state are
     /// persisted in Supabase (durable layer), not held in
     /// <c>[Networked]</c> properties (session layer).</para>
     /// </summary>
@@ -21,7 +21,6 @@ namespace SecondSpawn.Networking
     [RequireComponent(typeof(SimpleKCC))]
     public sealed class NetworkPlayer : NetworkBehaviour
     {
-        [Networked] public int CultivationTier { get; set; }
         [Networked] public float Hp { get; set; }
         [Networked] public float Stamina { get; set; }
         [Networked] public int Level { get; set; }
@@ -68,7 +67,6 @@ namespace SecondSpawn.Networking
 
             if (HasStateAuthority)
             {
-                CultivationTier = 1; // Awakening - starting tier per docs/design/04-cultivation-system.md
                 ApplyDefaultStats();
                 if (EquipmentVisualId == EquipmentVisualCatalog.None)
                 {

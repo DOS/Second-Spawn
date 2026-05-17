@@ -76,7 +76,7 @@ The current prototype module registers:
 
 - `secondspawn_health` - unauthenticated smoke check through `runtime.http_key`
 - `secondspawn_profile_get` - get or create the authenticated player's profile,
-  current body, soul, policy, BodyTime, cultivation, memory context, runtime
+  current body, soul, policy, BodyTime, level/stats, memory context, runtime
   stats, and bounded agent activity log
 - `secondspawn_memory_add` - add or deduplicate compact memory records
 - `secondspawn_soul_update` - update soul, characteristics, and agent policy

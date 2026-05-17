@@ -69,7 +69,7 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 - Nakama OSS backend base with TypeScript runtime modules, local config, custom
   Supabase-auth bridge, profile bootstrap, soul update, memory write, and agent
   decision RPC.
-- Agent context, soul, character trait, BodyTime, cultivation, policy, and memory
+- Agent context, soul, character trait, BodyTime, level/stats, policy, and memory
   contracts.
 - Unity gateway client with Nakama fallback, local memory seeding, NPC chat,
   speech bubble, and prototype voice cue.

@@ -92,10 +92,10 @@ The actual implementations land in `Assets/_SecondSpawn/Scripts/Networking/` (as
 
 ### `NetworkPlayer` (NetworkBehaviour)
 
-- Holds `[Networked]` properties: position, rotation, cultivation tier, HP, stamina, current zone.
+- Holds `[Networked]` properties: position, rotation, level, combat stats, HP, stamina, current zone.
 - Server-authoritative: client predicts visually, server overrides on next tick.
 - Spawned on player join (server-side spawn flow), despawned on disconnect.
-- Reincarnation flow keeps `cultivationTier` (partial) - see [04-cultivation-system.md](04-cultivation-system.md).
+- Reincarnation flow resets or carries selected level/stat values according to the future reincarnation rule.
 
 ### `NetworkInputProvider` (MonoBehaviour)
 
@@ -120,7 +120,7 @@ The actual implementations land in `Assets/_SecondSpawn/Scripts/Networking/` (as
 - Per offline player whose character is still in a zone, runs a server-side decision loop:
   pull state -> call `api.dos.ai` / Go LLM Gateway with capability-cap + rate-limit headers -> receive intent -> validate -> apply.
 - Inherits the player's rate limit + LLM token budget (no double-charging).
-- Death of agent = body death = reincarnation flow same as player (see [04-cultivation-system.md](04-cultivation-system.md)).
+- Death of agent = body death = reincarnation flow same as player.
 
 ---
 
@@ -136,7 +136,7 @@ The actual implementations land in `Assets/_SecondSpawn/Scripts/Networking/` (as
 ## Persistence boundary
 
 Photon Fusion 2 manages **session state** (in-zone networked properties).
-Nakama OSS + Postgres manages **durable state** (profile, inventory snapshot, quest progress, NFT lock state, cultivation tier).
+Nakama OSS + Postgres manages **durable state** (profile, inventory snapshot, quest progress, NFT lock state, level/stats).
 
 The dedicated server flushes Nakama/Postgres on:
 

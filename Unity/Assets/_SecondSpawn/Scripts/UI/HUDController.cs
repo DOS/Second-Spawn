@@ -47,7 +47,7 @@ namespace SecondSpawn.UI
             var rect = new Rect(_panelPosition.x, _panelPosition.y, _panelSize.x, _panelSize.y);
             GUI.Box(rect, "SECOND SPAWN");
             GUILayout.BeginArea(new Rect(rect.x + 12f, rect.y + 24f, rect.width - 24f, rect.height - 32f));
-            GUILayout.Label($"Level {player.Level} | Tier {player.CultivationTier}", _labelStyle);
+            GUILayout.Label($"Level {player.Level}", _labelStyle);
             GUILayout.Label($"HP {player.Hp:0}/{player.MaxHealth} | Energy {player.Stamina:0}/{player.MaxEnergy}", _labelStyle);
             GUILayout.Label($"ATK {player.AttackPower} | DEF {player.DefensePower} | AGI {player.Agility}", _labelStyle);
             GUILayout.Label($"BodyTime {FormatSeconds(player.BodyTimeRemainingSeconds)} / {FormatSeconds(player.BodyTimeMaxSeconds)}", _labelStyle);
