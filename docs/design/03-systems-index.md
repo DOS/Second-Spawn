@@ -1,7 +1,8 @@
 # Systems Index: SECOND SPAWN
 
-*Status: Draft (bootstrapped from CLAUDE.md tech stack + gameplay arch)*
+*Status: Living index*
 *Created: 2026-05-14*
+*Last updated: 2026-05-17*
 
 ---
 
@@ -29,30 +30,30 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 
 | # | System | Category | Priority | Status | Design Doc | Depends On |
 | --- | ---- | ---- | ---- | ---- | ---- | ---- |
-| 1 | NetworkRunner / Photon Fusion 2 setup | Core | MVP | Not started | (TDD pending) | - |
-| 2 | Player Controller (minimal baseline, Simple KCC spike, Opsive UCC evaluation later) | Core | MVP | Drafted | [07-player-controller-prototype.md](07-player-controller-prototype.md) | NetworkRunner |
-| 3 | Camera (top-down ARPG) | Core | MVP | Not started | (TDD pending) | Player Controller |
-| 4 | Input system (Unity Input System) | Core | MVP | Not started | - | Player Controller |
-| 5 | Zone scene management (1 zone vertical slice) | Core | MVP | Not started | (TDD pending) | NetworkRunner |
+| 1 | NetworkRunner / Photon Fusion 2 setup | Core | MVP | Prototype | (TDD pending) | - |
+| 2 | Player Controller (minimal baseline, Simple KCC spike, Opsive UCC evaluation later) | Core | MVP | Prototype | [07-player-controller-prototype.md](07-player-controller-prototype.md) | NetworkRunner |
+| 3 | Camera (top-down ARPG) | Core | MVP | Prototype | (TDD pending) | Player Controller |
+| 4 | Input system (Unity Input System) | Core | MVP | Prototype | - | Player Controller |
+| 5 | Zone scene management (1 zone vertical slice) | Core | MVP | Prototype | (TDD pending) | NetworkRunner |
 | 6 | Combat (ARPG action) | Gameplay | MVP | Not started | (TDD pending) | Player Controller, Networked state |
 | 7 | NPC dialogue (Convai SDK + intent validation) | Gameplay | MVP | Not started | (TDD pending) | api.dos.ai / Go LLM Gateway (phase 2 ready) |
 | 8 | Quest system (linear, 3-5 quests slice scope) | Gameplay | VS | Not started | (TDD pending) | NPC dialogue, persistence |
 | 9 | Dungeon instance (1 dungeon, 1 boss) | Gameplay | VS | Not started | (TDD pending) | Combat, NPC dialogue, Photon |
 | 10 | Boss LLM dialogue (Convai grounded) | Gameplay | VS | Not started | (TDD pending) | NPC dialogue |
-| 11 | AI agent for offline players (server-side) | Gameplay | VS | Drafted | [10-character-profile-agent-memory.md](10-character-profile-agent-memory.md) | NetworkRunner, api.dos.ai / Go LLM Gateway, intent schema |
+| 11 | AI agent for offline players (server-side) | Gameplay | VS | Prototype | [10-character-profile-agent-memory.md](10-character-profile-agent-memory.md) | NetworkRunner, api.dos.ai / Go LLM Gateway, intent schema |
 | 37 | OpenClaw-connected NPC bridge (user-owned agents as NPC actors) | Gameplay / Meta | Alpha | Concept | [10-character-profile-agent-memory.md](10-character-profile-agent-memory.md) | Auth, Nakama, api.dos.ai / Go LLM Gateway, NPC dialogue, LLM safety |
 | 12 | Level/stat progression | Progression | MVP | Prototype | (covered by profile/runtime contracts) | Persistence |
-| 13 | Reincarnation flow (death -> SECOND -> new body) | Progression | VS | Not started | (TDD pending) | Level/stats, NFT escrow, Persistence |
+| 13 | Reincarnation flow (death -> SECOND -> new body) | Progression | VS | Prototype | [12-game-design-document.md](12-game-design-document.md) | Level/stats, NFT escrow, Persistence |
 | 14 | SECOND token economy | Economy | VS | Not designed | (GDD pending - JOY input) | DOS Chain integration |
-| 36 | Time-as-currency (`BodyTime`) | Economy | VS | Drafted | [08-time-as-currency.md](08-time-as-currency.md) | Reincarnation, Combat, Persistence |
+| 36 | Time-as-currency (`BodyTime`) | Economy | VS | Prototype | [08-time-as-currency.md](08-time-as-currency.md) | Reincarnation, Combat, Persistence |
 | 15 | NFT inventory (Hunter skin slice scope) | Economy | VS | Not started | (TDD pending) | thirdweb-api MCP, Persistence |
 | 16 | NFT escrow (lock on equip, release on unequip) | Economy | VS | Not started | (TDD pending) | NFT inventory, DOS Chain |
 | 17 | Loot / drop tables | Economy | VS | Not started | (TDD pending) | Combat, persistence |
-| 18 | Profile persistence (Nakama OSS + Postgres) | Persistence | MVP | Drafted | [10-character-profile-agent-memory.md](10-character-profile-agent-memory.md) | Auth |
+| 18 | Profile persistence (Nakama OSS + Postgres) | Persistence | MVP | Prototype | [10-character-profile-agent-memory.md](10-character-profile-agent-memory.md) | Auth |
 | 19 | Inventory persistence | Persistence | MVP | Not started | (TDD pending) | Profile, NFT inventory |
 | 20 | Quest progress persistence | Persistence | MVP | Not started | (TDD pending) | Profile, Quest system |
 | 21 | Level/stat persistence | Persistence | MVP | Prototype | (covered by profile/runtime contracts) | Profile |
-| 22 | Auth (Nakama + DOS Chain wallet, Supabase sidecar if useful) | Persistence | MVP | Not started | (TDD pending - reuse DOS.Me pattern as identity bridge reference) | Nakama, thirdweb |
+| 22 | Auth (Nakama + DOS Chain wallet, Supabase sidecar if useful) | Persistence | MVP | Prototype | (TDD pending - reuse DOS.Me pattern as identity bridge reference) | Nakama, thirdweb |
 | 23 | HUD (combat, level/stats, BodyTime) | UI | VS | Prototype | (deferred template `_deferred/hud-design.md`) | Combat, Profile |
 | 24 | Inventory UI | UI | VS | Not started | (deferred template `_deferred/ux-spec.md`) | Inventory persistence |
 | 25 | NPC dialogue UI | UI | VS | Not started | (deferred) | NPC dialogue |
@@ -61,8 +62,8 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 | 28 | AI agent activity log UI | UI | VS | Not started | (deferred) | AI agent |
 | 29 | Audio (SFX, ambient, music - placeholder for slice) | Audio | VS | Not started | (deferred template `_deferred/sound-bible.md`) | - |
 | 30 | Chat (Nakama channel first, Supabase Realtime sidecar only if useful) | Narrative / UI | VS | Not started | (TDD pending) | Nakama |
-| 31 | LLM intent validation (api.dos.ai / Go LLM Gateway pattern) | Meta / Engineering | MVP | Not started | (TDD pending - reuse DOSRouter) | LLM provider |
-| 32 | LLM safety (rate limit, prompt injection defense) | Meta / Engineering | MVP | Not started | (TDD pending - reuse DOSafe patterns) | api.dos.ai / Go LLM Gateway |
+| 31 | LLM intent validation (api.dos.ai / Go LLM Gateway pattern) | Meta / Engineering | MVP | Prototype | [11-npc-agent-brain-architecture.md](11-npc-agent-brain-architecture.md) | LLM provider |
+| 32 | LLM safety (rate limit, prompt injection defense) | Meta / Engineering | MVP | Partial | (TDD pending - reuse DOSafe patterns) | api.dos.ai / Go LLM Gateway |
 | 33 | Anti-cheat / server-authority verification | Meta / Engineering | MVP | (Architectural) | [docs/ARCHITECTURE.md "Critical Invariants"](../ARCHITECTURE.md#critical-invariants) | All gameplay systems |
 | 34 | Telemetry / monitoring (Sentry + Grafana) | Meta | Alpha | Deferred | - | All systems |
 | 35 | Onboarding / tutorial | Meta | VS | Deferred (assume slice = no tutorial) | - | All gameplay systems |
@@ -198,12 +199,14 @@ Effort estimate: S = 1-3 days, M = 4-7 days, L = 1-2 weeks, XL = 2-4 weeks (solo
 
 | Metric | Count |
 | ---- | ---- |
-| Total systems identified | 36 |
-| Design docs started | 6 (deferred advanced body progression, overview design, player controller prototype, time-as-currency, Pirate Adventure reference review, character profile / agent memory) |
+| Total systems identified | 37 |
+| Systems with prototype implementation | 14 |
+| Design docs started | 12 |
 | Design docs reviewed | 0 |
 | Design docs approved | 0 |
 | MVP systems with TDD started | 0 |
 | Vertical Slice systems with TDD started | 0 |
+| Execution tracker | GitHub Projects recommended for issue, PR, review, and milestone tracking |
 
 ---
 

@@ -1,7 +1,8 @@
 # Vertical Slice Spec: SECOND SPAWN
 
-*Status: Spec (slice not yet built)*
+*Status: Spec with prototype progress*
 *Created: 2026-05-14*
+*Last updated: 2026-05-17*
 *Target completion: 3-6 months from setup (T+3 to T+6 from 2026-05-14)*
 
 > Note: This is the SPEC version (planning the slice). After slice is built, rename to `02-vertical-slice-report.md` and fill the report template (build velocity, playtest results, recommendation PROCEED/PIVOT/KILL).
@@ -33,6 +34,37 @@ This is two questions in one: **does the design loop fun?** AND **is the archite
 | **Multiplayer** | 4-20 players per zone instance via Photon Fusion 2 |
 | **Chat** | Basic global + zone via Nakama channels |
 | **Voice NPC** | NOT in slice (defer phase 2) |
+
+---
+
+## Current Prototype Progress - 2026-05-17
+
+Already implemented:
+
+- Unity `ZoneTest_Hub` can spawn a Fusion local player.
+- The spawned player has networked level, combat stats, BodyTime, lifecycle,
+  SECOND balance, reincarnation count, visual key, and agent-control state.
+- Prototype HUD displays level, HP, energy, attack, defense, agility,
+  BodyTime, lifecycle, SECOND balance, and reincarnation count.
+- Nakama profile bootstrap persists player profile, current body, stats, traits,
+  soul, memory, agent policy, runtime, activity, BodyTime, and reincarnation
+  counters.
+- Unity can load the Nakama profile and apply current-body stats to the local
+  authoritative player.
+- BodyTime earn, spend, drain, zero-time death, and reincarnation are available
+  through server-side prototype RPCs and Unity debug controls.
+- NPC-like actor profiles exist, and `_AgentNPC_Prototype` can patrol, speak,
+  and use the gateway decision path with deterministic fallback.
+
+Still missing from the playable slice:
+
+- Real combat damage and server-authoritative enemy rewards.
+- Normal-play BodyTime earn and spend sources outside debug controls.
+- Player-vs-player or contested-zone time-loot rules.
+- Questline, dungeon, boss, and grounded dialogue content.
+- Production HUD and reincarnation presentation flow.
+- NFT skin equip and escrow.
+- Dedicated server deployment and 4-20 player load validation.
 
 ---
 
@@ -73,7 +105,7 @@ The slice is considered "done" when ALL of the following are true and verified b
 - [ ] Multiplayer 4-20 players per zone holds 60Hz tick under load test (Fusion bots simulating 50 players for stress).
 
 ### Process (verifiable in repo state)
-- [ ] All slice work merged to `main` via PR with `code-review` skill pass before merge (per JOY hard rule #4).
+- [ ] All slice work merged to `main` via PR with `code-review` skill pass before merge.
 - [ ] All ADRs that the slice motivated are written in `docs/adr/` (current count: 4; expect 6-10 by slice complete).
 - [ ] Per-system GDDs in `docs/design/` for Combat, AI agent, Reincarnation, Time-as-currency, NFT escrow, LLM NPC. (Time-as-currency is drafted; advanced body progression is deferred.)
 - [ ] Vertical Slice Report (`02-vertical-slice-report.md`) written with build velocity, playtest data, recommendation.

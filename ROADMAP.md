@@ -1,10 +1,46 @@
 # SECOND SPAWN Roadmap
 
 Status: Pre-alpha, vertical slice foundation in development.
+Last updated: 2026-05-17.
 
 This roadmap tracks implementation status. Detailed design remains in `docs/`,
 especially `docs/design/02-vertical-slice-spec.md` and
 `docs/design/03-systems-index.md`.
+
+## Tracking Model
+
+- `ROADMAP.md` tracks public milestone status and should stay readable without
+  GitHub access.
+- `CHANGELOG.md` tracks what changed after code, docs, or prototype merges.
+- `docs/design/12-game-design-document.md` tracks the living GDD and current
+  design truth.
+- GitHub Projects should track daily execution through issues, PRs, priorities,
+  owners, milestone views, and review state.
+- Primary execution project: [DOS Project #5](https://github.com/orgs/DOS/projects/5).
+- GitHub issues should become the unit of work for roadmap items once they are
+  ready to implement.
+- Pull requests should link issues and move project status through automation
+  where possible.
+
+Recommended GitHub Project fields:
+
+| Field | Values |
+| ---- | ---- |
+| Status | Inbox, Ready, In Progress, In Review, Blocked, Done |
+| Area | Unity, Nakama, Gateway, AI Agent, Design, Docs, DevOps, Economy, Combat, UX |
+| Milestone | Foundation, Vertical Slice, Alpha, Beta, Post-Launch |
+| Priority | P0, P1, P2, P3 |
+| Size | XS, S, M, L, XL |
+| Review Gate | Not Ready, Local Review, Gemini, Codex, Approved, Waived |
+| Verification | Not Run, Docs Lint, Backend Tests, Unity Smoke, Playtest |
+
+Recommended views:
+
+- Vertical Slice Board: group by Status and filter Milestone = Vertical Slice.
+- Engineering Table: sort by Priority, Area, and Size.
+- Review Queue: filter Status = In Review or Review Gate not Approved.
+- Roadmap: timeline or roadmap view grouped by Milestone.
+- Risks and Blockers: filter Status = Blocked or Priority = P0.
 
 ## Completed Foundation
 
@@ -36,6 +72,37 @@ especially `docs/design/02-vertical-slice-spec.md` and
 - [x] Project docs and ADRs for Fusion, Unity 6.5 beta, Nakama OSS, LLM safety,
   AI offline control, agent workflow, and backend boundaries.
 - [x] Backend tests for gateway contracts and Nakama runtime behavior.
+- [x] Unity project baseline upgraded to Unity `6000.5.0b8`.
+- [x] Cloud Run staging gateway smoke-tested with the current Unity player
+  context payload.
+- [x] Local Nakama runtime smoke-tested with the current TypeScript module.
+- [x] PR review fallback policy documented for local `code-review`, Gemini, and
+  Codex Cloud review availability.
+
+## Current Playable Prototype Snapshot
+
+- [x] `ZoneTest_Hub` enters Play Mode with a Fusion-spawned local player.
+- [x] The spawned player has networked level, combat stats, BodyTime, lifecycle,
+  SECOND balance, reincarnation count, visual key, and agent-control flag.
+- [x] Unity prototype HUD shows level, HP, energy, attack, defense, agility,
+  BodyTime, lifecycle, SECOND balance, and reincarnation count.
+- [x] Unity `CharacterMemorySync` pulls the Nakama player profile and applies
+  current-body stats, BodyTime, lifecycle, SECOND balance, reincarnation count,
+  and visual key onto the authoritative local `NetworkPlayer`.
+- [x] New player profile bootstrap creates a current body with level 1 stats:
+  vitality 10, force 8, agility 8, focus 8, resilience 8, health 100, energy
+  50, attack 10, and defense 5.
+- [x] Prototype account reserve starts with 604800 SECOND seconds, equal to
+  7 days, and reincarnation currently costs 432000 SECOND seconds, equal to
+  5 days.
+- [x] BodyTime earn, spend, drain, zero-time death, and reincarnation debug
+  controls exist in Play Mode for smoke testing.
+- [x] Actor profile registry exists for NPC-like actors, including body, stats,
+  traits, soul, memory, policy, runtime, and activity state.
+- [x] `_AgentNPC_Prototype` can bind to an actor profile, patrol, speak, and use
+  the model-backed gateway decision path with deterministic fallback.
+- [ ] Real combat damage, enemy rewards, loot drops, quest progress, and player
+  time-loot from other users are not implemented yet.
 
 ## Current Review Gate
 
@@ -47,6 +114,8 @@ especially `docs/design/02-vertical-slice-spec.md` and
 - [x] Defer cultivation/Nibirium runtime progression from the current vertical
   slice.
 - [x] Merge reincarnation placeholder flow into `dev`.
+- [x] Merge Unity `6000.5.0b8` upgrade and backend smoke fixes into `dev`.
+- [x] Merge PR review fallback policy into `dev`.
 
 ## Vertical Slice - Current Milestone
 
@@ -74,11 +143,15 @@ MVP, and a visible offline-agent prototype.
 - [x] Add BodyTime meter MVP with one earn source and one spend sink.
 - [x] Add reincarnation placeholder flow: death -> SECOND token check ->
   respawn with current-body reset.
-- [ ] Surface BodyTime, lifecycle, SECOND balance, reincarnation count, and
+- [x] Surface BodyTime, lifecycle, SECOND balance, reincarnation count, and
   debug reincarnation controls in the Unity prototype.
 - [ ] Design server-authoritative PvP or contested-zone loot rules where
   BodyTime and SECOND can be taken from other users after validated combat or
   zone events. Clients and LLMs must never self-report this loot.
+- [ ] Implement the first server-authoritative combat reward path that can grant
+  BodyTime after a validated enemy kill or objective completion.
+- [ ] Implement the first server-authoritative contested loot rule for taking
+  BodyTime or SECOND from another user after a validated PvP or zone event.
 - [ ] Add one dungeon instance with one boss and grounded dialogue.
 - [ ] Add one Hunter NFT skin equip placeholder with DOS Chain escrow design
   still server-authoritative.

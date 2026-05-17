@@ -7,6 +7,17 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 
 ### Added
 
+- Unity `NetworkPlayer` now carries prototype level, combat stats, BodyTime,
+  lifecycle, SECOND balance, reincarnation count, visual key, and agent-control
+  state as networked fields.
+- Prototype HUD now shows level, HP, energy, attack, defense, agility,
+  BodyTime, lifecycle, SECOND balance, and reincarnation count.
+- Unity `CharacterMemorySync` now applies Nakama profile body state onto the
+  authoritative local player after profile load.
+- Prototype BodyTime and reincarnation debug panel for exercising earn, spend,
+  drain, zero-time death, and reincarnation from Play Mode.
+- Actor profile registry for NPC-like actors, including body, stats, traits,
+  soul, memory, policy, runtime, and activity state.
 - Prototype NPC brain phase tracing for `Sense -> Decide -> Validate -> Act ->
   Reflect -> Cooldown`, with a serialized toggle for local debugging.
 - Model-backed JSON intent path for `/v1/agent/decide`.
@@ -25,9 +36,20 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   cooldown, activity logging, and zero-time body death.
 - Nakama `secondspawn_reincarnate` RPC for a prototype zero-time death to fresh
   body flow using a 5-day SECOND cost against a 7-day starting test balance.
+- Unity `6000.5.0b8` project baseline.
+- PR review fallback policy for local `code-review`, Gemini, and Codex Cloud
+  review availability.
+- Roadmap tracking model for using GitHub Projects as the issue, PR, review,
+  and milestone execution layer.
+- GitHub Project #5 tracking guide with source-of-truth split, recommended
+  fields, views, seed issues, and CLI project-scope note.
 
 ### Changed
 
+- Local Unity prototype can show a player with persisted profile stats after
+  joining the hub scene.
+- Current visible progression baseline is level and body-bound stats. Advanced
+  body progression, cultivation tiers, and Nibirium XP remain deferred.
 - Gateway config now supports `AGENT_DECISION_MODEL`.
 - Gateway docs and Cloud Run env examples now describe the model-backed decision
   path.
@@ -43,17 +65,29 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   lifecycle state in the shared profile DTO.
 - Unity gateway client now exposes SECOND balance, reincarnation count, and a
   Nakama reincarnation wrapper for prototype UI and playtest flows.
+- Gateway player profile schema now accepts `second_balance_seconds` and
+  `reincarnation_count` in Unity-originated agent context payloads.
+- Nakama storage writes now use create/update version handling compatible with
+  refreshed local runtime state.
 
 ### Verification
 
-- `go test ./...` in `backend/gateway`.
-- `npm test` in `backend/nakama`.
-- Unity MCP refresh and Play Mode smoke for NPC brain phase traces.
+- `go test -count=1 ./...` and `go vet ./...` in `backend/gateway`.
+- Cloud Run staging gateway `/readyz` and `/v1/agent/decide` smoke on revision
+  `second-spawn-gateway-00008-cnn`.
+- `npm run build` and `npm test` in `backend/nakama`.
+- Local Nakama runtime `secondspawn_health` smoke with the current module.
+- Unity Play Mode smoke for `ZoneTest_Hub`, including profile/stat sync,
+  BodyTime UI, reincarnation debug flow, and NPC brain traces.
+- Markdown lint and dash scan for docs updates.
 
 ### Known Issues
 
-- PR #5 has merged into `dev`; the next review gate is the profile bootstrap
-  and agent activity branch.
+- Real combat damage, enemy rewards, loot drops, quest progress, and player
+  time-loot from other users are not implemented yet.
+- Unity UI is still prototype IMGUI, not production HUD.
+- Supabase anonymous auth can be used when configured, but the local prototype
+  still supports Nakama device fallback for development.
 - Gateway route-level JWT enforcement is not complete.
 - LLM rate limiting and token budget enforcement are tracked in issue #6.
 - Real voice still waits for an ephemeral-token provider flow.

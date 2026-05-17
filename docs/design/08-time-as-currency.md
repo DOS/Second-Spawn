@@ -1,9 +1,9 @@
 # Time-as-Currency
 
-*Status: Draft*
+*Status: Prototype implemented*
 *Created: 2026-05-14*
 *Author: Codex*
-*Last Verified: 2026-05-14 against MetaDOS wiki and SECOND SPAWN concept docs*
+*Last Verified: 2026-05-17 against Nakama BodyTime runtime, Unity HUD, and reincarnation debug flow*
 *Implements Pillar: Time is life, time is money*
 
 > **Quick reference** - Layer: `Core Economy` - Priority: `Vertical Slice` - Key deps: `Reincarnation`, `Loot`, `Profile persistence`, `Server-authoritative gameplay`
@@ -68,14 +68,41 @@ The fantasy is not "gold with another name." It is "your life is liquid."
 
 The first vertical slice should implement a very small version:
 
-- One `BodyTime` meter on the player.
+- One `BodyTime` meter on the player. Implemented in the prototype HUD.
 - Time decreases only inside a designated danger area or dungeon room.
 - Killing enemies or completing a small objective grants time.
 - A test vendor or shrine lets the player spend time on one useful service.
-- Reaching zero time triggers the reincarnation placeholder flow.
+- Reaching zero time triggers the reincarnation placeholder flow. Implemented
+  through the Nakama prototype RPC and Unity debug panel.
 - Offline AI agent activity can consume time while farming.
 
 No marketplace, tokenomics, or complex exchange rate is required for the first pass.
+
+## Prototype Implementation Status
+
+Implemented:
+
+- Nakama `secondspawn_bodytime_event` validates prototype earn, spend, drain,
+  and debug fatal-drain events.
+- BodyTime is stored on the current body profile with remaining seconds, max
+  seconds, and danger drain rate.
+- BodyTime cannot be changed on a dead body before reincarnation.
+- Duplicate earn events are rate-limited by source cooldown.
+- BodyTime reaching zero marks the current body dead.
+- Unity `CharacterMemorySync` can call the BodyTime RPC and apply the returned
+  profile state to the authoritative local player.
+- Unity prototype HUD displays BodyTime and lifecycle.
+- Unity debug panel can exercise earn, spend, drain, fatal drain, and
+  reincarnation while combat rewards are still absent.
+
+Not implemented:
+
+- Real enemy kills or objective completion rewards.
+- Real spend sink inside normal play.
+- Transfer between party members.
+- Player-vs-player or contested-zone time loot.
+- Conversion between `BodyTime` and SECOND token.
+- Final tuning for drain, earn, and spend values.
 
 ---
 
@@ -170,6 +197,7 @@ Design constraints:
 | ---- | ---- | ---- | ---- |
 | Does `BodyTime` tick down everywhere or only in danger zones? | JOY | Before implementation | Danger zones first. |
 | Can players transfer time in solo slice? | JOY | Before party feature | Defer until party exists. |
+| Can players loot time from other users? | JOY + Codex | Before PvP or contested-zone prototype | Allow only after server-validated combat or zone events. |
 | Can `BodyTime` convert to `SECOND token` or vice versa? | JOY | Economy design phase | Keep separate for now. |
 | How visible should the `In Time` inspiration be? | JOY | Narrative pass | Mechanic inspiration only, not direct theme copy. |
 
