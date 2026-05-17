@@ -134,6 +134,7 @@ GameObject:
   - component: {fileID: 34500819}
   - component: {fileID: 34500820}
   - component: {fileID: 34500821}
+  - component: {fileID: 34500822}
   m_Layer: 0
   m_Name: _AgentGateway
   m_TagString: Untagged
@@ -271,6 +272,24 @@ MonoBehaviour:
   _displayName: JOY
   _draftMessage: Hub chat is online.
   _messageLimit: 8
+--- !u!114 &34500822
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 34500814}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b5f84b1d2d3499fb377e18e36cbfb39, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.PrototypeNpcWorldDebugPanel
+  _showPanel: 1
+  _panelPosition: {x: 552, y: 280}
+  _panelSize: {x: 420, y: 292}
+  _actorAId: npc-synthetic-sentinel-0101
+  _actorBId: npc-wasteland-courier-0244
+  _topic: patrol
 --- !u!1 &47583031
 GameObject:
   m_ObjectHideFlags: 0

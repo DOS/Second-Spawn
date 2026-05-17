@@ -106,6 +106,10 @@ Recommended views:
   controls exist in Play Mode for smoke testing.
 - [x] Actor profile registry exists for NPC-like actors, including body, stats,
   traits, soul, memory, policy, runtime, and activity state.
+- [x] Permanent prototype NPC Frames can be seeded and listed from Nakama as
+  server-owned public actor profiles with durable memory and activity state.
+- [x] Prototype NPC-to-NPC interaction ticks can record deterministic dialogue,
+  relationship memory, and activity logs for two permanent NPC actors.
 - [x] Nakama has prototype OpenClaw bridge RPCs for Frame binding, structured
   context read, pending intent submission, and heartbeat/audit updates.
 - [x] Unity Play Mode has an OpenClaw bridge debug panel for binding, context
@@ -148,6 +152,9 @@ MVP, and a visible offline-agent prototype.
 - [ ] Replace prototype cube visuals with one approved Hunter-style player
   visual using the existing visual prefab catalog.
 - [ ] Add a proper hub NPC prefab using the prototype NPC brain contract.
+- [x] Add server-owned permanent NPC seed/list and prototype interaction RPCs.
+- [x] Add a Unity Play Mode debug panel for permanent NPC seed/list and
+  NPC-to-NPC interaction smoke testing.
 - [x] Add Nakama channel-based basic chat for the vertical slice.
 - [x] Surface agent runtime stats and recent activity in an in-editor or
   prototype debug UI.
