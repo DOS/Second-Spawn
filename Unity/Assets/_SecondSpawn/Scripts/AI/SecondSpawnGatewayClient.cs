@@ -568,9 +568,12 @@ namespace SecondSpawn.AI
             public string body_id;
             public string archetype_id;
             public string visual_prefab_key;
+            public int visual_variant;
             public EquipmentLoadoutDto equipment;
             public CharacterStatsDto stats;
             public CharacterTraitsDto characteristics;
+            public BodyStoryDto story;
+            public AnimationCapabilitiesDto animation_capabilities;
             public BodyTimeDto time;
             public AgentPolicyDto agent_policy;
             public SoulProfileDto soul;
@@ -588,9 +591,12 @@ namespace SecondSpawn.AI
                     body_id = body.body_id,
                     archetype_id = body.archetype_id,
                     visual_prefab_key = body.visual_prefab_key,
+                    visual_variant = body.visual_variant,
                     equipment = body.equipment,
                     stats = body.stats,
                     characteristics = body.characteristics,
+                    story = body.story,
+                    animation_capabilities = body.animation_capabilities,
                     time = body.time,
                     agent_policy = body.agent_policy,
                     soul = body.soul,

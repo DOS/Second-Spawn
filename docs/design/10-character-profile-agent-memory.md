@@ -103,7 +103,11 @@ Required fields:
 | ---- | ---- |
 | `body_id` | Unique current body ID |
 | `archetype_id` | Gameplay archetype or class key |
-| `visual_prefab_key` | Local Unity visual prefab key, used for random spawn visuals later |
+| `visual_prefab_key` | Server-selected Unity visual prefab key |
+| `visual_variant` | Prototype Unity visual catalog index for deterministic local loading |
+| `equipment` | Body-bound starting weapon and local equipment visual ID |
+| `story` | Short body-origin hook used by NPC/player onboarding and agent context |
+| `animation_capabilities` | Visual capability flags such as whether the current model has jump animation |
 | `body_time` | Current BodyTime state |
 | `stats` | Current level and combat stats |
 | `lifecycle` | `alive`, `dying`, `reincarnating`, or `dead` |
@@ -363,6 +367,10 @@ Implemented surfaces:
   `agent_activity` log. It exposes `secondspawn_profile_get`,
   `secondspawn_memory_add`, `secondspawn_soul_update`,
   `secondspawn_agent_activity_add`, and `secondspawn_agent_decide` runtime RPCs.
+- Nakama owns a prototype body archetype pool. New player profiles and
+  reincarnated bodies now receive a deterministic NPC-like body archetype with
+  distinct story hook, traits, stat bias, visual variant, weapon visual, soul
+  defaults, and animation capability flags.
 - Nakama runtime module tests cover Supabase custom-auth rewriting, profile
   bootstrap, memory dedupe, soul update clamping, deterministic fallback agent
   decisions, runtime counters, and activity logging.
@@ -386,10 +394,10 @@ Implemented surfaces:
   Nakama profile memory when a Nakama session exists, and calls the cloud
   gateway for NPC text chat, voice-session contract, and prototype LLM decision.
 - Unity `CharacterMemorySync` loads the Nakama profile and applies the current
-  body state onto the authoritative local `NetworkPlayer`.
-- The current player prototype starts at level 1 with vitality 10, force 8,
-  agility 8, focus 8, resilience 8, health 100, energy 50, attack 10, and
-  defense 5.
+  body stats, BodyTime, lifecycle, visual variant, weapon visual, and animation
+  capability flags onto the authoritative local `NetworkPlayer`.
+- The current player prototype starts at level 1 with stats selected from the
+  server-owned body archetype pool instead of one fixed stat line.
 - The prototype HUD shows level, HP, energy, attack, defense, agility,
   BodyTime, lifecycle, SECOND balance, and reincarnation count.
 - The current prototype account reserve starts with 604800 SECOND seconds and
@@ -421,10 +429,16 @@ Random model selection should use `visual_prefab_key`, not direct filesystem pat
 
 Flow:
 
-1. Server selects a valid visual key from an approved archetype pool.
-2. The spawned body stores that key in `BodyProfile`.
-3. Unity resolves the key to a local visual prefab.
-4. If the key is missing locally, Unity falls back to the default prototype visual and logs a warning.
+1. Server selects a valid body archetype from an approved archetype pool.
+2. The spawned body stores `visual_prefab_key`, `visual_variant`, equipment,
+   story, traits, soul defaults, and animation capability flags in
+   `BodyProfile`.
+3. Unity resolves the variant/key to a local visual prefab and reloads the
+   local visual if profile sync arrives after the initial Fusion spawn.
+4. Unity applies the server-selected weapon visual and disables jump animation
+   triggers for models whose body profile says `supports_jump: false`.
+5. If the key is missing locally, Unity falls back to the default prototype
+   visual and logs a warning.
 
 This keeps spawn visuals deterministic across clients and avoids letting clients choose invalid models.
 
@@ -464,7 +478,7 @@ The first playable version should support only a small intent set: move within s
 
 - [x] Backend data contract exists for profile, body, stats, soul, policy, and memory.
 - [x] LLM context builder is deterministic and bounded.
-- [ ] Random visual selection has a server-owned key contract.
+- [x] Random visual selection has a server-owned key contract.
 - [ ] OpenClaw-connected NPCs have identity binding, consent scope, moderation state, and rate limits before any prototype.
 - [x] Unity never sends provider keys or direct state mutations.
 - [x] Offline-agent intent flow uses the same network input shape as player input for prototype movement.

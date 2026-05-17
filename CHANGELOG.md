@@ -43,6 +43,9 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   and milestone execution layer.
 - GitHub Project #5 tracking guide with source-of-truth split, recommended
   fields, views, seed issues, and CLI project-scope note.
+- Server-owned prototype body archetype pool for new player bodies and NPC-like
+  actor profiles, including story hooks, stat bias, traits, soul defaults,
+  equipment visuals, visual variants, and animation capability flags.
 
 ### Changed
 
@@ -52,6 +55,9 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   body, BodyTime pressure, NPC knowledge, and faction tension.
 - Local Unity prototype can show a player with persisted profile stats after
   joining the hub scene.
+- Unity profile sync now reloads the local visual model from the Nakama body
+  profile, applies the server-selected weapon visual, and skips jump animation
+  triggers for models marked as missing jump support.
 - Current visible progression baseline is level and body-bound stats. Advanced
   body progression, cultivation tiers, and Nibirium XP remain deferred.
 - Gateway config now supports `AGENT_DECISION_MODEL`.

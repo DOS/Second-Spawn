@@ -39,9 +39,12 @@ namespace SecondSpawn.AI
         public string body_id;
         public string archetype_id;
         public string visual_prefab_key;
+        public int visual_variant = -1;
         public EquipmentLoadoutDto equipment;
         public CharacterStatsDto stats;
         public CharacterTraitsDto characteristics;
+        public BodyStoryDto story;
+        public AnimationCapabilitiesDto animation_capabilities;
         public BodyTimeDto time;
         public string lifecycle = "alive";
         public AgentPolicyDto agent_policy;
@@ -67,6 +70,21 @@ namespace SecondSpawn.AI
         public int discipline = 5;
         public int aggression = 3;
         public int sociability = 5;
+    }
+
+    [Serializable]
+    public sealed class BodyStoryDto
+    {
+        public string origin;
+        public string role;
+        public string conflict;
+        public string rumor;
+    }
+
+    [Serializable]
+    public sealed class AnimationCapabilitiesDto
+    {
+        public bool supports_jump = true;
     }
 
     [Serializable]
@@ -200,8 +218,12 @@ namespace SecondSpawn.AI
         public string display_name;
         public string archetype_id;
         public string visual_prefab_key;
+        public int visual_variant = -1;
+        public EquipmentLoadoutDto equipment;
         public CharacterStatsDto stats;
         public CharacterTraitsDto characteristics;
+        public BodyStoryDto story;
+        public AnimationCapabilitiesDto animation_capabilities;
         public BodyTimeDto time;
         public SoulProfileDto soul;
         public AgentPolicyDto agent_policy;

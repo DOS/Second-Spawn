@@ -41,6 +41,7 @@ namespace SecondSpawn.Networking
         [Networked] public int ReincarnationCount { get; set; }
         [Networked] public int VisualVariant { get; set; }
         [Networked] public int EquipmentVisualId { get; set; }
+        [Networked] public NetworkBool SupportsJumpAnimation { get; set; }
 
         /// <summary>True when the offline AI agent is driving this character (Pillar 1).</summary>
         [Networked] public NetworkBool IsAgentControlled { get; set; }
@@ -74,6 +75,11 @@ namespace SecondSpawn.Networking
                 if (EquipmentVisualId == EquipmentVisualCatalog.None)
                 {
                     EquipmentVisualId = EquipmentVisualCatalog.GetDefaultForVisualVariant(VisualVariant);
+                }
+
+                if (!SupportsJumpAnimation)
+                {
+                    SupportsJumpAnimation = true;
                 }
 
                 IsAgentControlled = false;
@@ -167,6 +173,23 @@ namespace SecondSpawn.Networking
             EquipmentVisualId = Mathf.Max(EquipmentVisualCatalog.None, equipmentVisualId);
         }
 
+        public void ApplyProfileVisual(int visualVariant, int equipmentVisualId, bool supportsJumpAnimation)
+        {
+            if (!HasStateAuthority)
+            {
+                Debug.LogWarning("[NetworkPlayer] Ignored profile visual on a non-authoritative player.");
+                return;
+            }
+
+            VisualVariant = VisualPrefabCatalog.NormalizeVariant(visualVariant);
+            EquipmentVisualId = Mathf.Max(
+                EquipmentVisualCatalog.None,
+                equipmentVisualId != EquipmentVisualCatalog.None
+                    ? equipmentVisualId
+                    : EquipmentVisualCatalog.GetDefaultForVisualVariant(VisualVariant));
+            SupportsJumpAnimation = supportsJumpAnimation;
+        }
+
         public void ApplyProfileStats(
             int level,
             int vitality,
@@ -245,6 +268,7 @@ namespace SecondSpawn.Networking
             BodyTimeMaxSeconds = 24 * 60 * 60;
             BodyTimeDangerDrainRate = 1;
             VisualVariant = 12;
+            SupportsJumpAnimation = true;
             IsBodyDead = false;
             SecondBalanceSeconds = 7 * 24 * 60 * 60;
             ReincarnationCount = 0;
