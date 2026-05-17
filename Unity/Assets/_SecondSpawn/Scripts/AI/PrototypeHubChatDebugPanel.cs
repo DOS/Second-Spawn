@@ -35,8 +35,7 @@ namespace SecondSpawn.AI
 
         private void Update()
         {
-            var keyboard = Keyboard.current;
-            if (keyboard != null && keyboard[_toggleKey].wasPressedThisFrame)
+            if (PrototypeDebugInput.WasPressedThisFrame(_toggleKey, Key.F3))
             {
                 _showPanel = !_showPanel;
             }

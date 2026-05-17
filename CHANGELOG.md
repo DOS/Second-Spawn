@@ -141,6 +141,8 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   to the authenticated local session owner, allowing local seed/list RPCs to run.
 - Permanent NPC world profile storage now uses a separate key prefix so it does
   not overwrite player source-body actor profiles with the same actor ID.
+- Prototype debug hotkeys now tolerate legacy serialized `KeyCode` values still
+  present in open Unity scene instances, preventing `Key` range exceptions.
 
 ### Verification
 
