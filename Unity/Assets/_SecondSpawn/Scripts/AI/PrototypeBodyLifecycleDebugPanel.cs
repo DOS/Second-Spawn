@@ -38,8 +38,7 @@ namespace SecondSpawn.AI
 
         private void Update()
         {
-            var keyboard = Keyboard.current;
-            if (keyboard != null && keyboard[_toggleKey].wasPressedThisFrame)
+            if (PrototypeDebugInput.WasPressedThisFrame(_toggleKey, Key.F2))
             {
                 _showPanel = !_showPanel;
             }
@@ -194,6 +193,69 @@ namespace SecondSpawn.AI
             }
 
             return seconds >= int.MaxValue ? int.MaxValue : (int)seconds;
+        }
+    }
+
+    internal static class PrototypeDebugInput
+    {
+        public static bool WasPressedThisFrame(Key serializedKey, Key fallback)
+        {
+            var keyboard = Keyboard.current;
+            if (keyboard == null)
+            {
+                return false;
+            }
+
+            if (!TryNormalizeKey(serializedKey, fallback, keyboard, out var key))
+            {
+                return false;
+            }
+
+            return keyboard[key].wasPressedThisFrame;
+        }
+
+        private static bool TryNormalizeKey(Key serializedKey, Key fallback, Keyboard keyboard, out Key key)
+        {
+            var raw = (int)serializedKey;
+            switch (raw)
+            {
+                case 283:
+                    key = Key.F2;
+                    return true;
+                case 284:
+                    key = Key.F3;
+                    return true;
+                case 285:
+                    key = Key.F4;
+                    return true;
+                case 286:
+                    key = Key.F5;
+                    return true;
+                case 287:
+                    key = Key.F6;
+                    return true;
+            }
+
+            if (IsKeyboardKey(serializedKey, keyboard))
+            {
+                key = serializedKey;
+                return true;
+            }
+
+            if (IsKeyboardKey(fallback, keyboard))
+            {
+                key = fallback;
+                return true;
+            }
+
+            key = Key.None;
+            return false;
+        }
+
+        private static bool IsKeyboardKey(Key key, Keyboard keyboard)
+        {
+            var index = (int)key - 1;
+            return index >= 0 && index < keyboard.allKeys.Count;
         }
     }
 }

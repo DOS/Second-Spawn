@@ -50,8 +50,7 @@ namespace SecondSpawn.AI
 
         private void Update()
         {
-            var keyboard = Keyboard.current;
-            if (keyboard != null && keyboard[_refreshKey].wasPressedThisFrame)
+            if (PrototypeDebugInput.WasPressedThisFrame(_refreshKey, Key.F6))
             {
                 Refresh();
             }
