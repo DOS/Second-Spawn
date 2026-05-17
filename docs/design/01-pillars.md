@@ -7,7 +7,7 @@
 
 ## Core Fantasy
 
-You are a Hunter in a 2050 post-apocalyptic world where consciousness can be transferred to synthetic bodies. Your character has a life that does not pause when yours does, grows through current-body level and stats, spends time as a real resource, and meets death as a transition rather than an end.
+You are a Hunter in a 2050 post-disaster world where consciousness can be transferred to synthetic bodies. Your character has a life that does not pause when yours does, grows through current-body level and stats, spends time as a real resource, and meets death as a transition rather than an end.
 
 ---
 

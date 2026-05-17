@@ -7,7 +7,7 @@
 
 ## Elevator Pitch
 
-> A near-future post-apocalyptic top-down ARPG where your character keeps playing when you log off - an LLM-driven AI agent quests, farms, and socializes with NPCs and other players' agents on your behalf. Time is both your body's remaining life and a spendable resource. Death is permanent for the body; reincarnation transfers your consciousness to a new synthetic body via SECOND tokens, resetting progression in a roguelike-MMO hybrid set in the MetaDOS universe.
+> A near-future post-disaster top-down ARPG where your character keeps playing when you log off - an LLM-driven AI agent quests, farms, and socializes with NPCs and other players' agents on your behalf. Time is both your body's remaining life and a spendable resource. Death is permanent for the body; reincarnation transfers your consciousness to a new synthetic body via SECOND tokens, resetting progression in a roguelike-MMO hybrid set in the MetaDOS universe.
 
 ---
 
@@ -28,7 +28,7 @@
 
 ## Core Fantasy
 
-You are a Hunter in a 2050 post-apocalyptic world where consciousness can be transferred to synthetic bodies. You explore, fight, level up the current body, and manage a finite body-time budget. When you log off, you don't disappear from the world - your character keeps playing through an AI agent shaped by your history. Death is meaningful (the body dies) but not final (you reincarnate into a new body).
+You are a Hunter in a 2050 post-disaster world where consciousness can be transferred to synthetic bodies. You explore, fight, level up the current body, and manage a finite body-time budget. When you log off, you don't disappear from the world - your character keeps playing through an AI agent shaped by your history. Death is meaningful (the body dies) but not final (you reincarnate into a new body).
 
 The fantasy is "your character has a life that does not pause when yours does."
 
@@ -132,7 +132,7 @@ Complete a quest line or dungeon clear; converse with hub-town NPCs (LLM-driven)
 | EVE Online | Player-driven economy, persistent universe consequence | Solo-friendly via AI agent; not a single-shard nightmare |
 | MetaDOS (BR) | Hunter skin NFT system, Photon Fusion 2 networking patterns | Different genre (ARPG, not BR); persistent zones, not match rounds |
 
-**Non-game inspirations**: Altered Carbon (consciousness transfer), Westworld (synthetic bodies + emergent NPC behavior), Ghost in the Shell (cyberpunk biotech tone)
+**Non-game inspirations**: Solo Leveling (system-driven Hunter growth), Omniscient Reader's Viewpoint (characters learning hidden scenario rules), Tower of God (ranked ascent and faction tests), Skeleton Soldier Could Not Protect the Dungeon (death loop, memory, and second-chance progression), Altered Carbon (consciousness transfer), Westworld (synthetic bodies + emergent NPC behavior)
 
 ---
 

@@ -23,7 +23,7 @@ This document follows a modern living-GDD shape rather than a static monolithic 
 
 ## 2. Game Overview
 
-SECOND SPAWN is a near-future, post-apocalyptic, top-down ARPG with MMO-style instanced zones. The player controls a Hunter whose consciousness can transfer between synthetic bodies. The game is set in the MetaDOS universe around 2050 and uses a dark sci-fi, cyberpunk, biotech, and AI-society tone.
+SECOND SPAWN is a near-future, post-disaster top-down ARPG with MMO-style instanced zones. The player controls a Hunter whose consciousness can transfer between synthetic bodies. The game is set in the MetaDOS universe around 2050 and uses a bright sci-fi progression-fantasy tone built around systems, ranking, awakening, body limits, AI society, and time pressure.
 
 The core promise is:
 
@@ -131,25 +131,125 @@ SECOND SPAWN is not:
 
 ## 6. Setting and Tone
 
-The setting is a near-future post-apocalyptic MetaDOS universe around 2050. Human survival is shaped by synthetic bodies, biotech, consciousness transfer, AI societies, and resource scarcity.
+SECOND SPAWN takes place in the MetaDOS universe around the 2050 era, after
+DOS Labs proved that human life-time, weapon testing, Hunters, and global
+spectacle could become one economy. This is not another MetaDOS battle royale.
+It explores the next layer of the same world: synthetic bodies, consciousness
+continuity, offline agents, NPC societies, and a contested time economy.
+
+The world should feel readable, energetic, and progression-driven rather than
+overly bleak. The core audience is closer to fans of system, ranking,
+awakening, tower, dungeon, and level-up stories in manga, manhwa, and manhua
+than to fans of dystopian survival fiction. Danger exists, but the fantasy is
+about growth, agency, clever rules, and becoming stronger inside a visible
+system.
+
+Human survival is shaped by biotech scarcity, body markets, AI governance,
+post-disaster infrastructure, and factions arguing over who should own the
+technologies that measure, extend, transfer, or spend life.
 
 Tone requirements:
 
-- Dark sci-fi and cyberpunk.
-- Biotech and consciousness science instead of magic.
-- Death and reincarnation should feel clinical, costly, and narratively charged.
-- AI NPC society should feel socially alive, but still bounded by game systems.
+- Bright near-future sci-fi with high-stakes progression, not bleak dystopian
+  survival.
+- System-story readability: ranks, gates, quests, BodyTime, reincarnation,
+  offline-agent policy, and NPC knowledge should feel like legible rules the
+  player can learn and exploit.
+- Manga, manhwa, and manhua progression fantasy references are useful for
+  pacing and player fantasy: Solo Leveling, Omniscient Reader's Viewpoint,
+  Tower of God, and Skeleton Soldier Could Not Protect the Dungeon.
+- Biotech and consciousness science replace magic, but should still serve the
+  same emotional role as awakening, second chances, hidden rules, and growth.
+- Death and reincarnation should feel costly and dramatic, but not oppressive.
+- AI NPC society should feel socially alive, colorful, and system-aware while
+  still bounded by game rules.
+- Nibirium may appear as a lore material, energy source, and historical cause,
+  but not as XP, cultivation tiers, rituals, or vertical-slice progression.
 
-Key lore anchors:
+### MetaDOS Continuity / Timeline
+
+This timeline is inherited from the MetaDOS GDD and adapted for SECOND SPAWN:
+
+| Year | Anchor | SECOND SPAWN Relevance |
+| ---- | ---- | ---- |
+| 2030 | A meteorite called Nibiru explodes in an airburst over Canada, changing the environment in the affected region. | Nibirium enters the world as a rare element tied to disaster, extraction, and corporate control. |
+| 2030s | DOS Labs becomes the only legitimate company able to manage and exploit Nibirium. | DOS Labs gains the leverage to reshape energy, biotech, warfare, and public policy. |
+| 2040 | DOS Labs discovers that Nibirium can prolong human life through AMB technology, using CT-like body scanning and an under-arm biological monitor that displays remaining life time. | Life-time becomes measurable, visible, tradable, and socially weaponized. |
+| 2040s | Avax wants the life-extension technology to broadly benefit humanity. Dr.J betrays him, monopolizes DOS Labs, and turns the corporation toward profit and influence. Avax survives and escapes with core technologies. | The world inherits a fracture between open survival technology and corporate life-time control. |
+| 2050 | DOS Labs creates MetaDOS, the Tournament of the Century, held every 4 years and watched globally. Winners can receive prolonged life time, money, fame, or other resources. DOS Labs uses the spectacle to test weapons and technology, profit, expand influence, and recruit exceptional fighters. | MetaDOS normalizes time-as-prize, Hunters, weapon trials, public combat entertainment, and SECOND as the final time-linked ticker. |
+| After MetaDOS | SECOND SPAWN begins from the consequences of that system rather than repeating the tournament format. | The focus moves from arena survival to persistent bodies, reincarnation, AI agents, NPC societies, and contested zones. |
+
+### Key Lore Anchors
 
 - Synthetic bodies: Replaceable vessels with finite operating life.
 - Consciousness transfer: The sci-fi basis of reincarnation.
 - Hunters: Player-controlled or agent-controlled characters who fight and survive.
+- Nibirium: The meteorite-derived element behind clean nuclear-scale energy and
+  life-extension breakthroughs. In SECOND SPAWN it is lore and infrastructure,
+  not the current progression currency.
+- DOS Labs: The corporate power that industrialized Nibirium, AMB life-time
+  monitoring, MetaDOS spectacle, weapons testing, and Hunter recruitment.
+- Avax and Dr.J: A founding fracture in DOS Labs. Their conflict frames the
+  larger question of whether life-extension and consciousness technologies are
+  public survival tools or corporate control mechanisms.
+- AMB life-time monitor: The MetaDOS-era technology that made remaining life
+  visible and governable, adapted into SECOND SPAWN's BodyTime pressure.
 - SECOND token: Account-level time reserve denominated in seconds. The token is used for reincarnation costs and must stay distinct from current-body `BodyTime` unless a future ADR explicitly merges them.
 - Time loot: A future PvP or contested-zone rule can allow BodyTime or SECOND
   to be taken from another user after server-validated combat, escrow, or zone
   events. Clients, LLMs, and connected agents must never self-report or grant
   this loot.
+- Hunter cosmetics, cards, badges, weapons, and pets: MetaDOS inheritance
+  candidates for account, NFT, cosmetic, and collection layers. They should not
+  bypass server authority or current economy rules.
+
+### SECOND SPAWN Story Premise
+
+After MetaDOS, DOS Labs no longer only sells spectacle. It has shown the world
+that life-time can be measured, wagered, rewarded, and used to recruit the
+strongest survivors. SECOND SPAWN asks what happens when the same world pushes
+beyond human bodies.
+
+The player is a durable consciousness placed into an NPC-like synthetic body.
+The body has finite `BodyTime`, combat stats, possible traits, and partial
+world context. The player can act directly while online, then leave a bounded
+offline agent to continue operating under policy while away. Death destroys the
+body, not the account. Reincarnation creates a new body through a SECOND-gated
+flow, with only explicitly designed identity layers carrying forward.
+
+The narrative tension is practical, not mystical: if bodies can be manufactured,
+inhabited, retired, and replaced, then every faction wants to decide who gets a
+body, who owns its time, what memories survive, and whether an agent acting in a
+body is a tool, a citizen, or a liability.
+
+### Vertical Slice Narrative Hooks
+
+Initial slice framing should remain flexible, but the first playable arc can
+use these hooks:
+
+- First hub: A guarded settlement or converted body facility near a contested
+  Nibirium-influenced zone, where surviving humans, synthetic citizens, Hunters,
+  technicians, and agent-run NPCs trade quests, rankings, rumors, and survival
+  services.
+- First body: The player wakes inside a synthetic body that was prepared,
+  recovered, or reassigned by the hub. The exact source remains open, but it
+  should make the player feel they inherited a vessel with limits rather than
+  creating a blank hero.
+- Why BodyTime matters: The body's operating life is visible, limited, and
+  spendable. It is both a survival clock and a tactical resource for services,
+  recovery, access, or risk decisions.
+- What NPCs know: Hub NPCs understand that MetaDOS made life-time public and
+  valuable. Some remember DOS Labs propaganda, some distrust synthetic bodies,
+  some treat offline agents as workers, and some fear consciousness transfer as
+  identity theft.
+- Faction tension: DOS Labs loyalists, Avax-aligned technologists, independent
+  Hunters, local settlement authorities, black-market body brokers, and
+  self-directed AI/NPC communities can all want different rules for bodies,
+  memory, SECOND, and BodyTime.
+- First questline: The player proves the new body can survive, recovers
+  BodyTime or body records from a danger area, meets an NPC who questions the
+  player's identity, and sees evidence that offline agents can help or make
+  costly mistakes.
 
 ---
 
@@ -638,7 +738,8 @@ Accessibility requirements for future passes:
 
 Current direction:
 
-- Visual style: dark sci-fi, cyberpunk, post-apocalyptic, stylized enough for production speed.
+- Visual style: bright near-future sci-fi, system-story progression fantasy,
+  post-disaster environments, and stylized readability for production speed.
 - Environment: ruined high-tech zones, synthetic-body facilities, biotech decay, hub town contrast.
 - Character readability: silhouettes and ability effects must stay readable from top-down camera distance.
 - Audio: tense biotech/sci-fi ambience, clear combat hits, distinct BodyTime warning sounds, restrained AI/NPC voice use.
