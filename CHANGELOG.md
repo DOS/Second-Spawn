@@ -94,7 +94,8 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   path.
 - Agent design docs now mark brain phase tracing and model-backed JSON intent as
   implemented prototype foundation.
-- Unity prototype brain now warns on gateway decision failures and escalates
+- Unity prototype brain now warns on gateway decision failures, recovers through
+  Nakama deterministic decisions when available, and escalates only unrecovered
   repeated failures to errors.
 - Unity Nakama auth now bootstraps the player profile immediately and records a
   profile activity event after successful authentication.
