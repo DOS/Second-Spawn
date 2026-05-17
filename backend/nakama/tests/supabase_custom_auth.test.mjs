@@ -212,6 +212,18 @@ assert.equal(profile.body.agent_runtime.decision_count, 0);
 assert.equal(profile.body.agent_runtime.fallback_decision_count, 0);
 assert.equal(profile.body.agent_activity.length, 1);
 assert.equal(profile.body.agent_activity[0].kind, "profile_bootstrap");
+const assignedSourceActor = harness.storage.get(storageKey("user-1", "secondspawn_actor", "profile:npc-crossline-hunter-5104"));
+assert.ok(assignedSourceActor);
+assert.equal(assignedSourceActor.value.actor_id, "npc-crossline-hunter-5104");
+assert.equal(assignedSourceActor.value.actor_type, "player_body");
+assert.equal(assignedSourceActor.value.body.body_id, profile.body.body_id);
+assert.equal(assignedSourceActor.value.body.equipment.weapon_visual_key, "crossbow");
+assert.equal(assignedSourceActor.value.body.inhabitation.inhabited_by_player, true);
+assert.equal(assignedSourceActor.value.body.inhabitation.source_actor_id, "npc-crossline-hunter-5104");
+assert.equal(assignedSourceActor.value.body.stats.max_health, profile.body.stats.max_health);
+assert.equal(assignedSourceActor.value.body.soul.name, profile.body.soul.name);
+assert.ok(assignedSourceActor.value.memory.length > 0);
+assert.equal(assignedSourceActor.value.agent_activity[0].kind, "profile_bootstrap");
 
 const spentBodyTime = JSON.parse(harness.registeredRpcs.get("secondspawn_bodytime_event")(
   { userId: "user-1", env: {} },
@@ -711,6 +723,15 @@ assert.ok(reincarnatedProfile.body.story.role.length > 0);
 assert.equal(reincarnatedProfile.body.agent_activity[0].id, "reincarnation-1");
 assert.equal(reincarnatedProfile.body.agent_activity[0].kind, "reincarnation");
 assert.match(reincarnatedProfile.body.memory[0].summary, /Consciousness transferred/);
+const reincarnatedSourceActor = reincarnationHarness.storage.get(storageKey(
+  "reincarnation-user",
+  "secondspawn_actor",
+  `profile:${reincarnatedProfile.body.inhabitation.source_actor_id}`
+));
+assert.ok(reincarnatedSourceActor);
+assert.equal(reincarnatedSourceActor.value.actor_type, "player_body");
+assert.equal(reincarnatedSourceActor.value.body.body_id, "body-reincarnation-user-r1");
+assert.equal(reincarnatedSourceActor.value.body.inhabitation.inhabited_by_player, true);
 
 const retriedReincarnation = JSON.parse(reincarnationHarness.registeredRpcs.get("secondspawn_reincarnate")(
   { userId: "reincarnation-user", env: {} },
