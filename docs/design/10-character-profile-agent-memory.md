@@ -66,6 +66,31 @@ changes.
 
 ---
 
+## Frame Core Layer Reference
+
+The long-term agent-file vocabulary should use `Frame*` names so it maps cleanly
+to OpenClaw-style files while staying game-specific. These are design layers,
+not a requirement to create ten database tables in the vertical slice.
+
+| Frame Layer | Agent File Map | Owns | Example |
+| ---- | ---- | ---- | ---- |
+| `FrameUser` | `USER.md` | Real account, wallet, consent, cocoon owner, and external identity links | JOY owns the account, DOS Chain wallet, and AMB cocoon session that can enter a Frame |
+| `FrameIdentity` | `IDENTITY.md` | Public face, name, callsign, faction-facing role, title, and reputation summary | "Crossline courier 5104", public title "Relay Runner", known by the hub as reliable but time-poor |
+| `FrameSoul` | `SOUL.md` | Drive, temperament, values, moral boundaries, and durable motivation | Protective, curious, refuses to betray civilians, wants to recover memories from a prior Frame |
+| `FrameBody` | Body / current `BodyProfile` | Current bio-synthetic vessel, TIME, stats, lifecycle, visual archetype, and body-bound story | A low-tier Frame with 3,600 SECOND loaded, agile stats, damaged arm, and source actor `npc-crossline-hunter-5104` |
+| `FrameMemory` | `MEMORY.md` | Curated memories, relationships, promises, debts, rivalries, and private context | Remembers owing Mina a favor, distrusts DOS Labs patrols, and promised to return a stolen TIME canister |
+| `FramePolicy` | Policy file | Player-approved offline behavior, spending caps, risk limits, and allowed social posture | May farm low-risk zones offline, may spend up to 300 SECOND, must avoid PvP unless attacked |
+| `FrameHeartbeat` | `HEARTBEAT.md` | Runtime cadence, activity counters, offline session state, fallback state, and last action summary | Last online 8 hours ago, 42 validated intents, 3 fallback moves, currently returning to hub |
+| `FrameTools` | `TOOLS.md` | Requestable action interface for the agent, with server-side validation owning final authority | Request move, interact, trade offer, dialogue reply, loot pickup, or combat skill use |
+| `FrameSkill` | `SKILL.md` | Gameplay abilities, profession capabilities, combat kit, crafting access, and usable expertise | Dagger combo level 2, scavenger scan, courier sprint, basic TIME repair |
+| `FrameAgents` | `AGENTS.md` | Operating playbooks, behavior routing, NPC job routines, and mode-specific instructions | When offline as a courier, prioritize delivery routes, avoid boss zones, and report anomalies at the hub |
+
+`FramePolicy` and `FrameTools` are not security boundaries by themselves. They
+describe what the agent may request. Nakama, Fusion, and authoritative server
+systems still validate every gameplay outcome.
+
+---
+
 ## Player Profile
 
 `PlayerProfile` is account-level identity. It should stay small.
@@ -117,6 +142,29 @@ Required fields:
 | `created_at` | Body creation timestamp |
 
 `BodyProfile` is replaced on reincarnation. The server decides which values carry forward.
+
+---
+
+## Profession and Relationship Placement
+
+Profession and social state should not live in one catch-all profile field.
+
+- Public profession, callsign, faction-facing role, title, and reputation
+  summary belong to the identity layer. During the prototype this can be stored
+  as body story or identity metadata, then split into a future `FrameIdentity`
+  field set.
+- Profession abilities belong to the future `FrameSkill` or combat/profession
+  system.
+- Profession routines, such as how an actor works while offline, belong to
+  future `FrameAgents` playbooks or current NPC behavior modes.
+- Personal relationships, debts, promises, rivalries, and private social facts
+  belong in `MemoryRecord`.
+- Relationships that become durable motivations can be promoted into
+  `SoulProfile.long_term_goals` or `moral_boundaries`.
+
+This keeps "what the world sees", "what the body can do", "what the agent does",
+and "what the character remembers" separate enough for later UI and backend
+design.
 
 ---
 

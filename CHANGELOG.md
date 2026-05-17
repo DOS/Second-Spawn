@@ -59,6 +59,12 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   SECOND as the unit/currency, manga/manhwa system-story progression tone, and
   vertical-slice story hooks for the first hub, first Frame, NPC knowledge, and
   faction tension.
+- Character profile docs now clarify where Frame professions, public roles,
+  social relationships, reputation summaries, offline routines, and durable
+  motivations belong across identity, skill, agent, memory, and soul layers.
+- Character profile docs now define the ten `Frame*` agent-core layers with
+  examples: user, identity, soul, body, memory, policy, heartbeat, tools, skill,
+  and agents.
 - Local Unity prototype can show a player with persisted profile stats after
   joining the hub scene.
 - Unity profile sync now reloads the local visual model from the Nakama body
