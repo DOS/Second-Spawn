@@ -18,7 +18,7 @@ The core design is:
 Sense -> Context -> Decide -> Validate -> Act -> Reflect
 ```
 
-The LLM is only one node in the graph. It never owns movement, combat, inventory, BodyTime, currency, quest state, or any other authoritative mutation.
+The LLM is only one node in the graph. It never owns movement, combat, inventory, TIME, SECOND, quest state, or any other authoritative mutation.
 
 ---
 
@@ -85,7 +85,7 @@ Builds a safe world snapshot:
 - nearby interactables
 - nearby threats
 - visible player/NPC actors
-- current BodyTime
+- current TIME measured in SECOND
 - current high-level state
 
 Never sends raw Unity scene objects or client-owned claims as trusted facts.
@@ -119,7 +119,7 @@ Checks intent shape and policy:
 - action is allowed in this state
 - target exists in the safe snapshot
 - move target is inside allowed radius
-- body time, cooldown, and risk policy allow the action
+- loaded TIME, cooldown, and risk policy allow the action
 - no direct economy/inventory/quest mutation is requested
 
 ### Act
@@ -186,7 +186,7 @@ Disallowed until later:
 
 - inventory mutation
 - economy mutation
-- BodyTime spending
+- TIME spending
 - combat authority
 - quest completion authority
 

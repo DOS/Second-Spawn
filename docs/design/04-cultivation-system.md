@@ -3,7 +3,7 @@
 *Status: Deferred*
 *Updated: 2026-05-17*
 
-> This document replaces the old cultivation / Nibirium XP draft. That mechanic
+> This document replaces the old cultivation / Nibiru-derived XP draft. That mechanic
 > is no longer part of the vertical slice because it behaved too much like a
 > traditional XP bar with sci-fi naming.
 
@@ -11,7 +11,7 @@
 
 ## Decision
 
-SECOND SPAWN will not implement cultivation tiers, Nibirium XP, tier-up rituals,
+SECOND SPAWN will not implement cultivation tiers, Nibiru-derived XP, tier-up rituals,
 or Cultivation Master progression in the current vertical slice.
 
 The slice uses:
@@ -19,7 +19,7 @@ The slice uses:
 - `CharacterStats.level` as the baseline progression value.
 - Body-bound stats such as vitality, force, agility, focus, resilience,
   max health, max energy, attack power, and defense power.
-- `BodyTime` and reincarnation as the signature systemic loop.
+- TIME / SECOND and reincarnation as the signature systemic loop.
 
 Advanced body or soul progression remains a future design space, but it needs a
 fresh brainstorm and a stronger mechanic before implementation.
@@ -30,14 +30,14 @@ fresh brainstorm and a stronger mechanic before implementation.
 
 The previous draft centered on:
 
-1. earning Nibirium from combat,
+1. earning Nibiru-derived XP from combat,
 2. filling a progress counter,
 3. completing a tier-up ritual,
 4. carrying some tier state across reincarnation.
 
 That loop was too familiar and did not add enough unique value on top of a
 standard level system. It also risked distracting from the stronger pillars:
-offline AI agents, reincarnation, BodyTime, and many NPC-like actors with
+offline AI agents, reincarnation, TIME / SECOND, and many NPC-like actors with
 separate profiles.
 
 ---
@@ -50,11 +50,11 @@ For the vertical slice, progression is intentionally simpler:
 | ---- | ---- |
 | Level | Main player-facing progression value for the current body |
 | Stats | Body-specific combat tuning and profile identity |
-| BodyTime | Current body's operating life and spendable tactical resource |
+| TIME / SECOND | TIME is the current body's operating life; SECOND is how it is measured and rewarded |
 | Reincarnation | Body replacement and current-body reset |
 | Soul/profile | Durable identity layer, exact carryover rules still open |
 
-Level and stats are enough until combat, reincarnation, and BodyTime feel good.
+Level and stats are enough until combat, reincarnation, and TIME / SECOND feel good.
 
 ---
 
@@ -76,10 +76,10 @@ None of these are approved for implementation yet.
 
 ## Implementation Rules
 
-- Do not add `cultivation`, `progress_xp`, Nibirium XP, tier names, or tier-up
+- Do not add `cultivation`, `progress_xp`, Nibiru-derived XP, tier names, or tier-up
   RPCs to the runtime model.
 - Do not show cultivation tier in UI or HUD.
-- Do not let LLMs grant level, stats, BodyTime, inventory, quest progress,
+- Do not let LLMs grant level, stats, TIME, SECOND, inventory, quest progress,
   token rewards, or any future body progression directly.
 - Keep advanced body progression behind a future design review.
 

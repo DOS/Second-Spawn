@@ -17,8 +17,8 @@ SECOND SPAWN is a hybrid MMO + top-down ARPG. The mechanical scope spans:
 - AI agent autoplay (server-side, capability-capped)
 - OpenClaw-connected NPCs (user-owned agents as server-validated world actors)
 - Level/stat progression
-- Reincarnation loop (death -> SECOND token -> new body)
-- Time-as-currency body lifespan economy
+- Reincarnation loop (death -> SECOND -> new Frame)
+- TIME / SECOND body lifespan economy
 - NFT integration (DOS Chain via thirdweb)
 - Server-authoritative invariants (anti-cheat assumes open source)
 
@@ -43,10 +43,10 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 | 11 | AI agent for offline players (server-side) | Gameplay | VS | Prototype | [10-character-profile-agent-memory.md](10-character-profile-agent-memory.md) | NetworkRunner, api.dos.ai / Go LLM Gateway, intent schema |
 | 37 | OpenClaw-connected NPC bridge (user-owned agents as NPC actors) | Gameplay / Meta | Alpha | Concept | [10-character-profile-agent-memory.md](10-character-profile-agent-memory.md) | Auth, Nakama, api.dos.ai / Go LLM Gateway, NPC dialogue, LLM safety |
 | 12 | Level/stat progression | Progression | MVP | Prototype | (covered by profile/runtime contracts) | Persistence |
-| 13 | Reincarnation flow (death -> SECOND -> new body) | Progression | VS | Prototype | [12-game-design-document.md](12-game-design-document.md) | Level/stats, NFT escrow, Persistence |
-| 14 | SECOND token economy | Economy | VS | Not designed | (GDD pending - JOY input) | DOS Chain integration |
-| 36 | Time-as-currency (`BodyTime`) | Economy | VS | Prototype | [08-time-as-currency.md](08-time-as-currency.md) | Reincarnation, Combat, Persistence |
-| 15 | NFT inventory (Hunter skin slice scope) | Economy | VS | Not started | (TDD pending) | thirdweb-api MCP, Persistence |
+| 13 | Reincarnation flow (death -> SECOND -> new Frame) | Progression | VS | Prototype | [12-game-design-document.md](12-game-design-document.md) | Level/stats, NFT escrow, Persistence |
+| 14 | SECOND economy | Economy | VS | Not designed | (GDD pending - JOY input) | DOS Chain integration |
+| 36 | TIME / SECOND economy | Economy | VS | Prototype | [08-time-as-currency.md](08-time-as-currency.md) | Reincarnation, Combat, Persistence |
+| 15 | NFT inventory (Hunter Frame skin slice scope) | Economy | VS | Not started | (TDD pending) | thirdweb-api MCP, Persistence |
 | 16 | NFT escrow (lock on equip, release on unequip) | Economy | VS | Not started | (TDD pending) | NFT inventory, DOS Chain |
 | 17 | Loot / drop tables | Economy | VS | Not started | (TDD pending) | Combat, persistence |
 | 18 | Profile persistence (Nakama OSS + Postgres) | Persistence | MVP | Prototype | [10-character-profile-agent-memory.md](10-character-profile-agent-memory.md) | Auth |
@@ -54,7 +54,7 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 | 20 | Quest progress persistence | Persistence | MVP | Not started | (TDD pending) | Profile, Quest system |
 | 21 | Level/stat persistence | Persistence | MVP | Prototype | (covered by profile/runtime contracts) | Profile |
 | 22 | Auth (Nakama + DOS Chain wallet, Supabase sidecar if useful) | Persistence | MVP | Prototype | (TDD pending - reuse DOS.Me pattern as identity bridge reference) | Nakama, thirdweb |
-| 23 | HUD (combat, level/stats, BodyTime) | UI | VS | Prototype | (deferred template `_deferred/hud-design.md`) | Combat, Profile |
+| 23 | HUD (combat, level/stats, TIME) | UI | VS | Prototype | (deferred template `_deferred/hud-design.md`) | Combat, Profile |
 | 24 | Inventory UI | UI | VS | Not started | (deferred template `_deferred/ux-spec.md`) | Inventory persistence |
 | 25 | NPC dialogue UI | UI | VS | Not started | (deferred) | NPC dialogue |
 | 26 | Quest tracker UI | UI | VS | Not started | (deferred) | Quest system |
@@ -79,7 +79,7 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 | **Core** | Foundation systems everything depends on | 5 (NetworkRunner, Controller, Camera, Input, Zone management) |
 | **Gameplay** | The systems that make the game fun | 7 (Combat, NPC dialogue, Quest, Dungeon, Boss LLM, AI agent, OpenClaw-connected NPC bridge) |
 | **Progression** | How the player grows over time | 2 (Level/stats, Reincarnation) |
-| **Economy** | Resource creation and consumption | 5 (SECOND token, Time-as-currency, NFT inventory, NFT escrow, Loot) |
+| **Economy** | Resource creation and consumption | 5 (SECOND, TIME / SECOND economy, NFT inventory, NFT escrow, Loot) |
 | **Persistence** | Save state and continuity | 5 (Profile, Inventory, Quest, Level/stats, Auth) |
 | **UI** | Player-facing information displays | 6 (HUD, Inventory UI, NPC dialogue UI, Quest tracker, Reincarnation UI, Agent log) |
 | **Audio** | Sound and music systems | 1 (placeholder for slice) |
@@ -124,9 +124,9 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 21. NFT escrow (#16) - depends on: NFT inventory, DOS Chain
 22. Loot / drop tables (#17) - depends on: Combat, Persistence
 23. Reincarnation flow (#13) - depends on: Level/stats, NFT escrow, Persistence
-24. Time-as-currency (#36) - depends on: Reincarnation, Combat, Persistence
-25. SECOND token economy (#14) - depends on: DOS Chain integration, Reincarnation
-26. AI agent for offline players (#11) - depends on: NetworkRunner, api.dos.ai / Go LLM Gateway, intent schema, Combat, Time-as-currency
+24. TIME / SECOND economy (#36) - depends on: Reincarnation, Combat, Persistence
+25. SECOND economy (#14) - depends on: DOS Chain integration, Reincarnation
+26. AI agent for offline players (#11) - depends on: NetworkRunner, api.dos.ai / Go LLM Gateway, intent schema, Combat, TIME / SECOND economy
 
 ### Presentation Layer (depends on features)
 
@@ -156,7 +156,7 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 | LLM intent validation (#31) + safety (#32) | Security | Open-source codebase + LLM = injection / abuse vector | Reuse DOSafe patterns; per-NPC memory cap; per-player rate limit |
 | NFT escrow (#16) | Technical | Latency between Unity equip action and DOS Chain confirmation | Optimistic UI + reconcile-on-failure; cache lock state in Supabase |
 | Reincarnation flow (#13) | Design | Carryover too generous = no death weight; too punitive = grind | Tune cost during slice playtests |
-| Time-as-currency (#36) | Design + Economy | Constant drain can feel oppressive; weak drain can feel invisible | Start with danger-zone drain, one earn source, one spend sink |
+| TIME / SECOND economy (#36) | Design + Economy | Constant drain can feel oppressive; weak drain can feel invisible | Start with danger-zone drain, one earn source, one spend sink |
 | Photon Fusion 2 dedicated server (#1) | Technical | Solo dev capacity to run dedicated infra | Slice uses Photon Cloud free 20 CCU; production migration is post-slice |
 | Convai SDK in Unity (#7) | Technical | 3rd-party SDK may not test against Unity 6.5 beta | Have phase 2 fallback (`api.dos.ai` / Go LLM Gateway + custom LLM) ready in design |
 
@@ -182,9 +182,9 @@ Aligned with [02-vertical-slice-spec.md](02-vertical-slice-spec.md) build phases
 | 12 | Dungeon instance (#9) | Phase 4 | L | |
 | 13 | Boss LLM dialogue (#10) | Phase 4 | M | Layered on NPC dialogue |
 | 14 | Reincarnation flow (#13) | Phase 5 | L | |
-| 15 | Time-as-currency (#36) | Phase 6 | M | BodyTime meter, one earn source, one spend sink |
+| 15 | TIME / SECOND economy (#36) | Phase 6 | M | TIME meter measured in SECOND, one earn source, one spend sink |
 | 16 | NFT inventory (#15) + escrow (#16) | Phase 7 | L | DOS Chain test net |
-| 17 | SECOND token economy (#14) | Phase 7 | M | JOY input required first |
+| 17 | SECOND economy (#14) | Phase 7 | M | JOY input required first |
 | 18 | AI agent for offline players (#11) | Phase 8 | XL | Highest-risk system |
 | 19 | UI cluster (#23-#28) | Throughout phases 2-8 | XL | Build incrementally |
 | 20 | Audio placeholder (#29) | Phase 9 | S | Slice-quality only |

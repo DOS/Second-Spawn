@@ -7,7 +7,7 @@
 
 ## Elevator Pitch
 
-> A near-future post-disaster top-down ARPG where your character keeps playing when you log off - an LLM-driven AI agent quests, farms, and socializes with NPCs and other players' agents on your behalf. Time is both your body's remaining life and a spendable resource. Death is permanent for the body; reincarnation transfers your consciousness to a new synthetic body via SECOND tokens, resetting progression in a roguelike-MMO hybrid set in the MetaDOS universe.
+> A near-future post-disaster top-down ARPG where your character keeps playing when you log off - an LLM-driven AI agent quests, farms, and socializes with NPCs and other players' agents on your behalf. TIME is the life medium that keeps Frames running, and SECOND is the unit used to measure, store, and trade it. Death is permanent for the Frame; reincarnation transfers your neural imprint into a new bio-synthetic Frame via SECOND, resetting progression in a roguelike-MMO hybrid set in the MetaDOS universe.
 
 ---
 
@@ -20,7 +20,7 @@
 | **Target Audience** | ARPG players who like progression-reset roguelike loops + LLM-driven NPC interaction; MMO-curious solo players who can't commit 4-hour grind sessions |
 | **Player Count** | Multiplayer 4-20 per instance zone, 50v50 guild PvP at later phases |
 | **Session Length** | 30-90 min active play; offline AI agent extends progress without active play |
-| **Monetization** | [TODO: JOY decide - SECOND token gating reincarnation cost is the proposed sink; time-as-currency is a gameplay economy, not automatically a monetization currency; cosmetic NFT marketplace is a candidate] |
+| **Monetization** | [TODO: JOY decide - SECOND gating reincarnation cost is the proposed sink; TIME / SECOND is a gameplay economy, not automatically a monetization currency; cosmetic NFT marketplace is a candidate] |
 | **Estimated Scope** | Vertical slice 3-6 months; full vision multi-year |
 | **Comparable Titles** | Diablo IV, Path of Exile 2, Lost Ark (combat); EVE Online (player-driven economy aspiration); Black Desert (open trades); novel reference: AI agent autoplay has no direct comparable |
 
@@ -28,7 +28,7 @@
 
 ## Core Fantasy
 
-You are a Hunter in a 2050 post-disaster world where consciousness can be transferred to synthetic bodies. You explore, fight, level up the current body, and manage a finite body-time budget. When you log off, you don't disappear from the world - your character keeps playing through an AI agent shaped by your history. Death is meaningful (the body dies) but not final (you reincarnate into a new body).
+You are a Hunter in a 2050 post-disaster world where a human in an AMB cocoon can control a TIME-powered Frame. A Frame is a bio-synthetic human body grown to hold TIME, host an agent brain, and accept a neural imprint. You explore, fight, level up the current Frame, and manage a finite TIME budget measured in SECOND. When you log off, you don't disappear from the world - your character keeps playing through an AI agent shaped by your history. Death is meaningful (the Frame dies) but not final (your neural imprint and agent memory transfer into a new Frame).
 
 The fantasy is "your character has a life that does not pause when yours does."
 
@@ -41,7 +41,7 @@ It's like Diablo IV with persistent online zones, AND ALSO **your character keep
 The hook passes the "and also" test on three axes simultaneously:
 1. AI agent autoplay (offline persistence in a multiplayer ARPG is near-unique)
 2. Reincarnation as the death loop (instead of corpse run / repair cost / equipment loss)
-3. Time-as-currency (every body has a time budget that can be earned, spent, and lost)
+3. TIME / SECOND economy (every Frame has a TIME budget measured in SECOND that can be earned, spent, and lost)
 
 Ecosystem extension: a user's OpenClaw agent can also connect into SECOND SPAWN as an NPC-like world actor. This turns OpenClaw agents into social citizens of the game world, not just external assistants. The connected agent may speak, remember, assist, trade socially, or participate in quest-adjacent moments, but any gameplay-affecting action remains server-validated intent.
 
@@ -64,8 +64,8 @@ Ecosystem extension: a user's OpenClaw agent can also connect into SECOND SPAWN 
 1. Top-down ARPG action combat (minimal Fusion controller first; Opsive Ultimate Character Controller is an evaluation candidate)
 2. LLM-driven NPC dialogue with server-validated intent (Convai phase 1, `api.dos.ai` / Go LLM Gateway phase 2)
 3. AI agent autonomous control of player character when offline (server-authoritative, capability-capped)
-4. Reincarnation via SECOND token cost (consciousness transfer and current-body reset)
-5. Time-as-currency body lifespan economy (earn/spend body time; zero time triggers body death)
+4. Reincarnation via SECOND cost (neural-imprint transfer and current-body reset)
+5. TIME / SECOND body lifespan economy (earn SECOND, spend TIME; zero TIME triggers body death)
 
 ---
 
@@ -107,14 +107,14 @@ Complete a quest line or dungeon clear; converse with hub-town NPCs (LLM-driven)
 - **Curiosity**: AI agent activity log (what did your character do while you slept?)
 - **Investment**: level/stat progress + NFT-locked equipment
 - **Social**: guild obligations, zone friend agent encounters
-- **Mastery**: combat, dungeon clears, BodyTime tradeoffs, and build choices
+- **Mastery**: combat, dungeon clears, TIME tradeoffs, and build choices
 
 ---
 
 ## Game Pillars (preview - see [01-pillars.md](01-pillars.md))
 
 1. **AI agent 24/7** - the character is always playing
-2. **Reincarnation, not respawn** - death has weight; SECOND token cost
+2. **Reincarnation, not respawn** - death has weight; SECOND cost
 3. **Time is life, time is money** - time is the body's survival budget and a spendable resource
 4. **LLM as world citizen, not chatbot** - NPCs and connected OpenClaw agents are server-validated actors in the world
 5. **Server-authoritative gameplay** - public open-source repo means anti-cheat assumes attacker has full source
@@ -132,7 +132,7 @@ Complete a quest line or dungeon clear; converse with hub-town NPCs (LLM-driven)
 | EVE Online | Player-driven economy, persistent universe consequence | Solo-friendly via AI agent; not a single-shard nightmare |
 | MetaDOS (BR) | Hunter skin NFT system, Photon Fusion 2 networking patterns | Different genre (ARPG, not BR); persistent zones, not match rounds |
 
-**Non-game inspirations**: Solo Leveling (system-driven Hunter growth), Omniscient Reader's Viewpoint (characters learning hidden scenario rules), Tower of God (ranked ascent and faction tests), Skeleton Soldier Could Not Protect the Dungeon (death loop, memory, and second-chance progression), Altered Carbon (consciousness transfer), Westworld (synthetic bodies + emergent NPC behavior)
+**Non-game inspirations**: Solo Leveling (system-driven Hunter growth), Omniscient Reader's Viewpoint (characters learning hidden scenario rules), Tower of God (ranked ascent and faction tests), Skeleton Soldier Could Not Protect the Dungeon (death loop, memory, and second-chance progression), Altered Carbon (body transfer), Westworld (artificial humans + emergent NPC behavior)
 
 ---
 
@@ -171,7 +171,7 @@ See [docs/ARCHITECTURE.md](../ARCHITECTURE.md) for system diagram + critical inv
 ### Design Risks
 - AI agent offline play may feel either invisible (player doesn't notice progress) or invasive (agent does things player wouldn't choose)
 - Level/stat progression may feel generic if combat and reincarnation do not create meaningful decisions
-- Time-as-currency may feel oppressive if time drain is constant, or invisible if it only appears at death
+- TIME may feel oppressive if drain is constant, or invisible if it only appears at death
 - LLM NPCs may feel chatbot-like if they don't ground in world state (location, quest progress, faction)
 
 ### Technical Risks
@@ -188,8 +188,8 @@ See [docs/ARCHITECTURE.md](../ARCHITECTURE.md) for system diagram + critical inv
 - 3rd-party assets (Opsive UCC, Behavior Designer, Convai) may not be tested against Unity 6.5 beta. Opsive is not mandatory for the first movement prototype until it proves value against the minimal controller baseline.
 
 ### Open Questions (need JOY input later)
-- SECOND token economy: reincarnation cost, source, sink. (Open Decision Point in CLAUDE.md.)
-- BodyTime economy: where time drains, how players earn it, how they spend it, and whether conversion to/from SECOND token ever exists.
+- SECOND economy: reincarnation cost, source, sink. (Open Decision Point in CLAUDE.md.)
+- TIME economy: where TIME drains, how players earn SECOND, how they spend TIME, and whether direct wallet-to-body top-up ever exists.
 - Hunter NFT integration: Option 1 (preset hero) vs Hybrid 1+3 (modular pieces)
 - Voice NPC vendor: OpenAI Realtime vs ElevenLabs vs self-host
 - Final game name (SECOND SPAWN is codename)
@@ -200,7 +200,7 @@ See [docs/ARCHITECTURE.md](../ARCHITECTURE.md) for system diagram + critical inv
 
 See [02-vertical-slice-spec.md](02-vertical-slice-spec.md).
 
-**Core hypothesis**: A solo player can experience the signature hooks (AI agent autoplay, reincarnation, and time-as-currency) plus basic level/stat progression inside a single zone within 30 minutes of first play, without requiring out-of-game tutorials.
+**Core hypothesis**: A solo player can experience the signature hooks (AI agent autoplay, reincarnation, and the TIME / SECOND economy) plus basic level/stat progression inside a single zone within 30 minutes of first play, without requiring out-of-game tutorials.
 
 ---
 
@@ -209,4 +209,4 @@ See [02-vertical-slice-spec.md](02-vertical-slice-spec.md).
 - [ ] JOY review and refine this concept doc (especially monetization line + open questions)
 - [ ] Finalize [01-pillars.md](01-pillars.md) (preview pillars listed above need design tests added)
 - [ ] Build vertical slice per [02-vertical-slice-spec.md](02-vertical-slice-spec.md)
-- [ ] Per-system GDDs as systems are designed (advanced body progression deferred in [04-cultivation-system.md](04-cultivation-system.md); time-as-currency started in [08-time-as-currency.md](08-time-as-currency.md); combat, AI agent, reincarnation, NFT escrow, LLM NPC pending)
+- [ ] Per-system GDDs as systems are designed (advanced body progression deferred in [04-cultivation-system.md](04-cultivation-system.md); TIME / SECOND economy started in [08-time-as-currency.md](08-time-as-currency.md); combat, AI agent, reincarnation, NFT escrow, LLM NPC pending)

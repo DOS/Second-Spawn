@@ -7,7 +7,7 @@
 
 ## Core Fantasy
 
-You are a Hunter in a 2050 post-disaster world where consciousness can be transferred to synthetic bodies. Your character has a life that does not pause when yours does, grows through current-body level and stats, spends time as a real resource, and meets death as a transition rather than an end.
+You are a Hunter in a 2050 post-disaster world where a neural imprint can be transferred between Frames. Your character has a life that does not pause when yours does, grows through current-body level and stats, spends TIME as a real resource, and meets death as a transition rather than an end.
 
 ---
 
@@ -54,11 +54,11 @@ You are a Hunter in a 2050 post-disaster world where consciousness can be transf
 
 ### Pillar 2: Reincarnation, not respawn
 
-**One-Sentence Definition**: Death is permanent for the body; players transfer consciousness to a new synthetic body via SECOND token cost, with durable identity partially preserved and current-body progression reset.
+**One-Sentence Definition**: Death is permanent for the Frame; players transfer a surviving neural imprint and agent memory to a new bio-synthetic Frame via SECOND cost, with durable identity partially preserved and current-body progression reset.
 
 **Target Aesthetics Served**: Challenge (death has weight), Discovery (each new body sees a new starting state), Narrative (consciousness transfer is the world's central conceit)
 
-**Design Test**: When debating any death penalty or "loss on death" mechanic, this pillar says: the loss is the body and its possessions, not the cultivated consciousness. SECOND token cost is the gating economy lever.
+**Design Test**: When debating any death penalty or "loss on death" mechanic, this pillar says: the loss is the Frame and its possessions, not the durable identity imprint. SECOND cost is the gating economy lever.
 
 #### What This Means for Each Department
 
@@ -66,11 +66,11 @@ You are a Hunter in a 2050 post-disaster world where consciousness can be transf
 | ---- | ---- | ---- |
 | **Game Design** | No corpse-run, no equipment-loss, no XP-debt - those are the OLD MMO patterns | Death triggers reincarnation flow (in-game UI), not corpse retrieval. |
 | **Engineering** | Reincarnation state is DB-persisted; equipment is escrow on death | NFT escrow contract releases on reincarnation per token rules. |
-| **Narrative** | Every reincarnation is a story beat - new body, fragmented memory, lore reveal | Boss dialogue adapts: "Ah, you came back. Different face this time." |
-| **Economy** | SECOND token is a sink; reincarnation cost calibrates death frequency | Initial cost target: 1 average dungeon clear's worth of token income. |
+| **Narrative** | Every reincarnation is a story beat - new Frame, fragmented memory, lore reveal | Boss dialogue adapts: "Ah, you came back. Different face this time." |
+| **Economy** | SECOND is a sink; reincarnation cost calibrates death frequency | Initial cost target: 1 average dungeon clear's worth of token income. |
 
 #### Serving This Pillar
-- Permanent body death triggers SECOND-token reincarnation flow
+- Permanent Frame death triggers SECOND-gated reincarnation flow
 - Durable soul/profile layers can carry forward across bodies
 - Equipment escrow + release is part of death flow
 
@@ -81,33 +81,33 @@ You are a Hunter in a 2050 post-disaster world where consciousness can be transf
 
 ---
 
-### Pillar 3: Time is life, time is money
+### Pillar 3: TIME is life, SECOND is money
 
-**One-Sentence Definition**: Time is both the current body's remaining operating life and a spendable gameplay currency; earning and spending time creates the core survival-economy tension inherited from MetaDOS and adapted for SECOND SPAWN.
+**One-Sentence Definition**: TIME is the life medium loaded into humans and Frames, while SECOND is the unit and currency used to measure, store, transfer, reward, and spend it.
 
 **Target Aesthetics Served**: Challenge (time pressure), Autonomy (spend/conserve decisions), Discovery (finding time sources and sinks)
 
-**Design Test**: When debating any economy or survival-pressure feature, this pillar says: time should create meaningful tactical tradeoffs without becoming a pure nuisance timer.
+**Design Test**: When debating any economy or survival-pressure feature, this pillar says: TIME should create meaningful tactical tradeoffs without becoming a pure nuisance timer, and SECOND should remain the readable unit of account.
 
 #### What This Means for Each Department
 
 | Department | This Pillar Says... | Example |
 | ---- | ---- | ---- |
-| **Game Design** | Time is not just gold; it is tied to body survival | Spend time at a shrine for supplies, but risk entering the next fight closer to death. |
-| **Engineering** | Time mutations are server-authoritative and auditable | Client requests `SpendBodyTime`; server validates zone, cost, and body state before applying. |
-| **Narrative** | Synthetic bodies have finite operating life | NPCs talk about bodies "running out of time" as biotech failure, not magic. |
-| **Economy** | Keep `BodyTime` and `SECOND token` distinct until an ADR says otherwise | BodyTime creates tactical pressure; SECOND token gates reincarnation. |
+| **Game Design** | TIME is not just gold; it is tied to body survival | Spend TIME at a shrine for supplies, but risk entering the next fight closer to death. |
+| **Engineering** | TIME / SECOND mutations are server-authoritative and auditable | Client requests a spend action; server validates zone, cost, and body state before applying. Prototype code may still use `BodyTime` names. |
+| **Narrative** | Frames have finite operating life | NPCs talk about Frames "running out of TIME" as biotech failure, not magic. |
+| **Economy** | TIME is the medium and SECOND is the unit of account | TIME creates tactical pressure; SECOND gates reincarnation and rewards. |
 
 #### Serving This Pillar
-- Body time meter exists in danger zones or dungeons
-- Player can earn time from combat or objectives
-- Player can spend time on one useful service in the vertical slice
-- Zero body time triggers body death and reincarnation flow
+- TIME meter exists in danger zones or dungeons
+- Player can earn SECOND from combat or objectives
+- Player can spend TIME on one useful service in the vertical slice
+- Zero TIME triggers body death and reincarnation flow
 
 #### Violating This Pillar
-- Time is only a UI timer with no spend choice
-- Time can be bought directly in a pay-to-win loop
-- Client-side code grants or spends time without server validation
+- TIME is only a UI timer with no spend choice
+- SECOND can be bought directly in a pay-to-win loop
+- Client-side code grants or spends TIME / SECOND without server validation
 - Time drain is constant everywhere and makes exploration feel punished
 
 ---
@@ -176,7 +176,7 @@ You are a Hunter in a 2050 post-disaster world where consciousness can be transf
 
 - **NOT a full open-world MMORPG** - we have instance-based zones (~20 players), not seamless single-shard. WoW/FFXIV-scale would blow scope and cost.
 - **NOT a Chinese cultivation novel game** - no qi, immortals, sect politics, or tier-up grind as the primary loop.
-- **NOT pay-to-win** - SECOND token gates reincarnation cost; `BodyTime` is a gameplay economy and must not become direct power-for-cash.
+- **NOT pay-to-win** - SECOND gates reincarnation cost; TIME / SECOND is a gameplay economy and must not become direct power-for-cash.
 - **NOT a passive countdown survival game** - time pressure supports ARPG decisions; it does not replace combat, level/stat progression, or AI agent play.
 - **NOT a chatbot game** - LLM NPCs are world citizens with grounded memory + rate limits. Dialogue is constrained by quest / faction / location, not free-form roleplay.
 - **NOT mobile-first** - PC Steam audience first. Mobile companion app is a possible future, not core.
@@ -193,7 +193,7 @@ When pillars conflict, use this priority order. Higher-priority pillars win when
 | 1 | **Server-authoritative gameplay** | If we lose this, the public AGPL-3.0 codebase becomes a cheat tutorial; everything else collapses. |
 | 2 | **AI agent 24/7** | This is the unique hook the entire concept is built on; remove it and SECOND SPAWN is just another ARPG. |
 | 3 | **Reincarnation, not respawn** | Critical to identity and death loop; time expiration and body death depend on this remaining meaningful. |
-| 4 | **Time is life, time is money** | Signature MetaDOS lineage mechanic; must support death pressure without overpowering the rest of the game. |
+| 4 | **TIME is life, SECOND is money** | Signature MetaDOS lineage mechanic; must support death pressure without overpowering the rest of the game. |
 | 5 | **LLM as world citizen** | This delivers the AI agent feel + NPC depth; without it, both pillar 2 and the discovery aesthetic suffer. |
 
 **Resolution Process**:
@@ -210,7 +210,7 @@ When pillars conflict, use this priority order. Higher-priority pillars win when
 | Need | Which Pillar Serves It | How |
 | ---- | ---- | ---- |
 | **Autonomy** | AI agent 24/7 | Player chooses what to delegate to agent vs play actively |
-| **Competence** | Reincarnation + Time-as-currency + Server-authoritative | Level/stat progression is the early mastery measure; time tradeoffs and server-validated combat make skill-based wins real |
+| **Competence** | Reincarnation + TIME / SECOND economy + Server-authoritative | Level/stat progression is the early mastery measure; time tradeoffs and server-validated combat make skill-based wins real |
 | **Relatedness** | LLM as world citizen + AI agent | NPCs remember player; agents bridge social distance across timezones |
 
 All three SDT needs covered.
