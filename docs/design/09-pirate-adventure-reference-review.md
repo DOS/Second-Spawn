@@ -33,7 +33,7 @@ Use it as a reference, not as code to copy.
 
 | Area | Pirate Adventure | SECOND SPAWN Current State | Notes |
 | ---- | ---- | ---- | ---- |
-| Unity version | Unity `2021.3.45f2` | Unity `6000.5.0b7` | Sample must be treated as a pattern source, not imported wholesale. |
+| Unity version | Unity `2021.3.45f2` | Unity `6000.5.0b8` | Sample must be treated as a pattern source, not imported wholesale. |
 | Fusion version | `2.0.12 Stable 1861` | `2.1.1 Release-Candidate 2037` | API drift is possible. Validate in Unity after each integration step. |
 | KCC | Simple KCC addon `2.0.15` DLL | Installed at `Unity/Assets/Photon/FusionAddons/SimpleKCC/` | Strong candidate for next controller prototype branch. |
 | Topology | Shared Mode | Server Mode production, Host Mode dev | Do not copy Shared Mode authority assumptions. |

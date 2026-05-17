@@ -1,8 +1,11 @@
-# ADR 0005: Use Unity 6.5 beta (`6000.5.0b7`) instead of Unity 6.0 LTS
+# ADR 0005: Use Unity 6.5 beta instead of Unity 6.0 LTS
 
 **Status:** Accepted
 **Date:** 2026-05-14
 **Deciders:** JOY (sole decision-maker, solo dev)
+
+**Current baseline:** Unity `6000.5.0b8` as of 2026-05-17. The original
+decision was made against local Unity Hub build `6000.5.0b7`.
 
 ## Context
 
@@ -20,7 +23,7 @@ Two options were on the table:
   Designer, Convai, Photon Fusion 2) are tested against this version.
   Predictable for a 3-6 month vertical slice timeline. Ecosystem
   packages (URP 17.x, Input System) are stable on 6.0.
-- **Option B: Stay on Unity 6.5 beta `6000.5.0b7`.** Newer features,
+- **Option B: Stay on Unity 6.5 beta.** Newer features,
   some performance improvements, but breaking changes between beta
   builds (b7 -> b8 -> RC -> GA) are likely; 3rd-party assets may have
   un-tested behavior; ecosystem packages may not have stable releases
@@ -31,7 +34,7 @@ CLI second-pass) was Option A.
 
 ## Decision
 
-**Option B - stay on Unity 6.5 beta `6000.5.0b7`.**
+**Option B - stay on Unity 6.5 beta.**
 
 JOY explicitly chose to keep the beta install rather than roll back.
 
@@ -78,7 +81,7 @@ This is a mutable decision. Re-evaluate if any of the following:
 
 ### Mitigations
 
-- Pin the exact build (`6000.5.0b7`) in
+- Pin the current exact build (`6000.5.0b8`) in
   [.claude/CLAUDE.md](../../.claude/CLAUDE.md) and
   [Unity/ProjectSettings/ProjectVersion.txt](../../Unity/ProjectSettings/ProjectVersion.txt)
   so anyone reproducing the env knows the target.

@@ -355,7 +355,7 @@ function getOrCreateAgentContextState(ctx: nkruntime.Context, nk: nkruntime.Naka
   }
 
   var context = defaultAgentContext(userId);
-  writeAgentContext(nk, context, "");
+  writeAgentContext(nk, context, "*");
   var created = readAgentContext(nk, userId);
   if (created) {
     return {
@@ -374,7 +374,15 @@ function normalizeExistingAgentContextState(nk: nkruntime.Nakama, userId: string
   var before = JSON.stringify(existing.value || {});
   var context = ensureAgentContext(existing.value || {}, userId);
   if (JSON.stringify(context) !== before) {
-    writeAgentContext(nk, context, existing.version);
+    try {
+      writeAgentContext(nk, context, existing.version);
+    } catch (err) {
+      var raced = readAgentContext(nk, userId);
+      if (raced) {
+        return normalizeRacedAgentContextState(nk, userId, raced);
+      }
+      throw err;
+    }
     var rewritten = readAgentContext(nk, userId);
     if (rewritten) {
       return {
@@ -416,7 +424,7 @@ function writeAgentContext(nk: nkruntime.Nakama, context: any, version: string):
     permissionRead: 1,
     permissionWrite: 0
   };
-  if (typeof version === "string") {
+  if (typeof version === "string" && version.length > 0) {
     write.version = version;
   }
   nk.storageWrite([write]);
@@ -432,7 +440,7 @@ function getOrCreateActorProfileState(ctx: nkruntime.Context, nk: nkruntime.Naka
 
   var profile = defaultActorProfile(ownerId, actorId, request);
   try {
-    writeActorProfile(nk, profile, "");
+    writeActorProfile(nk, profile, "*");
   } catch (err) {
     var raced = readActorProfile(nk, ownerId, actorId);
     if (raced) {
@@ -459,7 +467,15 @@ function normalizeExistingActorProfileState(nk: nkruntime.Nakama, ownerId: strin
   var profile = ensureActorProfile(existing.value || {}, ownerId, actorId);
   if (needsPersistence) {
     profile.updated_at = new Date().toISOString();
-    writeActorProfile(nk, profile, existing.version);
+    try {
+      writeActorProfile(nk, profile, existing.version);
+    } catch (err) {
+      var raced = readActorProfile(nk, ownerId, actorId);
+      if (raced) {
+        return normalizeRacedActorProfileState(nk, ownerId, actorId, raced);
+      }
+      throw err;
+    }
     var rewritten = readActorProfile(nk, ownerId, actorId);
     if (rewritten) {
       return {
@@ -471,6 +487,26 @@ function normalizeExistingActorProfileState(nk: nkruntime.Nakama, ownerId: strin
 
   return {
     profile: profile,
+    version: existing.version
+  };
+}
+
+function normalizeRacedAgentContextState(nk: nkruntime.Nakama, userId: string, existing: any): any {
+  var before = JSON.stringify(existing.value || {});
+  var context = ensureAgentContext(existing.value || {}, userId);
+  if (JSON.stringify(context) !== before) {
+    writeAgentContext(nk, context, existing.version);
+    var rewritten = readAgentContext(nk, userId);
+    if (rewritten) {
+      return {
+        context: ensureAgentContext(rewritten.value, userId),
+        version: rewritten.version
+      };
+    }
+  }
+
+  return {
+    context: context,
     version: existing.version
   };
 }
@@ -499,6 +535,27 @@ function actorProfileNeedsNormalization(profile: any): boolean {
     !profile.updated_at;
 }
 
+function normalizeRacedActorProfileState(nk: nkruntime.Nakama, ownerId: string, actorId: string, existing: any): any {
+  var needsPersistence = actorProfileNeedsNormalization(existing.value || {});
+  var profile = ensureActorProfile(existing.value || {}, ownerId, actorId);
+  if (needsPersistence) {
+    profile.updated_at = new Date().toISOString();
+    writeActorProfile(nk, profile, existing.version);
+    var rewritten = readActorProfile(nk, ownerId, actorId);
+    if (rewritten) {
+      return {
+        profile: ensureActorProfile(rewritten.value, ownerId, actorId),
+        version: rewritten.version
+      };
+    }
+  }
+
+  return {
+    profile: profile,
+    version: existing.version
+  };
+}
+
 function readActorProfile(nk: nkruntime.Nakama, ownerId: string, actorId: string): any {
   var objects = nk.storageRead([{
     collection: collectionActor,
@@ -525,7 +582,7 @@ function writeActorProfile(nk: nkruntime.Nakama, profile: any, version: string):
     permissionRead: 1,
     permissionWrite: 0
   };
-  if (typeof version === "string") {
+  if (typeof version === "string" && version.length > 0) {
     write.version = version;
   }
   nk.storageWrite([write]);
@@ -574,9 +631,9 @@ function defaultActorProfile(ownerId: string, actorId: string, request: any): an
 
 function ensureActorProfile(profile: any, ownerId: string, actorId: string): any {
   var timestamp = new Date().toISOString();
-  profile.actor_id = normalizeActorId(profile.actor_id || actorId);
+  profile.actor_id = actorId;
   profile.actor_type = normalizeActorType(profile.actor_type);
-  profile.owner_player_id = trimString(profile.owner_player_id) || ownerId;
+  profile.owner_player_id = ownerId;
   profile.display_name = trimString(profile.display_name) || actorDisplayName(profile.actor_id);
   profile.body = profile.body || {};
   profile.body.body_id = trimString(profile.body.body_id) || "body-" + profile.actor_id;
@@ -650,7 +707,7 @@ function defaultBodyProfile(playerId: string, displayName: string, timestamp: st
 function ensureAgentContext(context: any, playerId: string): any {
   var timestamp = new Date().toISOString();
   context.player = context.player || {};
-  context.player.player_id = trimString(context.player.player_id) || playerId;
+  context.player.player_id = playerId;
   context.player.display_name = trimString(context.player.display_name) || context.player.player_id;
   context.player.created_at = trimString(context.player.created_at) || timestamp;
   ensureSecondBalance(context);

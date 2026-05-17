@@ -11,9 +11,11 @@ import (
 
 // PlayerProfile is durable account-level identity. It survives body death.
 type PlayerProfile struct {
-	PlayerID    string    `json:"player_id"`
-	DisplayName string    `json:"display_name"`
-	CreatedAt   time.Time `json:"created_at"`
+	PlayerID             string    `json:"player_id"`
+	DisplayName          string    `json:"display_name"`
+	SecondBalanceSeconds int64     `json:"second_balance_seconds"`
+	ReincarnationCount   int64     `json:"reincarnation_count"`
+	CreatedAt            time.Time `json:"created_at"`
 }
 
 // BodyProfile is the current synthetic body. It is replaced on reincarnation.
@@ -184,6 +186,8 @@ func BuildAgentContextPrompt(ctx AgentContext, maxMemories int) string {
 	var b strings.Builder
 	writeKV(&b, "player_id", ctx.Player.PlayerID)
 	writeKV(&b, "display_name", ctx.Player.DisplayName)
+	writeKV(&b, "second_balance_seconds", fmt.Sprintf("%d", ctx.Player.SecondBalanceSeconds))
+	writeKV(&b, "reincarnation_count", fmt.Sprintf("%d", ctx.Player.ReincarnationCount))
 	writeKV(&b, "body_id", ctx.Body.BodyID)
 	writeKV(&b, "archetype_id", ctx.Body.ArchetypeID)
 	writeKV(&b, "visual_prefab_key", ctx.Body.VisualPrefabKey)

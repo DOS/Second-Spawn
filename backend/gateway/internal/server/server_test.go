@@ -120,7 +120,9 @@ func TestAgentDecidePrototype(t *testing.T) {
 		"context": {
 			"player": {
 				"player_id": "user-1",
-				"display_name": "user-1"
+				"display_name": "user-1",
+				"second_balance_seconds": 604800,
+				"reincarnation_count": 0
 			},
 			"body": {
 				"body_id": "body-user-1",

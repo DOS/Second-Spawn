@@ -154,7 +154,7 @@ Complete a quest line or dungeon clear; converse with hub-town NPCs (LLM-driven)
 
 | Consideration | Assessment |
 | ---- | ---- |
-| **Engine** | Unity 6.5 beta (currently `6000.5.0b7`) + URP. JOY chose beta for newest features. |
+| **Engine** | Unity 6.5 beta (currently `6000.5.0b8`) + URP. JOY chose beta for newest features. |
 | **Networking** | Photon Fusion 2 (Server Mode dedicated for production; Host Mode + Photon Cloud free 20 CCU for dev) |
 | **Persistence** | Nakama OSS + Postgres (profile, inventory, quest, NFT lock state, level/stats) |
 | **LLM** | Convai phase 1 (NPC dialogue) -> `api.dos.ai` / Go LLM Gateway phase 2 (Haiku 4.5 for NPC chat, Sonnet 4.6 for boss / quest-critical NPCs). Server-side intent validation only. |
