@@ -48,19 +48,46 @@ namespace SecondSpawn.Networking
         private bool _hidePrototypeWeaponProps = true;
 
         private GameObject _instance;
+        private int _loadedVisualVariant = int.MinValue;
 
         private void Start()
         {
-            if (Application.isBatchMode || _instance != null)
+            RefreshVisualFromNetwork();
+        }
+
+        public void RefreshVisualFromNetwork()
+        {
+            if (Application.isBatchMode)
             {
                 return;
             }
 
-            var visualKey = ResolveVisualKey();
+            var visualVariant = GetNetworkVisualVariant();
+            var equipmentVisualId = GetNetworkEquipmentVisualId();
+            if (_instance != null && _loadedVisualVariant == visualVariant)
+            {
+                ApplyEquipmentVisual(equipmentVisualId);
+                return;
+            }
+
+            if (_instance != null)
+            {
+                Destroy(_instance);
+                _instance = null;
+                _loadedVisualVariant = int.MinValue;
+            }
+
+            LoadVisualInstance(visualVariant, equipmentVisualId);
+        }
+
+        private void LoadVisualInstance(int visualVariant, int equipmentVisualId)
+        {
+            var visualKey = ResolveVisualKey(visualVariant);
             var visualPrefab = LoadVisualPrefab(visualKey);
             if (visualPrefab == null)
             {
                 Debug.LogWarning("[LocalVisualPrefabLoader] No local visual prefab found. Keeping placeholder cube.");
+                SetRootRenderersVisible(true);
                 return;
             }
 
@@ -71,7 +98,6 @@ namespace SecondSpawn.Networking
 
             NormalizeVisualTransform(_instance);
             DisablePhysics(_instance);
-            var equipmentVisualId = GetNetworkEquipmentVisualId();
             if (_hidePrototypeWeaponProps)
             {
                 EquipmentVisualCatalog.ApplyEquipmentVisual(_instance, equipmentVisualId);
@@ -96,12 +122,10 @@ namespace SecondSpawn.Networking
 
             if (_hideRootRenderers)
             {
-                foreach (var renderer in GetComponents<Renderer>())
-                {
-                    renderer.enabled = false;
-                }
+                SetRootRenderersVisible(false);
             }
 
+            _loadedVisualVariant = visualVariant;
             Debug.Log($"[LocalVisualPrefabLoader] Loaded local visual '{visualKey}' with equipment visual {equipmentVisualId}.");
         }
 
@@ -115,10 +139,17 @@ namespace SecondSpawn.Networking
             }
         }
 
-        private string ResolveVisualKey()
+        private void SetRootRenderersVisible(bool visible)
+        {
+            foreach (var renderer in GetComponents<Renderer>())
+            {
+                renderer.enabled = visible;
+            }
+        }
+
+        private string ResolveVisualKey(int visualVariant)
         {
 #if UNITY_EDITOR
-            var visualVariant = GetNetworkVisualVariant();
             var cleanPath = VisualPrefabCatalog.GetCleanAssetPath(visualVariant);
             if (AssetDatabase.LoadAssetAtPath<GameObject>(cleanPath) != null)
             {

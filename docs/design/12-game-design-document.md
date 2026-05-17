@@ -331,6 +331,7 @@ Every important NPC-like actor should eventually resolve to a bundle with clear 
 | `BodyProfile` | Current vessel, archetype, visual key, lifecycle, BodyTime, and body-bound state |
 | `CharacterStats` | Combat, movement, health, energy, attack, defense, and level values |
 | `CharacterTraits` | Personality and behavior tendencies for agent decisions |
+| `BodyStory` | Short origin, role, conflict, and rumor hooks for the specific body |
 | `SoulProfile` | Durable identity, name, drive, temperament, goals, and moral boundaries |
 | `MemoryRecord` | Bounded memories used by LLM and deterministic agent context |
 | `AgentPolicy` or NPC policy | What the actor is allowed to attempt |
@@ -339,10 +340,19 @@ Every important NPC-like actor should eventually resolve to a bundle with clear 
 
 Server-side systems decide which parts are editable, inherited, generated, or read-only for each actor type.
 
+Prototype body-model decisions:
+
+- A new account spawns into a server-selected NPC-like synthetic body from the
+  approved body archetype pool.
+- Each body can carry pre-existing story hooks, traits, stat bias, weapon
+  visual, soul defaults, and a seed memory before the player enters it.
+- Reincarnation currently selects a fresh body archetype after death and SECOND
+  payment. Candidate rejection is deferred until the reincarnation UI exists.
+- The body profile also stores animation capability flags so a model without a
+  jump animation can still move while skipping broken jump visual triggers.
+
 Open body-model decisions:
 
-- How the first body is chosen when a new player spawns: [TODO: JOY input]
-- Whether each body has pre-existing memory before the player enters it: [TODO: JOY input]
 - Whether the player can reject a candidate body during reincarnation: [TODO: JOY input]
 - How much body-level memory survives once the player leaves or the body dies: [TODO: JOY input]
 
@@ -695,7 +705,8 @@ MetaDOS patterns worth reusing later:
 
 Open item decisions:
 
-- First weapon archetype: [TODO: prototype]
+- First prototype weapon archetypes are one-hand sword, staff, hammer, and
+  crossbow through the body archetype pool. Final combat tuning is still open.
 - Loot rarity names and count: [TODO: JOY input]
 - Which gear survives reincarnation, if any: [TODO: JOY input]
 - Cosmetic rarity model: [TODO: JOY input]
@@ -760,11 +771,11 @@ The first slice should list content volume explicitly so scope cannot silently i
 | Hub area | 1 | Small safe zone with NPC, vendor or shrine, reincarnation entry point |
 | Danger zone | 1 | BodyTime drain is visible here |
 | Dungeon | 1 | Short instance with one readable objective |
-| Player class | 1 | One Hunter archetype |
+| Player class | 1 | One playable body archetype set, server-selected from the prototype pool |
 | Basic enemies | 1-2 | Enough to test combat and rewards |
 | Elite or boss | 1 | Includes LLM dialogue trigger if feasible |
 | Questline | 1 | 3-5 steps |
-| NPCs | 2-3 | Hub NPC, quest NPC, boss or mentor |
+| NPCs | 2-3 | Hub NPC, quest NPC, boss or mentor, all backed by actor profiles |
 | Items | 4-8 | Weapon, armor or module, consumable, objective item, optional cosmetic |
 | Offline-agent policies | 2-3 | Observe, safe farm, stop below threshold |
 | Reincarnation flow | 1 | Placeholder but server-authoritative |

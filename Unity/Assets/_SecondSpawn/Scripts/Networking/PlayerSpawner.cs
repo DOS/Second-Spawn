@@ -65,6 +65,7 @@ namespace SecondSpawn.Networking
                 {
                     networkPlayer.VisualVariant = visualVariant;
                     networkPlayer.EquipmentVisualId = equipmentVisualId;
+                    networkPlayer.SupportsJumpAnimation = true;
                 }
             });
             runner.SetPlayerObject(player, playerObject);

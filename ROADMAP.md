@@ -61,6 +61,9 @@ Recommended views:
   soul update, NPC chat, voice-session contract, and agent decision routes.
 - [x] Agent context contract covering player profile, body state, soul,
   traits, level/stats, BodyTime, agent policy, and compact memory.
+- [x] Server-owned prototype body archetype pool for random NPC-like player
+  bodies, story hooks, stat bias, weapon visuals, visual variants, and animation
+  capability flags.
 - [x] Prototype Unity gateway client with Nakama fallback, profile/memory sync,
   NPC chat, local voice cue, and speech bubble.
 - [x] Local player agent prototype toggle for bounded movement intent.
@@ -90,8 +93,10 @@ Recommended views:
   current-body stats, BodyTime, lifecycle, SECOND balance, reincarnation count,
   and visual key onto the authoritative local `NetworkPlayer`.
 - [x] New player profile bootstrap creates a current body with level 1 stats:
-  vitality 10, force 8, agility 8, focus 8, resilience 8, health 100, energy
-  50, attack 10, and defense 5.
+  level 1 body stats selected from the server-owned prototype archetype pool.
+- [x] Current-body profile sync reloads the Unity visual variant, applies the
+  weapon visual, and disables jump animation triggers for body models marked as
+  missing jump support.
 - [x] Prototype account reserve starts with 604800 SECOND seconds, equal to
   7 days, and reincarnation currently costs 432000 SECOND seconds, equal to
   5 days.

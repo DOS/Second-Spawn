@@ -30,6 +30,124 @@ var bodyTimeDebugFatalDrainSource = "prototype_reincarnation_debug";
 var secondPrototypeMaxBalanceSeconds = 86400 * 365;
 var secondPrototypeStartingBalanceSeconds = 86400 * 7;
 var secondPrototypeReincarnationCostSeconds = 86400 * 5;
+var prototypeVisualVariantMax = 12;
+var bodyArchetypePool = [
+  {
+    archetype_id: "synthetic-sentinel",
+    visual_prefab_key: "generated_visual_07_knight",
+    visual_variant: 7,
+    equipment_visual_id: 2,
+    stats: { vitality: 12, force: 9, agility: 7, focus: 7, resilience: 11, max_health: 120, max_energy: 45, attack_power: 11, defense_power: 8 },
+    characteristics: { curiosity: 4, courage: 8, empathy: 5, discipline: 8, aggression: 4, sociability: 4 },
+    soul: {
+      core_drive: "hold the line for weaker bodies entering the zone",
+      temperament: "patient, watchful, and duty-bound",
+      combat_style: "guard allies, use measured melee pressure, and avoid overextending",
+      social_style: "short, direct, and protective",
+      long_term_goals: ["map safe routes through the hub perimeter", "earn trust as a reliable escort"]
+    },
+    story: {
+      origin: "A patrol chassis recovered from a ruined security cordon.",
+      role: "Frontline guard body",
+      conflict: "Its old command routines still prioritize civilians over self-preservation.",
+      rumor: "Some hub survivors claim this line once guarded a sealed Nibirium vault."
+    },
+    animation_capabilities: { supports_jump: true },
+    seed_memory_summary: "This body remembers standing watch near the southern gate during a Nibirium storm."
+  },
+  {
+    archetype_id: "wasteland-courier",
+    visual_prefab_key: "generated_visual_03_ninja",
+    visual_variant: 3,
+    equipment_visual_id: 2,
+    stats: { vitality: 8, force: 8, agility: 12, focus: 8, resilience: 7, max_health: 90, max_energy: 60, attack_power: 10, defense_power: 4 },
+    characteristics: { curiosity: 8, courage: 7, empathy: 5, discipline: 6, aggression: 5, sociability: 7 },
+    soul: {
+      core_drive: "stay mobile, gather rumors, and deliver promises before the body burns out",
+      temperament: "restless, alert, and hard to corner",
+      combat_style: "kite threats, strike only when escape routes are open",
+      social_style: "fast, pragmatic, and slightly suspicious",
+      long_term_goals: ["connect isolated survivor pockets", "keep a private map of reliable safehouses"]
+    },
+    story: {
+      origin: "A messenger body assembled from lightweight synthetic muscle and black-market reflex firmware.",
+      role: "Scout and courier body",
+      conflict: "It carries delivery fragments for clients who may no longer be alive.",
+      rumor: "A courier with this imprint once crossed the dead belt without losing a second of BodyTime."
+    },
+    animation_capabilities: { supports_jump: true },
+    seed_memory_summary: "This body remembers hidden route markers scratched under broken street lights."
+  },
+  {
+    archetype_id: "clinic-operator",
+    visual_prefab_key: "generated_visual_08_mage",
+    visual_variant: 8,
+    equipment_visual_id: 8,
+    stats: { vitality: 9, force: 6, agility: 7, focus: 12, resilience: 8, max_health: 95, max_energy: 80, attack_power: 8, defense_power: 5 },
+    characteristics: { curiosity: 7, courage: 5, empathy: 9, discipline: 8, aggression: 2, sociability: 8 },
+    soul: {
+      core_drive: "stabilize damaged bodies and preserve identity continuity",
+      temperament: "gentle, clinical, and quietly stubborn",
+      combat_style: "avoid direct duels, support allies, and retreat before BodyTime becomes critical",
+      social_style: "calm, observant, and reassuring",
+      long_term_goals: ["build a registry of successful consciousness transfers", "learn why some memories survive better than others"]
+    },
+    story: {
+      origin: "A field medic body assigned to a failing resurrection clinic.",
+      role: "Support and researcher body",
+      conflict: "It cannot ignore injured strangers, even when the clock says to run.",
+      rumor: "The clinic kept one forbidden backup of a patient who never woke."
+    },
+    animation_capabilities: { supports_jump: true },
+    seed_memory_summary: "This body remembers the smell of coolant in an underground reincarnation ward."
+  },
+  {
+    archetype_id: "scrap-warden",
+    visual_prefab_key: "generated_visual_10_hammer",
+    visual_variant: 10,
+    equipment_visual_id: 9,
+    stats: { vitality: 13, force: 12, agility: 5, focus: 6, resilience: 12, max_health: 135, max_energy: 35, attack_power: 13, defense_power: 9 },
+    characteristics: { curiosity: 5, courage: 8, empathy: 4, discipline: 7, aggression: 6, sociability: 3 },
+    soul: {
+      core_drive: "protect salvage rights and keep predators away from the weak",
+      temperament: "blunt, territorial, and loyal after trust is earned",
+      combat_style: "hold ground with heavy swings and avoid chase-heavy fights",
+      social_style: "terse, skeptical, and practical",
+      long_term_goals: ["claim a safe workshop", "recover a lost repair rig from the scrapyard"]
+    },
+    story: {
+      origin: "A reinforced labor body rebuilt for combat after the collapse.",
+      role: "Heavy salvage body",
+      conflict: "Its reinforced frame is powerful but less agile than newer shells.",
+      rumor: "Scrap wardens mark debts on weapon handles instead of ledgers."
+    },
+    animation_capabilities: { supports_jump: false },
+    seed_memory_summary: "This body remembers defending a scrap claim through three nights of low BodyTime."
+  },
+  {
+    archetype_id: "crossline-hunter",
+    visual_prefab_key: "generated_visual_09_crossbow",
+    visual_variant: 9,
+    equipment_visual_id: 7,
+    stats: { vitality: 9, force: 10, agility: 9, focus: 9, resilience: 7, max_health: 100, max_energy: 60, attack_power: 12, defense_power: 5 },
+    characteristics: { curiosity: 6, courage: 6, empathy: 4, discipline: 9, aggression: 5, sociability: 4 },
+    soul: {
+      core_drive: "observe threats before acting and never waste a shot",
+      temperament: "quiet, precise, and slow to trust",
+      combat_style: "keep distance, prioritize exposed targets, and disengage from melee pressure",
+      social_style: "minimal, dry, and exact",
+      long_term_goals: ["catalog dangerous mutations", "find the source of a repeating signal beyond the hub"]
+    },
+    story: {
+      origin: "A hunter body calibrated for perimeter work and long sightlines.",
+      role: "Ranged survey body",
+      conflict: "It trusts patterns more than people.",
+      rumor: "Its optical stack still receives a signal from a district that should be silent."
+    },
+    animation_capabilities: { supports_jump: false },
+    seed_memory_summary: "This body remembers counting hostile silhouettes from a broken overpass."
+  }
+];
 
 let InitModule: nkruntime.InitModule = function (
   ctx: nkruntime.Context,
@@ -521,9 +639,12 @@ function actorProfileNeedsNormalization(profile: any): boolean {
     !profile.body.body_id ||
     !profile.body.archetype_id ||
     !profile.body.visual_prefab_key ||
+    profile.body.visual_variant === undefined ||
     !profile.body.equipment ||
     !profile.body.stats ||
     !profile.body.characteristics ||
+    !profile.body.story ||
+    !profile.body.animation_capabilities ||
     !profile.body.time ||
     !profile.body.lifecycle ||
     !profile.body.agent_policy ||
@@ -592,6 +713,7 @@ function defaultActorProfile(ownerId: string, actorId: string, request: any): an
   var timestamp = new Date().toISOString();
   var displayName = trimString(request.display_name) || actorDisplayName(actorId);
   var actorType = normalizeActorType(request.actor_type || request.kind);
+  var archetype = selectBodyArchetype(request.archetype_id || ownerId + ":" + actorId);
 
   return ensureActorProfile({
     actor_id: actorId,
@@ -600,20 +722,23 @@ function defaultActorProfile(ownerId: string, actorId: string, request: any): an
     display_name: displayName,
     body: {
       body_id: "body-" + actorId,
-      archetype_id: trimString(request.archetype_id) || "prototype-npc",
-      visual_prefab_key: trimString(request.visual_prefab_key) || "prototype-npc",
-      equipment: normalizeEquipment({}),
-      stats: normalizeStats(request.stats || {}),
-      characteristics: normalizeTraits(request.characteristics || {}),
+      archetype_id: archetype.archetype_id,
+      visual_prefab_key: trimString(request.visual_prefab_key) || archetype.visual_prefab_key,
+      visual_variant: normalizeVisualVariant(firstDefined(request.visual_variant, archetype.visual_variant)),
+      equipment: normalizeEquipment(request.equipment || { equipment_visual_id: archetype.equipment_visual_id }),
+      stats: normalizeStatsWithDefaults(request.stats || {}, archetype.stats || {}),
+      characteristics: normalizeTraitsWithDefaults(request.characteristics || {}, archetype.characteristics || {}),
+      story: normalizeBodyStory(request.story || archetype.story || {}),
+      animation_capabilities: normalizeAnimationCapabilities(request.animation_capabilities || archetype.animation_capabilities || {}),
       time: normalizeBodyTime(request.time || {}),
       lifecycle: "alive",
       agent_policy: normalizePolicy(request.agent_policy || {}),
-      soul: normalizeSoul(request.soul || { name: displayName }, displayName)
+      soul: normalizeSoulWithDefaults(request.soul || { name: displayName }, archetype.soul || {}, displayName)
     },
     memory: [{
       id: "seed-actor-origin",
       kind: "system",
-      summary: "This actor is an NPC-like body profile with separate memory, stats, traits, soul, and policy.",
+      summary: trimString(archetype.seed_memory_summary) || "This actor is an NPC-like body profile with separate memory, stats, traits, soul, and policy.",
       importance: 6
     }],
     agent_runtime: defaultAgentRuntime(timestamp),
@@ -637,15 +762,19 @@ function ensureActorProfile(profile: any, ownerId: string, actorId: string): any
   profile.display_name = trimString(profile.display_name) || actorDisplayName(profile.actor_id);
   profile.body = profile.body || {};
   profile.body.body_id = trimString(profile.body.body_id) || "body-" + profile.actor_id;
-  profile.body.archetype_id = trimString(profile.body.archetype_id) || "prototype-npc";
-  profile.body.visual_prefab_key = trimString(profile.body.visual_prefab_key) || "prototype-npc";
-  profile.body.equipment = normalizeEquipment(profile.body.equipment || {});
-  profile.body.stats = normalizeStats(profile.body.stats || {});
-  profile.body.characteristics = normalizeTraits(profile.body.characteristics || {});
+  var archetype = selectBodyArchetype(profile.body.archetype_id || profile.owner_player_id + ":" + profile.actor_id);
+  profile.body.archetype_id = trimString(profile.body.archetype_id) || archetype.archetype_id;
+  profile.body.visual_prefab_key = trimString(profile.body.visual_prefab_key) || archetype.visual_prefab_key;
+  profile.body.visual_variant = normalizeVisualVariant(firstDefined(profile.body.visual_variant, archetype.visual_variant));
+  profile.body.equipment = normalizeEquipment(equipmentOrArchetypeDefault(profile.body.equipment, archetype));
+  profile.body.stats = normalizeStatsWithDefaults(profile.body.stats || {}, archetype.stats || {});
+  profile.body.characteristics = normalizeTraitsWithDefaults(profile.body.characteristics || {}, archetype.characteristics || {});
+  profile.body.story = normalizeBodyStory(profile.body.story || archetype.story || {});
+  profile.body.animation_capabilities = normalizeAnimationCapabilities(profile.body.animation_capabilities || archetype.animation_capabilities || {});
   profile.body.time = normalizeBodyTime(profile.body.time || {});
   profile.body.lifecycle = trimString(profile.body.lifecycle) || "alive";
   profile.body.agent_policy = normalizePolicy(profile.body.agent_policy || {});
-  profile.body.soul = normalizeSoul(profile.body.soul || { name: profile.display_name }, profile.display_name);
+  profile.body.soul = normalizeSoulWithDefaults(profile.body.soul || { name: profile.display_name }, archetype.soul || {}, profile.display_name);
   profile.memory = sortAndBoundMemories(profile.memory || []);
   profile.agent_runtime = profile.agent_runtime || defaultAgentRuntime(timestamp);
   profile.agent_activity = profile.agent_activity || [];
@@ -670,14 +799,18 @@ function defaultAgentContext(playerId: string): any {
   };
 }
 
-function defaultBodyProfile(playerId: string, displayName: string, timestamp: string): any {
+function defaultBodyProfile(playerId: string, displayName: string, timestamp: string, seedSuffix?: string): any {
+  var archetype = selectBodyArchetype(playerId + ":" + (seedSuffix || "initial"));
   return {
     body_id: "body-" + playerId,
-    archetype_id: "prototype-hunter",
-    visual_prefab_key: "prototype-random",
-    equipment: normalizeEquipment({}),
-    stats: defaultCharacterStats(),
-    characteristics: normalizeTraits({}),
+    archetype_id: archetype.archetype_id,
+    visual_prefab_key: archetype.visual_prefab_key,
+    visual_variant: normalizeVisualVariant(archetype.visual_variant),
+    equipment: normalizeEquipment({ equipment_visual_id: archetype.equipment_visual_id }),
+    stats: normalizeStatsWithDefaults({}, archetype.stats || {}),
+    characteristics: normalizeTraitsWithDefaults({}, archetype.characteristics || {}),
+    story: normalizeBodyStory(archetype.story || {}),
+    animation_capabilities: normalizeAnimationCapabilities(archetype.animation_capabilities || {}),
     time: {
       remaining_seconds: 86400,
       max_seconds: 86400,
@@ -685,11 +818,11 @@ function defaultBodyProfile(playerId: string, displayName: string, timestamp: st
     },
     lifecycle: "alive",
     agent_policy: normalizePolicy({}),
-    soul: normalizeSoul({}, displayName),
+    soul: normalizeSoulWithDefaults({}, archetype.soul || {}, displayName),
     memory: [{
       id: "seed-origin",
       kind: "system",
-      summary: "The character is a Second Spawn prototype body controlled by the player or their offline agent.",
+      summary: trimString(archetype.seed_memory_summary) || "The character is a Second Spawn prototype body controlled by the player or their offline agent.",
       importance: 6
     }],
     agent_runtime: defaultAgentRuntime(timestamp),
@@ -713,15 +846,19 @@ function ensureAgentContext(context: any, playerId: string): any {
   ensureSecondBalance(context);
   context.body = context.body || {};
   context.body.body_id = trimString(context.body.body_id) || "body-" + context.player.player_id;
-  context.body.archetype_id = trimString(context.body.archetype_id) || "prototype-hunter";
-  context.body.visual_prefab_key = trimString(context.body.visual_prefab_key) || "prototype-random";
-  context.body.equipment = normalizeEquipment(context.body.equipment || {});
-  context.body.stats = normalizeStats(context.body.stats || {});
-  context.body.characteristics = normalizeTraits(context.body.characteristics || {});
+  var archetype = selectBodyArchetype(context.body.archetype_id || context.player.player_id + ":initial");
+  context.body.archetype_id = trimString(context.body.archetype_id) || archetype.archetype_id;
+  context.body.visual_prefab_key = trimString(context.body.visual_prefab_key) || archetype.visual_prefab_key;
+  context.body.visual_variant = normalizeVisualVariant(firstDefined(context.body.visual_variant, archetype.visual_variant));
+  context.body.equipment = normalizeEquipment(equipmentOrArchetypeDefault(context.body.equipment, archetype));
+  context.body.stats = normalizeStatsWithDefaults(context.body.stats || {}, archetype.stats || {});
+  context.body.characteristics = normalizeTraitsWithDefaults(context.body.characteristics || {}, archetype.characteristics || {});
+  context.body.story = normalizeBodyStory(context.body.story || archetype.story || {});
+  context.body.animation_capabilities = normalizeAnimationCapabilities(context.body.animation_capabilities || archetype.animation_capabilities || {});
   context.body.time = normalizeBodyTime(context.body.time || {});
   context.body.lifecycle = trimString(context.body.lifecycle) || "alive";
   context.body.agent_policy = normalizePolicy(context.body.agent_policy || {});
-  context.body.soul = normalizeSoul(context.body.soul || {}, context.player.display_name);
+  context.body.soul = normalizeSoulWithDefaults(context.body.soul || {}, archetype.soul || {}, context.player.display_name);
   context.body.memory = sortAndBoundMemories(context.body.memory || []);
   context.body.created_at = trimString(context.body.created_at) || timestamp;
   ensureAgentRuntime(context);
@@ -802,6 +939,55 @@ function defaultAgentRuntime(timestamp: string): any {
   };
 }
 
+function selectBodyArchetype(seed: any): any {
+  var requested = trimString(seed);
+  var exact = findBodyArchetype(requested);
+  if (exact) {
+    return exact;
+  }
+
+  if (bodyArchetypePool.length === 0) {
+    return {
+      archetype_id: "prototype-hunter",
+      visual_prefab_key: "generated_visual_12_swordsman",
+      visual_variant: 12,
+      equipment_visual_id: 2,
+      stats: defaultCharacterStats(),
+      characteristics: {},
+      soul: {},
+      story: {},
+      animation_capabilities: { supports_jump: true },
+      seed_memory_summary: ""
+    };
+  }
+
+  var index = stableHashIndex(requested || "default-body", bodyArchetypePool.length);
+  return bodyArchetypePool[index];
+}
+
+function findBodyArchetype(archetypeId: string): any {
+  var normalized = trimString(archetypeId);
+  if (normalized === "prototype-hunter" || normalized === "prototype-npc") {
+    return null;
+  }
+
+  for (var i = 0; i < bodyArchetypePool.length; i++) {
+    if (bodyArchetypePool[i].archetype_id === normalized) {
+      return bodyArchetypePool[i];
+    }
+  }
+  return null;
+}
+
+function stableHashIndex(value: string, modulo: number): number {
+  var hash = 2166136261;
+  for (var i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i);
+    hash = (hash * 16777619) >>> 0;
+  }
+  return modulo <= 0 ? 0 : hash % modulo;
+}
+
 function defaultCharacterStats(): any {
   return {
     level: 1,
@@ -814,6 +1000,22 @@ function defaultCharacterStats(): any {
     max_energy: 50,
     attack_power: 10,
     defense_power: 5
+  };
+}
+
+function normalizeStatsWithDefaults(stats: any, defaults: any): any {
+  var base = normalizeStats(defaults || {});
+  return {
+    level: clampNumber(numberOrDefault(stats.level, base.level), 1, 100),
+    vitality: clampNumber(numberOrDefault(stats.vitality, base.vitality), 1, 9999),
+    force: clampNumber(numberOrDefault(stats.force, base.force), 1, 9999),
+    agility: clampNumber(numberOrDefault(stats.agility, base.agility), 1, 9999),
+    focus: clampNumber(numberOrDefault(stats.focus, base.focus), 1, 9999),
+    resilience: clampNumber(numberOrDefault(stats.resilience, base.resilience), 1, 9999),
+    max_health: clampNumber(numberOrDefault(stats.max_health, base.max_health), 1, 999999),
+    max_energy: clampNumber(numberOrDefault(stats.max_energy, base.max_energy), 0, 999999),
+    attack_power: clampNumber(numberOrDefault(stats.attack_power, base.attack_power), 0, 999999),
+    defense_power: clampNumber(numberOrDefault(stats.defense_power, base.defense_power), 0, 999999)
   };
 }
 
@@ -966,7 +1168,7 @@ function reincarnateBody(context: any, request: any, nk: nkruntime.Nakama): void
   var durablePolicy = previousBody.agent_policy || normalizePolicy({});
   var durableTraits = previousBody.characteristics || normalizeTraits({});
   var nextCount = Math.floor(context.player.reincarnation_count || 0) + 1;
-  var nextBody = defaultBodyProfile(context.player.player_id, context.player.display_name || context.player.player_id, timestamp);
+  var nextBody = defaultBodyProfile(context.player.player_id, context.player.display_name || context.player.player_id, timestamp, "r" + nextCount);
 
   nextBody.body_id = "body-" + sanitizeNakamaIdentifier(context.player.player_id || "player", "player") + "-r" + nextCount;
   nextBody.soul = durableSoul;
@@ -1257,6 +1459,21 @@ function normalizeSoul(soul: any, fallbackName: string): any {
   };
 }
 
+function normalizeSoulWithDefaults(soul: any, defaults: any, fallbackName: string): any {
+  var merged = {
+    name: firstDefined(soul.name, defaults.name),
+    core_drive: firstDefined(soul.core_drive, defaults.core_drive),
+    temperament: firstDefined(soul.temperament, defaults.temperament),
+    combat_style: firstDefined(soul.combat_style, defaults.combat_style),
+    social_style: firstDefined(soul.social_style, defaults.social_style),
+    moral_boundaries: firstDefined(soul.moral_boundaries, defaults.moral_boundaries),
+    long_term_goals: firstDefined(soul.long_term_goals, defaults.long_term_goals),
+    player_notes: firstDefined(soul.player_notes, defaults.player_notes),
+    reincarnation_lore: firstDefined(soul.reincarnation_lore, defaults.reincarnation_lore)
+  };
+  return normalizeSoul(merged, fallbackName);
+}
+
 function normalizeTraits(traits: any): any {
   return {
     curiosity: clampNumber(traits.curiosity || 6, 1, 10),
@@ -1266,6 +1483,17 @@ function normalizeTraits(traits: any): any {
     aggression: clampNumber(traits.aggression || 3, 1, 10),
     sociability: clampNumber(traits.sociability || 5, 1, 10)
   };
+}
+
+function normalizeTraitsWithDefaults(traits: any, defaults: any): any {
+  return normalizeTraits({
+    curiosity: firstDefined(traits.curiosity, defaults.curiosity),
+    courage: firstDefined(traits.courage, defaults.courage),
+    empathy: firstDefined(traits.empathy, defaults.empathy),
+    discipline: firstDefined(traits.discipline, defaults.discipline),
+    aggression: firstDefined(traits.aggression, defaults.aggression),
+    sociability: firstDefined(traits.sociability, defaults.sociability)
+  });
 }
 
 function normalizePolicy(policy: any): any {
@@ -1279,6 +1507,41 @@ function normalizePolicy(policy: any): any {
     forbidden_activities: normalizeStringArray(policy.forbidden_activities, ["spend_body_time", "start_pvp", "trade_items"]),
     stop_when_body_time_below: clampNumber(policy.stop_when_body_time_below || 900, 60, 86400)
   };
+}
+
+function normalizeVisualVariant(value: any): number {
+  return clampNumber(numberOrDefault(value, 12), 0, prototypeVisualVariantMax);
+}
+
+function normalizeBodyStory(story: any): any {
+  return {
+    origin: trimString(story.origin) || "A synthetic body with a partial pre-player history.",
+    role: trimString(story.role) || "Wanderer body",
+    conflict: trimString(story.conflict) || "The body carries old habits that may not match its new consciousness.",
+    rumor: trimString(story.rumor) || "No one knows which memories belong to the body and which belong to the soul."
+  };
+}
+
+function normalizeAnimationCapabilities(capabilities: any): any {
+  return {
+    supports_jump: capabilities.supports_jump === false ? false : true
+  };
+}
+
+function equipmentOrArchetypeDefault(equipment: any, archetype: any): any {
+  if (!equipment) {
+    return { equipment_visual_id: archetype.equipment_visual_id };
+  }
+
+  var hasEquipmentVisualId = equipment.equipment_visual_id !== undefined &&
+    equipment.equipment_visual_id !== null &&
+    Number(equipment.equipment_visual_id) > 0;
+  var hasPrimaryWeapon = !!trimString(equipment.primary_weapon);
+  if (!hasEquipmentVisualId && !hasPrimaryWeapon) {
+    return { equipment_visual_id: archetype.equipment_visual_id };
+  }
+
+  return equipment;
 }
 
 function normalizeEquipment(equipment: any): any {

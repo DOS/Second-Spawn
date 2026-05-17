@@ -13,6 +13,7 @@ namespace SecondSpawn.AI
         [SerializeField] private bool _preferNakama = true;
         [SerializeField] private bool _seedPrototypeMemory = true;
         [SerializeField] private bool _applyProfileStatsToLocalPlayer = true;
+        [SerializeField] private bool _applyProfileVisualToLocalPlayer = true;
         [SerializeField] private bool _applyProfileEquipmentToLocalPlayer = true;
         [SerializeField, TextArea] private string _prototypeMemory =
             "JOY wants overnight prototype progress without client-side LLM secrets.";
@@ -145,7 +146,7 @@ namespace SecondSpawn.AI
 
         private IEnumerator ApplyProfileToLocalPlayerWhenAvailable()
         {
-            if (!_applyProfileEquipmentToLocalPlayer && !_applyProfileStatsToLocalPlayer)
+            if (!_applyProfileEquipmentToLocalPlayer && !_applyProfileStatsToLocalPlayer && !_applyProfileVisualToLocalPlayer)
             {
                 yield break;
             }
@@ -188,7 +189,11 @@ namespace SecondSpawn.AI
                     ApplyStats(player, body);
                 }
 
-                if (_applyProfileEquipmentToLocalPlayer)
+                if (_applyProfileVisualToLocalPlayer)
+                {
+                    ApplyVisual(player, body);
+                }
+                else if (_applyProfileEquipmentToLocalPlayer)
                 {
                     ApplyEquipment(player, body);
                 }
@@ -224,6 +229,20 @@ namespace SecondSpawn.AI
                 ToNetworkSeconds(account.reincarnation_count));
         }
 
+        private static void ApplyVisual(NetworkPlayer player, BodyProfileDto body)
+        {
+            var equipmentVisualId = body.equipment?.equipment_visual_id ?? EquipmentVisualCatalog.None;
+            var visualVariant = ResolveVisualVariant(body, player.VisualVariant);
+            var supportsJump = body.animation_capabilities == null || body.animation_capabilities.supports_jump;
+
+            player.ApplyProfileVisual(visualVariant, equipmentVisualId, supportsJump);
+            var loaders = player.GetComponentsInChildren<LocalVisualPrefabLoader>(includeInactive: true);
+            foreach (var loader in loaders)
+            {
+                loader.RefreshVisualFromNetwork();
+            }
+        }
+
         public static string BuildClientEventId(string prefix)
         {
             return $"{prefix}-{System.Guid.NewGuid():N}";
@@ -243,6 +262,53 @@ namespace SecondSpawn.AI
             {
                 loader.ApplyEquipmentVisual(equipmentVisualId);
             }
+        }
+
+        private static int ResolveVisualVariant(BodyProfileDto body, int fallback)
+        {
+            if (body != null && body.visual_variant >= 0)
+            {
+                return VisualPrefabCatalog.NormalizeVariant(body.visual_variant);
+            }
+
+            if (TryParseVisualVariant(body?.visual_prefab_key, out var parsedVariant))
+            {
+                return VisualPrefabCatalog.NormalizeVariant(parsedVariant);
+            }
+
+            return VisualPrefabCatalog.NormalizeVariant(fallback);
+        }
+
+        private static bool TryParseVisualVariant(string visualKey, out int visualVariant)
+        {
+            visualVariant = -1;
+            if (string.IsNullOrWhiteSpace(visualKey))
+            {
+                return false;
+            }
+
+            var start = -1;
+            for (var i = 0; i <= visualKey.Length; i++)
+            {
+                var atEnd = i == visualKey.Length;
+                var isDigit = !atEnd && char.IsDigit(visualKey[i]);
+                if (isDigit && start < 0)
+                {
+                    start = i;
+                }
+                else if ((!isDigit || atEnd) && start >= 0)
+                {
+                    var token = visualKey.Substring(start, i - start);
+                    if (int.TryParse(token, out visualVariant))
+                    {
+                        return true;
+                    }
+
+                    start = -1;
+                }
+            }
+
+            return false;
         }
 
         private static int ToNetworkSeconds(long seconds)
