@@ -298,6 +298,20 @@ namespace SecondSpawn.AI
             }
 
             var json = JsonUtility.ToJson(payload);
+            yield return Send(BuildNakamaRpcRequest(rpcId, json), onSuccess, error =>
+            {
+                if (IsNakamaAuthInvalid(error))
+                {
+                    ClearNakamaSession();
+                    Debug.LogWarning($"[SecondSpawnGatewayClient] Nakama session rejected for RPC {rpcId}. Cleared stale session; the next required Nakama RPC will authenticate again.");
+                }
+
+                onError?.Invoke(error);
+            });
+        }
+
+        private UnityWebRequest BuildNakamaRpcRequest(string rpcId, string json)
+        {
             var request = new UnityWebRequest(BuildNakamaUrl($"/v2/rpc/{UnityWebRequest.EscapeURL(rpcId)}?unwrap"), "POST")
             {
                 uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json)),
@@ -306,7 +320,7 @@ namespace SecondSpawn.AI
             request.SetRequestHeader("Authorization", "Bearer " + _nakamaAuthToken);
             request.SetRequestHeader("Content-Type", "application/json; charset=utf-8");
             request.SetRequestHeader("Accept", "application/json");
-            yield return Send(request, onSuccess, onError);
+            return request;
         }
 
         private IEnumerator SignInSupabaseAnonymously(string supabaseUrl, string supabaseKey, Action<SupabaseAnonymousSessionDto> onSuccess, Action<string> onError)
@@ -483,6 +497,23 @@ namespace SecondSpawn.AI
             return string.IsNullOrWhiteSpace(value) ? "" : value.Trim().TrimEnd('/');
         }
 
+        private void ClearNakamaSession()
+        {
+            _nakamaAuthToken = "";
+            _nakamaUserId = "";
+        }
+
+        private static bool IsNakamaAuthInvalid(string error)
+        {
+            if (string.IsNullOrWhiteSpace(error))
+            {
+                return false;
+            }
+
+            return error.Contains("401:", StringComparison.OrdinalIgnoreCase) ||
+                   error.Contains("Auth token invalid", StringComparison.OrdinalIgnoreCase);
+        }
+
         private static AgentActivityRecordDto BuildGatewayDecisionActivity(AgentDecisionDto decision)
         {
             var action = NormalizeDecisionAction(decision?.action);
@@ -500,7 +531,10 @@ namespace SecondSpawn.AI
         {
             yield return AddNakamaAgentActivity(BuildGatewayDecisionActivity(decision), null, error =>
             {
-                Debug.LogWarning($"[SecondSpawnGatewayClient] Gateway decision activity write failed: {error}");
+                if (!IsNakamaAuthInvalid(error))
+                {
+                    Debug.LogWarning($"[SecondSpawnGatewayClient] Gateway decision activity write failed: {error}");
+                }
             });
         }
 

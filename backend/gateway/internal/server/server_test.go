@@ -128,6 +128,7 @@ func TestAgentDecidePrototype(t *testing.T) {
 				"body_id": "body-user-1",
 				"archetype_id": "prototype-hunter",
 				"visual_prefab_key": "prototype-random",
+				"visual_variant": 9,
 				"equipment": {
 					"primary_weapon": "none",
 					"equipment_visual_id": 0
@@ -151,6 +152,15 @@ func TestAgentDecidePrototype(t *testing.T) {
 					"discipline": 5,
 					"aggression": 3,
 					"sociability": 5
+				},
+				"story": {
+					"origin": "A hunter body calibrated for perimeter work.",
+					"role": "Ranged survey body",
+					"conflict": "It trusts patterns more than people.",
+					"rumor": "Its optics still receive a signal from a silent district."
+				},
+				"animation_capabilities": {
+					"supports_jump": false
 				},
 				"time": {
 					"remaining_seconds": 3600,

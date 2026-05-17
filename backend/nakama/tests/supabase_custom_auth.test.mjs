@@ -810,6 +810,30 @@ assert.equal(afterRepeatedMove.body.agent_runtime.decision_count, 2);
 assert.equal(afterRepeatedMove.body.agent_runtime.move_intent_count, 2);
 assert.equal(afterRepeatedMove.body.agent_activity.filter((activity) => activity.kind === "agent_decision").length, 1);
 
+const activityConflictHarness = createRuntimeHarness(module);
+activityConflictHarness.registeredRpcs.get("secondspawn_profile_get")(
+  { userId: "activity-conflict-user", env: {} },
+  activityConflictHarness.logger,
+  activityConflictHarness.nk,
+  ""
+);
+activityConflictHarness.conflictNextWrite();
+const activityConflictResponse = JSON.parse(activityConflictHarness.registeredRpcs.get("secondspawn_agent_activity_add")(
+  { userId: "activity-conflict-user", env: {} },
+  activityConflictHarness.logger,
+  activityConflictHarness.nk,
+  JSON.stringify({
+    kind: "agent_decision",
+    summary: "This append-only activity should be retried after a stale version.",
+    metrics: { decisions_made: 1 }
+  })
+));
+assert.equal(activityConflictResponse.body.agent_runtime.decision_count, 1);
+assert.equal(
+  activityConflictResponse.body.agent_activity[0].summary,
+  "This append-only activity should be retried after a stale version."
+);
+
 const conflictHarness = createRuntimeHarness(module);
 conflictHarness.registeredRpcs.get("secondspawn_profile_get")(
   { userId: "conflict-user", env: {} },

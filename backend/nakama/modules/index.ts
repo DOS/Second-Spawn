@@ -315,6 +315,7 @@ function rpcAgentActivityAdd(
   nk: nkruntime.Nakama,
   payload: string
 ): string {
+  var userId = requireUserId(ctx);
   var state = getOrCreateAgentContextState(ctx, nk);
   var context = state.context;
   var request = parseJson(payload || "{}", "agent activity payload");
@@ -322,7 +323,24 @@ function rpcAgentActivityAdd(
 
   if (addAgentActivity(context, activity, nk)) {
     applyActivityMetrics(context.body.agent_runtime, request.metrics || {});
-    writeAgentContext(nk, context, state.version);
+    try {
+      writeAgentContext(nk, context, state.version);
+    } catch (err) {
+      if (!isStorageVersionConflict(err)) {
+        throw err;
+      }
+
+      var latest = readAgentContext(nk, userId);
+      if (!latest) {
+        throw err;
+      }
+
+      context = ensureAgentContext(latest.value || {}, userId);
+      if (addAgentActivity(context, activity, nk)) {
+        applyActivityMetrics(context.body.agent_runtime, request.metrics || {});
+      }
+      writeAgentContext(nk, context, latest.version);
+    }
   }
   return JSON.stringify(context);
 }
@@ -546,6 +564,12 @@ function writeAgentContext(nk: nkruntime.Nakama, context: any, version: string):
     write.version = version;
   }
   nk.storageWrite([write]);
+}
+
+function isStorageVersionConflict(err: any): boolean {
+  var message = trimString(err && err.message ? err.message : String(err));
+  return message.indexOf("version") >= 0 &&
+    (message.indexOf("conflict") >= 0 || message.indexOf("version check failed") >= 0);
 }
 
 function getOrCreateActorProfileState(ctx: nkruntime.Context, nk: nkruntime.Nakama, request: any): any {
