@@ -2,6 +2,7 @@
     "name": "SecondSpawn.UI",
     "rootNamespace": "SecondSpawn.UI",
     "references": [
+        "SecondSpawn.AI",
         "SecondSpawn.Gameplay",
         "SecondSpawn.Networking",
         "Fusion.Runtime"
