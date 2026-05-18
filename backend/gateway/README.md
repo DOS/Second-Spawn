@@ -39,7 +39,7 @@ Optional agent-decision env:
 - `DOS_AI_API_KEY` enables model-backed JSON decisions through `api.dos.ai`.
 - `DOS_AI_BASE_URL` defaults to `https://api.dos.ai/v1`.
 - `ANTHROPIC_API_KEY` is a local prototype fallback only.
-- `AGENT_DECISION_MODEL` defaults to `claude-haiku-4.5`.
+- `AGENT_DECISION_MODEL` defaults to `dos-ai`.
 - Without a provider key, `/v1/agent/decide` keeps using the deterministic
   fallback path.
 

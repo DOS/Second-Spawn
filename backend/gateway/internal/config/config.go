@@ -48,7 +48,7 @@ func Load() (*Config, error) {
 		DOSAIAPIKey:        os.Getenv("DOS_AI_API_KEY"),
 		OpenAIAPIKey:       os.Getenv("OPENAI_API_KEY"),
 		ConvaiAPIKey:       os.Getenv("CONVAI_API_KEY"),
-		AgentDecisionModel: getEnv("AGENT_DECISION_MODEL", "claude-haiku-4.5"),
+		AgentDecisionModel: getEnv("AGENT_DECISION_MODEL", "dos-ai"),
 
 		RedisURL: getEnv("REDIS_URL", "redis://localhost:6379/0"),
 
