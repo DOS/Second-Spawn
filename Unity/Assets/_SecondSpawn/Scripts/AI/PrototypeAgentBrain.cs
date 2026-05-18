@@ -865,16 +865,7 @@ namespace SecondSpawn.AI
             animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
             animator.updateMode = AnimatorUpdateMode.Normal;
             animator.speed = 1f;
-#if UNITY_EDITOR
-            if (animator.runtimeAnimatorController == null)
-            {
-                var sharedController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(SharedAnimatorControllerPath);
-                if (sharedController != null)
-                {
-                    animator.runtimeAnimatorController = sharedController;
-                }
-            }
-#endif
+            EnsureSharedController(animator);
             animator.Rebind();
             animator.Update(0f);
 
@@ -882,6 +873,39 @@ namespace SecondSpawn.AI
             {
                 animator.gameObject.AddComponent<AnimationEventReceiver>();
             }
+        }
+
+        private static void EnsureSharedController(Animator animator)
+        {
+#if UNITY_EDITOR
+            if (animator.runtimeAnimatorController != null && ExposesLocomotionContract(animator))
+            {
+                return;
+            }
+
+            var sharedController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(SharedAnimatorControllerPath);
+            if (sharedController != null)
+            {
+                animator.runtimeAnimatorController = sharedController;
+            }
+            else
+            {
+                Debug.LogWarning($"[PrototypeAgentBrain] Shared animator controller not found at '{SharedAnimatorControllerPath}'.");
+            }
+#endif
+        }
+
+        private static bool ExposesLocomotionContract(Animator animator)
+        {
+            foreach (var parameter in animator.parameters)
+            {
+                if (parameter.name is "Moving" or "Velocity" or "Velocity X" or "Velocity Z")
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void ApplyLocomotion(float speed)

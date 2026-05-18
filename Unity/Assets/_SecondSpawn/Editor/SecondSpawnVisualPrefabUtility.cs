@@ -10,6 +10,9 @@ namespace SecondSpawn.EditorTools
 {
     public static class SecondSpawnVisualPrefabUtility
     {
+        private const string SharedAnimatorControllerPath =
+            "Assets/ExplosiveLLC/RPG Character Mecanim Animation Pack/Animation Controller/RPG-Character-Animation-Controller.controller";
+
         [MenuItem("Second Spawn/Art/Rebuild Generated Visual Prefabs")]
         public static void RebuildGeneratedVisualPrefabs()
         {
@@ -47,6 +50,7 @@ namespace SecondSpawn.EditorTools
                     StripGameplayScripts(instance);
                     StripNonVisualRuntimeComponents(instance);
                     PrepareVisualRoot(instance);
+                    AssignSharedAnimatorController(instance);
                     ConvertMaterialsToUrp(instance, materialCache);
                     EquipmentVisualCatalog.ApplyEquipmentVisual(instance, EquipmentVisualCatalog.GetDefaultForVisualVariant(i));
 
@@ -152,6 +156,22 @@ namespace SecondSpawn.EditorTools
 
             root.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
             root.transform.localScale = Vector3.one;
+        }
+
+        private static void AssignSharedAnimatorController(GameObject root)
+        {
+            var sharedController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(SharedAnimatorControllerPath);
+            if (sharedController == null)
+            {
+                Debug.LogWarning($"[SecondSpawnVisualPrefabUtility] Shared animator controller not found at '{SharedAnimatorControllerPath}'.");
+                return;
+            }
+
+            foreach (var animator in root.GetComponentsInChildren<Animator>(includeInactive: true))
+            {
+                animator.runtimeAnimatorController = sharedController;
+                EditorUtility.SetDirty(animator);
+            }
         }
 
         private static void ConvertMaterialsToUrp(GameObject root, Dictionary<Material, Material> materialCache)
