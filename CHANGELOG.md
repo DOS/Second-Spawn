@@ -135,6 +135,14 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 
 ### Fixed
 
+- Gateway `/v1/agent/decide` now accepts forward-compatible Unity body context
+  fields for prompt-safe decisions, preventing new body or identity metadata
+  from forcing Unity NPC brains into Nakama deterministic fallback.
+- Gateway Frame identity now includes age band, age years, and home base so
+  model-backed NPC decisions receive the same public identity summary Unity
+  shows over permanent NPCs.
+- Gateway model-backed decisions now prefer `api.dos.ai` via `DOS_AI_API_KEY`
+  instead of calling Anthropic directly from the Second Spawn gateway.
 - Prototype debug panel hotkeys now use Unity Input System keyboard polling
   instead of the disabled legacy input API, stopping Play Mode console spam.
 - Prototype Nakama world storage now scopes permanent NPC profiles and hub chat

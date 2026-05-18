@@ -37,7 +37,10 @@ func NewWithStore(cfg *config.Config, store character.Store) *Server {
 	if cfg == nil {
 		cfg = &config.Config{}
 	}
-	provider := llm.NewAnthropicProvider(cfg.AnthropicAPIKey)
+	provider := llm.NewDOSAIProvider(cfg.DOSAIAPIKey, cfg.DOSAIBaseURL)
+	if provider == nil {
+		provider = llm.NewAnthropicProvider(cfg.AnthropicAPIKey)
+	}
 	return NewWithDependencies(cfg, store, agent.NewModelBackedDecider(provider, llm.Model(cfg.AgentDecisionModel)))
 }
 
@@ -143,7 +146,7 @@ func (s *Server) handleAddMemory(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleAgentDecide(w http.ResponseWriter, r *http.Request) {
 	var req agent.DecisionRequest
-	if err := decodeJSON(r, &req); err != nil {
+	if err := decodeAgentDecisionJSON(r, &req); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]any{"error": err.Error()})
 		return
 	}
@@ -292,6 +295,12 @@ func decodeJSON(r *http.Request, target any) error {
 	defer r.Body.Close()
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
+	return decoder.Decode(target)
+}
+
+func decodeAgentDecisionJSON(r *http.Request, target *agent.DecisionRequest) error {
+	defer r.Body.Close()
+	decoder := json.NewDecoder(r.Body)
 	return decoder.Decode(target)
 }
 

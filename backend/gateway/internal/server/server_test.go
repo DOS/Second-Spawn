@@ -200,8 +200,12 @@ func TestAgentDecidePrototype(t *testing.T) {
 					"public_role": "Ranged survey body",
 					"faction_title": "Relay Runner",
 					"profession": "Perimeter scout",
+					"age_years": 34,
+					"age_band": "adult",
+					"home_base": "Gate Seraph Hub",
 					"reputation_summary": "Known by the hub as reliable but time-poor."
 				},
+				"client_debug_note": "Unity may send prompt-safe body fields before the gateway contract catches up.",
 				"skills": [{
 					"id": "skill-scout",
 					"name": "Perimeter Scout",

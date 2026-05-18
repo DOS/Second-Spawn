@@ -23,8 +23,8 @@ type Provider interface {
 type Model string
 
 const (
-	ModelHaikuFast    Model = "claude-haiku-4-5"  // NPC chat (fast, cheap) - phase 2
-	ModelSonnetSmart  Model = "claude-sonnet-4-6" // boss / quest-critical dialog - phase 2
+	ModelHaikuFast    Model = "claude-haiku-4.5"  // NPC chat (fast, cheap) - phase 2
+	ModelSonnetSmart  Model = "claude-sonnet-4.6" // boss / quest-critical dialog - phase 2
 	ModelOpenAIVoice  Model = "gpt-realtime"      // voice NPC via ephemeral token - phase 2
 	ModelConvaiPhase1 Model = "convai-default"    // phase 1 NPC dialogue
 )

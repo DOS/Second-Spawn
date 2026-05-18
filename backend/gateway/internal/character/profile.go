@@ -137,6 +137,9 @@ type FrameIdentity struct {
 	PublicRole        string `json:"public_role"`
 	FactionTitle      string `json:"faction_title"`
 	Profession        string `json:"profession"`
+	AgeYears          int    `json:"age_years"`
+	AgeBand           string `json:"age_band"`
+	HomeBase          string `json:"home_base"`
 	ReputationSummary string `json:"reputation_summary"`
 }
 
@@ -444,6 +447,11 @@ func formatFrameIdentity(identity FrameIdentity) string {
 	appendKV("role", identity.PublicRole)
 	appendKV("faction_title", identity.FactionTitle)
 	appendKV("profession", identity.Profession)
+	if identity.AgeYears > 0 {
+		parts = append(parts, fmt.Sprintf("age_years=%d", identity.AgeYears))
+	}
+	appendKV("age_band", identity.AgeBand)
+	appendKV("home_base", identity.HomeBase)
 	appendKV("reputation", identity.ReputationSummary)
 	return strings.Join(parts, "; ")
 }
