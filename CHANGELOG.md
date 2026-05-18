@@ -7,6 +7,9 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 
 ### Added
 
+- Human-believable NPC agent design doc covering trait axes, relationship
+  ledger, memory tiers, needs, mood, stress, proactive communication, and
+  research anchors for LLM-driven NPC behavior.
 - Unity `NetworkPlayer` now carries prototype level, combat stats, BodyTime,
   lifecycle, SECOND balance, reincarnation count, visual key, and agent-control
   state as networked fields.

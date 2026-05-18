@@ -2,7 +2,7 @@
 
 *Status: Living index*
 *Created: 2026-05-14*
-*Last updated: 2026-05-17*
+*Last updated: 2026-05-18*
 
 ---
 
@@ -36,7 +36,7 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 | 4 | Input system (Unity Input System) | Core | MVP | Prototype | - | Player Controller |
 | 5 | Zone scene management (1 zone vertical slice) | Core | MVP | Prototype | (TDD pending) | NetworkRunner |
 | 6 | Combat (ARPG action) | Gameplay | MVP | Not started | (TDD pending) | Player Controller, Networked state |
-| 7 | NPC dialogue (Convai SDK + intent validation) | Gameplay | MVP | Not started | (TDD pending) | api.dos.ai / Go LLM Gateway (phase 2 ready) |
+| 7 | NPC dialogue and human-believable NPC agent model | Gameplay | MVP | Design | [13-human-believable-npc-agent-model.md](13-human-believable-npc-agent-model.md) | api.dos.ai / Go LLM Gateway (phase 2 ready), Profile persistence |
 | 8 | Quest system (linear, 3-5 quests slice scope) | Gameplay | VS | Not started | (TDD pending) | NPC dialogue, persistence |
 | 9 | Dungeon instance (1 dungeon, 1 boss) | Gameplay | VS | Not started | (TDD pending) | Combat, NPC dialogue, Photon |
 | 10 | Boss LLM dialogue (Convai grounded) | Gameplay | VS | Not started | (TDD pending) | NPC dialogue |

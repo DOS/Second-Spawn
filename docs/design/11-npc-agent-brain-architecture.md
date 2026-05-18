@@ -10,7 +10,16 @@
 
 ## Purpose
 
-SECOND SPAWN needs NPCs and offline player agents that feel alive, but still obey game-server authority. This document defines the brain architecture before the prototype grows into a pile of one-off scripts.
+SECOND SPAWN needs NPCs and offline player agents that aim for
+human-believable behavior while still obeying game-server authority. This
+document defines the brain architecture before the prototype grows into a pile
+of one-off scripts.
+
+The design goal is to test how close the MVP can get to human-believable NPCs
+through LLM planning, memory, relationships, needs, and mood. The game should
+not pre-limit the agent to simple scripted behavior before playtests reveal the
+real limits. The boundary is authority: the LLM may choose intent, but it never
+owns authoritative state mutation.
 
 The core design is:
 
@@ -34,6 +43,19 @@ The LLM is only one node in the graph. It never owns movement, combat, inventory
 | Provider wrapper | OpenAI Agents SDK-style guardrails/tracing | Useful later for tool guardrails, output validation, and traceability around model calls |
 
 Do not embed a general-purpose desktop agent runtime directly in Unity. Game NPCs need bounded capabilities, predictable ticks, and server validation.
+
+### Research Anchors
+
+The character and social model is defined in
+[13-human-believable-npc-agent-model.md](13-human-believable-npc-agent-model.md).
+Important design anchors:
+
+- Hierarchical memory for persistent LLM game NPC personality.
+- Generative-agent observation, reflection, retrieval, and planning.
+- Symbolically grounded LLM dialogue from social simulation state.
+- Classic playable social relationship design from Prom Week / Comme il Faut.
+- Game-tested trait vocabularies from Dwarf Fortress, Crusader Kings III, and
+  RimWorld.
 
 ---
 
@@ -240,6 +262,9 @@ Soft prompt guidance:
 - Use hostility, familiarity, role, soul, and recent activity to choose tone.
 - When affinity is low, keep exchanges short unless a quest, danger, or duty
   reason exists.
+- Use traits, needs, mood, stress, and BodyTime pressure to decide whether a
+  social action should feel warm, guarded, manipulative, fearful, urgent, or
+  avoidant.
 
 Current prototype boundary:
 
