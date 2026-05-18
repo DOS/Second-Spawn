@@ -283,6 +283,25 @@ assert.equal(npcIntent.actor.relationships[0].affinity, 4);
 assert.equal(npcIntent.actor.relationships[0].familiarity_count, 1);
 assert.ok(npcIntent.actor.memory.some((memory) => /Route check complete/.test(memory.summary)));
 assert.ok(npcIntent.target_actor.memory.some((memory) => /Route check complete/.test(memory.summary)));
+let frequentNpcIntent = null;
+for (const id of ["npc-intent-2", "npc-intent-3", "npc-intent-4"]) {
+  frequentNpcIntent = JSON.parse(harness.registeredRpcs.get("secondspawn_npc_intent_submit")(
+    { userId: "user-1", env: {} },
+    harness.logger,
+    harness.nk,
+    JSON.stringify({
+      id,
+      actor_id: "npc-synthetic-sentinel-0101",
+      target_actor_id: "npc-wasteland-courier-0244",
+      intent: "say",
+      source: "llm",
+      text: "Still holding the route."
+    })
+  ));
+}
+assert.equal(frequentNpcIntent.accepted, true);
+assert.equal(frequentNpcIntent.actor.relationships[0].affinity, 16);
+assert.equal(frequentNpcIntent.actor.relationships[0].familiarity_count, 4);
 const tooFarNpcIntent = JSON.parse(harness.registeredRpcs.get("secondspawn_npc_intent_submit")(
   { userId: "user-1", env: {} },
   harness.logger,
