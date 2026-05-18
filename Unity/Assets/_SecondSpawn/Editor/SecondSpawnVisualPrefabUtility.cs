@@ -205,7 +205,7 @@ namespace SecondSpawn.EditorTools
                 return cachedMaterial;
             }
 
-            var materialName = $"{SanitizeFileName(sourceMaterial.name)}_URP";
+            var materialName = $"{SanitizeFileName(CleanGeneratedAssetName(sourceMaterial.name))}_URP";
             var materialPath = AssetDatabase.GenerateUniqueAssetPath($"{VisualPrefabCatalog.CleanMaterialFolder}/{materialName}.mat");
             var convertedMaterial = new Material(urpShader)
             {
@@ -325,6 +325,15 @@ namespace SecondSpawn.EditorTools
             }
 
             return new string(chars);
+        }
+
+        private static string CleanGeneratedAssetName(string value)
+        {
+            var normalized = value.Trim();
+            const string freeSuffix = " FREE";
+            return normalized.EndsWith(freeSuffix, System.StringComparison.OrdinalIgnoreCase)
+                ? normalized[..^freeSuffix.Length]
+                : normalized;
         }
     }
 }

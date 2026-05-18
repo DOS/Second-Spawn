@@ -21,9 +21,10 @@ namespace SecondSpawn.AI
         [SerializeField, Min(0.5f)] private float _spacing = 4f;
         [SerializeField, Min(0.5f)] private float _markerHeight = 1.8f;
         [SerializeField, Min(0.1f)] private float _markerRadius = 0.45f;
-        [SerializeField, Min(0.5f)] private float _labelHeight = 2.35f;
-        [SerializeField, Min(0.01f)] private float _labelCharacterSize = 0.05f;
-        [SerializeField, Range(8, 32)] private int _labelMaxLineLength = 22;
+        [SerializeField, Min(0.5f)] private float _labelHeight = 2.65f;
+        [SerializeField, Range(12, 24)] private int _labelFontSize = 18;
+        [SerializeField, Range(8, 32)] private int _labelMaxLineLength = 20;
+        [SerializeField, Min(96f)] private float _labelMaxWidth = 260f;
         [SerializeField, Min(1f)] private float _labelVisibleDistance = 24f;
         [SerializeField] private Key _refreshKey = Key.F6;
         [SerializeField] private bool _logStatus = true;
@@ -183,18 +184,9 @@ namespace SecondSpawn.AI
             var labelObject = new GameObject("Label");
             labelObject.transform.SetParent(marker, false);
             labelObject.transform.localPosition = new Vector3(0f, _labelHeight, 0f);
-            labelObject.transform.localRotation = Quaternion.Euler(60f, 0f, 0f);
 
-            var text = labelObject.AddComponent<TextMesh>();
-            text.text = BuildLabel(npc, index);
-            text.anchor = TextAnchor.MiddleCenter;
-            text.alignment = TextAlignment.Center;
-            text.fontSize = 56;
-            text.characterSize = _labelCharacterSize;
-            text.color = Color.white;
-
-            var billboard = labelObject.AddComponent<PrototypeBillboardLabel>();
-            billboard.Configure(_labelVisibleDistance);
+            var label = labelObject.AddComponent<PrototypeScreenSpaceLabel>();
+            label.Configure(BuildLabel(npc, index), _labelVisibleDistance, _labelFontSize, _labelMaxWidth);
         }
 
         private void AddFallbackCapsule(Transform marker, ActorProfileDto npc, int index)
@@ -381,40 +373,82 @@ namespace SecondSpawn.AI
     }
 
     [DisallowMultipleComponent]
-    public sealed class PrototypeBillboardLabel : MonoBehaviour
+    public sealed class PrototypeScreenSpaceLabel : MonoBehaviour
     {
+        private const float ScreenPadding = 8f;
+
+        private string _text = "";
         private float _visibleDistance = 24f;
-        private Renderer _renderer;
+        private int _fontSize = 18;
+        private float _maxWidth = 260f;
+        private GUIStyle _labelStyle;
+        private GUIStyle _shadowStyle;
 
-        private void Awake()
+        public void Configure(string text, float visibleDistance, int fontSize, float maxWidth)
         {
-            _renderer = GetComponent<Renderer>();
-        }
-
-        public void Configure(float visibleDistance)
-        {
+            _text = string.IsNullOrWhiteSpace(text) ? "NPC" : text.Trim();
             _visibleDistance = Mathf.Max(1f, visibleDistance);
+            _fontSize = Mathf.Clamp(fontSize, 12, 24);
+            _maxWidth = Mathf.Max(96f, maxWidth);
         }
 
-        private void LateUpdate()
+        private void OnGUI()
         {
             var cam = Camera.main;
-            if (cam == null)
+            if (cam == null || string.IsNullOrWhiteSpace(_text))
             {
                 return;
             }
 
-            var toLabel = transform.position - cam.transform.position;
-            if (toLabel.sqrMagnitude > 0.0001f)
+            var distance = Vector3.Distance(cam.transform.position, transform.position);
+            if (distance > _visibleDistance)
             {
-                transform.rotation = Quaternion.LookRotation(toLabel);
+                return;
             }
 
-            var distance = Mathf.Sqrt(toLabel.sqrMagnitude);
-            if (_renderer != null)
+            var screenPoint = cam.WorldToScreenPoint(transform.position);
+            if (screenPoint.z <= 0f)
             {
-                _renderer.enabled = distance <= _visibleDistance;
+                return;
             }
+
+            if (screenPoint.x < -_maxWidth || screenPoint.x > Screen.width + _maxWidth ||
+                screenPoint.y < -_maxWidth || screenPoint.y > Screen.height + _maxWidth)
+            {
+                return;
+            }
+
+            EnsureStyles();
+            var content = new GUIContent(_text);
+            var height = _labelStyle.CalcHeight(content, _maxWidth);
+            var x = Mathf.Clamp(screenPoint.x - _maxWidth * 0.5f, ScreenPadding, Screen.width - _maxWidth - ScreenPadding);
+            var y = Mathf.Clamp(Screen.height - screenPoint.y - height * 0.5f, ScreenPadding, Screen.height - height - ScreenPadding);
+            var rect = new Rect(x, y, _maxWidth, height);
+
+            GUI.Label(new Rect(rect.x + 1f, rect.y + 1f, rect.width, rect.height), content, _shadowStyle);
+            GUI.Label(rect, content, _labelStyle);
+        }
+
+        private void EnsureStyles()
+        {
+            if (_labelStyle != null)
+            {
+                return;
+            }
+
+            _labelStyle = new GUIStyle(GUI.skin.label)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                fontSize = _fontSize,
+                fontStyle = FontStyle.Bold,
+                wordWrap = true,
+                normal = { textColor = new Color(0.92f, 0.94f, 0.96f) }
+            };
+
+            _shadowStyle = new GUIStyle(_labelStyle)
+            {
+                normal = { textColor = new Color(0f, 0f, 0f, 0.72f) }
+            };
         }
     }
 }

@@ -21,7 +21,7 @@ namespace SecondSpawn.UI
         [SerializeField] private bool _showFrameIdentity = true;
         [SerializeField] private bool _showAgentActivity = true;
         [SerializeField] private Vector2 _panelPosition = new Vector2(16f, 16f);
-        [SerializeField] private Vector2 _panelSize = new Vector2(360f, 320f);
+        [SerializeField] private Vector2 _panelSize = new Vector2(440f, 420f);
         [SerializeField] private int _maxStoryCharacters = 110;
         [SerializeField] private int _maxActivityRows = 4;
         [SerializeField] private int _maxActivitySummaryCharacters = 92;
@@ -212,13 +212,13 @@ namespace SecondSpawn.UI
         {
             _labelStyle ??= new GUIStyle(GUI.skin.label)
             {
-                fontSize = 14,
+                fontSize = 17,
                 normal = { textColor = Color.white }
             };
 
             _headingStyle ??= new GUIStyle(_labelStyle)
             {
-                fontSize = 15,
+                fontSize = 18,
                 fontStyle = FontStyle.Bold,
                 normal = { textColor = new Color(0.68f, 0.88f, 1f) }
             };
