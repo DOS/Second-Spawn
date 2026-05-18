@@ -157,6 +157,9 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   of only local speech bubbles.
 - Docs now align the GDD, NPC brain architecture, character profile design, and
   roadmap with the proactive NPC social path merged in PR #67.
+- Permanent NPC nameplates now show the active brain source in Play Mode:
+  `AI DOS.AI` for model-backed decisions, orange `AI FALLBACK` for degraded
+  Nakama fallback, and red `AI ERROR` when no valid decision is available.
 - Prototype debug panel hotkeys now use Unity Input System keyboard polling
   instead of the disabled legacy input API, stopping Play Mode console spam.
 - Prototype Nakama world storage now scopes permanent NPC profiles and hub chat
