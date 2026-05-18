@@ -80,6 +80,7 @@ namespace SecondSpawn.AI
 
         public string BrainStatusLabel { get; private set; } = "AI booting";
         public Color BrainStatusColor { get; private set; } = new Color(0.82f, 0.86f, 0.9f);
+        public string BrainStatusReason { get; private set; } = "";
 
         private void Awake()
         {
@@ -502,30 +503,84 @@ namespace SecondSpawn.AI
             if (decision == null)
             {
                 var hasError = !string.IsNullOrWhiteSpace(gatewayError) || !string.IsNullOrWhiteSpace(fallbackError);
-                SetBrainStatus(hasError ? "AI ERROR" : "AI idle", hasError ? new Color(1f, 0.24f, 0.22f) : new Color(0.82f, 0.86f, 0.9f));
+                SetBrainStatus(
+                    hasError ? "AI ERROR" : "AI idle",
+                    hasError ? new Color(1f, 0.24f, 0.22f) : new Color(0.82f, 0.86f, 0.9f),
+                    FirstNonEmpty(ExtractGatewayReason(gatewayError), ExtractGatewayReason(fallbackError)));
                 return;
             }
 
             if (string.Equals(decision.source, "model", System.StringComparison.OrdinalIgnoreCase))
             {
-                SetBrainStatus("AI DOS.AI", new Color(0.62f, 1f, 0.72f));
+                SetBrainStatus("AI DOS.AI", new Color(0.62f, 1f, 0.72f), decision.source_reason);
                 return;
             }
 
             if (string.Equals(decision.source, "fallback", System.StringComparison.OrdinalIgnoreCase) ||
                 !string.IsNullOrWhiteSpace(gatewayError))
             {
-                SetBrainStatus("AI FALLBACK", new Color(1f, 0.62f, 0.16f));
+                SetBrainStatus(
+                    "AI FALLBACK",
+                    new Color(1f, 0.62f, 0.16f),
+                    FirstNonEmpty(decision.source_reason, ExtractGatewayReason(gatewayError)));
                 return;
             }
 
-            SetBrainStatus("AI unknown", new Color(1f, 0.86f, 0.28f));
+            SetBrainStatus("AI unknown", new Color(1f, 0.86f, 0.28f), decision.source_reason);
         }
 
-        private void SetBrainStatus(string label, Color color)
+        private void SetBrainStatus(string label, Color color, string reason = "")
         {
             BrainStatusLabel = string.IsNullOrWhiteSpace(label) ? "AI unknown" : label.Trim();
             BrainStatusColor = color;
+            BrainStatusReason = string.IsNullOrWhiteSpace(reason) ? "" : reason.Trim();
+        }
+
+        private static string FirstNonEmpty(params string[] values)
+        {
+            foreach (var value in values)
+            {
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    return value.Trim();
+                }
+            }
+
+            return "";
+        }
+
+        private static string ExtractGatewayReason(string error)
+        {
+            if (string.IsNullOrWhiteSpace(error))
+            {
+                return "";
+            }
+
+            if (error.Contains("daily token budget", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return "token_budget";
+            }
+
+            if (error.Contains("429", System.StringComparison.OrdinalIgnoreCase) ||
+                error.Contains("rate", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return "rate_limited";
+            }
+
+            if (error.Contains("502", System.StringComparison.OrdinalIgnoreCase) ||
+                error.Contains("bad gateway", System.StringComparison.OrdinalIgnoreCase) ||
+                error.Contains("origin_bad_gateway", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return "provider_502";
+            }
+
+            if (error.Contains("timeout", System.StringComparison.OrdinalIgnoreCase) ||
+                error.Contains("timed out", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return "timeout";
+            }
+
+            return "gateway_error";
         }
 
         private bool IsGatewayBudgetBackoffActive()

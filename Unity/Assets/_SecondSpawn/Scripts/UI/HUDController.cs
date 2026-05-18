@@ -18,10 +18,13 @@ namespace SecondSpawn.UI
     public sealed class HUDController : MonoBehaviour
     {
         [SerializeField] private bool _showPrototypeStats = true;
+        [SerializeField] private bool _showFpsCounter = true;
         [SerializeField] private bool _showFrameIdentity = true;
         [SerializeField] private bool _showAgentActivity = true;
         [SerializeField] private Vector2 _panelPosition = new Vector2(16f, 16f);
         [SerializeField] private Vector2 _panelSize = new Vector2(440f, 420f);
+        [SerializeField] private Vector2 _fpsOffset = new Vector2(16f, 16f);
+        [SerializeField, Min(0.05f)] private float _fpsRefreshSeconds = 0.25f;
         [SerializeField] private int _maxStoryCharacters = 110;
         [SerializeField] private int _maxActivityRows = 4;
         [SerializeField] private int _maxActivitySummaryCharacters = 92;
@@ -32,20 +35,55 @@ namespace SecondSpawn.UI
         private GUIStyle _headingStyle;
         private GUIStyle _mutedStyle;
         private GUIStyle _wrapStyle;
+        private GUIStyle _fpsStyle;
+        private GUIStyle _fpsBoxStyle;
         private float _nextPlayerRefreshAt;
         private float _nextMemorySyncRefreshAt;
+        private float _nextFpsRefreshAt;
+        private float _smoothedDeltaTime;
+        private string _fpsText = "FPS --";
+        private Color _fpsColor = Color.white;
         private Vector2 _scrollPosition;
+
+        private void Update()
+        {
+            if (!_showFpsCounter)
+            {
+                return;
+            }
+
+            var deltaTime = Time.unscaledDeltaTime;
+            if (deltaTime <= 0f)
+            {
+                return;
+            }
+
+            _smoothedDeltaTime = _smoothedDeltaTime <= 0f
+                ? deltaTime
+                : Mathf.Lerp(_smoothedDeltaTime, deltaTime, 0.08f);
+
+            if (Time.unscaledTime < _nextFpsRefreshAt)
+            {
+                return;
+            }
+
+            _nextFpsRefreshAt = Time.unscaledTime + _fpsRefreshSeconds;
+            var fps = Mathf.RoundToInt(1f / Mathf.Max(0.0001f, _smoothedDeltaTime));
+            _fpsText = $"FPS {fps}";
+            _fpsColor = FpsColor(fps);
+        }
 
         private void OnGUI()
         {
+            EnsureStyles();
+            DrawFpsCounter();
+
             if (!_showPrototypeStats)
             {
                 return;
             }
 
             var player = ResolvePlayer();
-            EnsureStyles();
-
             var rect = ResponsiveRect(_panelPosition, _panelSize);
             GUI.Box(rect, "SECOND SPAWN");
             GUILayout.BeginArea(new Rect(rect.x + 12f, rect.y + 24f, rect.width - 24f, rect.height - 32f));
@@ -232,6 +270,51 @@ namespace SecondSpawn.UI
             {
                 wordWrap = true
             };
+
+            _fpsStyle ??= new GUIStyle(_labelStyle)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                fontSize = 18,
+                fontStyle = FontStyle.Bold
+            };
+
+            _fpsBoxStyle ??= new GUIStyle(GUI.skin.box)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                padding = new RectOffset(10, 10, 4, 4)
+            };
+        }
+
+        private void DrawFpsCounter()
+        {
+            if (!_showFpsCounter)
+            {
+                return;
+            }
+
+            const float width = 104f;
+            const float height = 34f;
+            var x = Mathf.Max(8f, Screen.width - width - Mathf.Max(0f, _fpsOffset.x));
+            var y = Mathf.Max(8f, _fpsOffset.y);
+            var rect = new Rect(x, y, width, height);
+            GUI.Box(rect, GUIContent.none, _fpsBoxStyle);
+            _fpsStyle.normal.textColor = _fpsColor;
+            GUI.Label(rect, _fpsText, _fpsStyle);
+        }
+
+        private static Color FpsColor(int fps)
+        {
+            if (fps >= 55)
+            {
+                return new Color(0.55f, 1f, 0.6f);
+            }
+
+            if (fps >= 30)
+            {
+                return new Color(1f, 0.85f, 0.35f);
+            }
+
+            return new Color(1f, 0.38f, 0.32f);
         }
 
         private static Rect ResponsiveRect(Vector2 position, Vector2 requestedSize)

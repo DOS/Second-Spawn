@@ -483,7 +483,10 @@ namespace SecondSpawn.AI
                 return _text;
             }
 
-            return $"{_text}\n{_brain.BrainStatusLabel}";
+            var reason = string.IsNullOrWhiteSpace(_brain.BrainStatusReason)
+                ? ""
+                : $" {_brain.BrainStatusReason.Trim()}";
+            return $"{_text}\n{_brain.BrainStatusLabel}{reason}";
         }
 
         private Color ResolveLabelColor()
