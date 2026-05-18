@@ -411,15 +411,14 @@ mood or stress context, body presentation data, and validated action surface. Se
 
 Target character-model taxonomy:
 
-This taxonomy is the design target. The current prototype runtime still uses
-the older serialized stat keys such as `vitality`, `force`, `agility`, `focus`,
-`resilience`, `max_health`, and `defense_power` until a coordinated backend,
-gateway, and Unity migration lands.
+The MVP backend uses six canonical body-bound core stats: `strength`, `agility`,
+`endurance`, `perception`, `focus`, and `presence`. The older serialized keys
+`vitality`, `force`, and `resilience` remain compatibility aliases until the
+Unity networked prototype stats are renamed safely.
 
-- Core stats: body-bound gameplay numbers such as strength, dexterity,
-  endurance, intelligence, perception, focus, charisma, and luck. Do not add
-  wisdom as a core stat and do not expose accuracy as a player-facing stat for
-  MVP.
+- Core stats: body-bound gameplay numbers such as strength, agility, endurance,
+  perception, focus, and presence. Do not add wisdom as a core stat and do not
+  expose accuracy as a player-facing stat for MVP.
 - Secondary stats: derived gameplay values such as HP, energy, attack power,
   skill power, armor rating, five elemental resistance ratings, dodge rating,
   dodge chance, crit chance, crit damage, attack speed, move speed, cooldown

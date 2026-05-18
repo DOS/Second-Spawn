@@ -199,6 +199,10 @@ func NewDefaultAgentContext(playerID string, now time.Time) AgentContext {
 			},
 			Stats: CharacterStats{
 				Level:        1,
+				Strength:     8,
+				Endurance:    10,
+				Perception:   8,
+				Presence:     5,
 				Vitality:     10,
 				Force:        8,
 				Agility:      8,

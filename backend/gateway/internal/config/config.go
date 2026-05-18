@@ -17,12 +17,13 @@ type Config struct {
 	SupabaseJWTSecret      string
 	SupabaseServiceRoleKey string
 
-	AnthropicAPIKey    string
-	DOSAIBaseURL       string
-	DOSAIAPIKey        string
-	OpenAIAPIKey       string
-	ConvaiAPIKey       string
-	AgentDecisionModel string
+	AnthropicAPIKey              string
+	DOSAIBaseURL                 string
+	DOSAIAPIKey                  string
+	OpenAIAPIKey                 string
+	ConvaiAPIKey                 string
+	AgentDecisionModel           string
+	LegacyCharacterRoutesEnabled bool
 
 	RedisURL string
 
@@ -43,12 +44,13 @@ func Load() (*Config, error) {
 		SupabaseJWTSecret:      os.Getenv("SUPABASE_JWT_SECRET"),
 		SupabaseServiceRoleKey: os.Getenv("SUPABASE_SERVICE_ROLE_KEY"),
 
-		AnthropicAPIKey:    os.Getenv("ANTHROPIC_API_KEY"),
-		DOSAIBaseURL:       getEnv("DOS_AI_BASE_URL", "https://api.dos.ai/v1"),
-		DOSAIAPIKey:        os.Getenv("DOS_AI_API_KEY"),
-		OpenAIAPIKey:       os.Getenv("OPENAI_API_KEY"),
-		ConvaiAPIKey:       os.Getenv("CONVAI_API_KEY"),
-		AgentDecisionModel: getEnv("AGENT_DECISION_MODEL", "dos-ai"),
+		AnthropicAPIKey:              os.Getenv("ANTHROPIC_API_KEY"),
+		DOSAIBaseURL:                 getEnv("DOS_AI_BASE_URL", "https://api.dos.ai/v1"),
+		DOSAIAPIKey:                  os.Getenv("DOS_AI_API_KEY"),
+		OpenAIAPIKey:                 os.Getenv("OPENAI_API_KEY"),
+		ConvaiAPIKey:                 os.Getenv("CONVAI_API_KEY"),
+		AgentDecisionModel:           getEnv("AGENT_DECISION_MODEL", "dos-ai"),
+		LegacyCharacterRoutesEnabled: getEnvBool("ENABLE_LEGACY_GATEWAY_CHARACTER_ROUTES", false),
 
 		RedisURL: getEnv("REDIS_URL", "redis://localhost:6379/0"),
 
@@ -69,6 +71,9 @@ func Load() (*Config, error) {
 		}
 		if len(missing) > 0 {
 			return nil, fmt.Errorf("required env vars missing in production: %s", strings.Join(missing, ", "))
+		}
+		if cfg.LegacyCharacterRoutesEnabled {
+			return nil, fmt.Errorf("ENABLE_LEGACY_GATEWAY_CHARACTER_ROUTES is not allowed in production")
 		}
 	}
 
@@ -103,4 +108,19 @@ func getEnvInt(key string, fallback int) int {
 		return fallback
 	}
 	return n
+}
+
+func getEnvBool(key string, fallback bool) bool {
+	value := strings.TrimSpace(strings.ToLower(os.Getenv(key)))
+	if value == "" {
+		return fallback
+	}
+	switch value {
+	case "1", "true", "yes", "y", "on":
+		return true
+	case "0", "false", "no", "n", "off":
+		return false
+	default:
+		return fallback
+	}
 }

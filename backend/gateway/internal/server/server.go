@@ -15,11 +15,9 @@ import (
 	"github.com/DOS/Second-Spawn/backend/gateway/internal/llm"
 )
 
-// Server is the HTTP entrypoint for the LLM gateway.
-// All LLM provider calls (Anthropic, OpenAI, Convai) are funneled through
-// here. The Unity client never holds API keys - it calls this gateway with
-// a Supabase JWT, the gateway validates intent server-side, then proxies
-// to the chosen provider.
+// Server is the HTTP entrypoint for the Second Spawn LLM adapter.
+// Durable game backend state belongs in Nakama. This service only shapes
+// prompt-safe model requests, validates JSON intent, and hides provider keys.
 type Server struct {
 	cfg     *config.Config
 	store   character.Store
@@ -71,9 +69,11 @@ func (s *Server) Routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.handleHealth)
 	mux.HandleFunc("GET /readyz", s.handleReady)
-	mux.HandleFunc("GET /v1/characters/{playerID}/context", s.handleGetAgentContext)
-	mux.HandleFunc("PUT /v1/characters/{playerID}/soul", s.handleUpdateSoul)
-	mux.HandleFunc("POST /v1/characters/{playerID}/memory", s.handleAddMemory)
+	if s.cfg.LegacyCharacterRoutesEnabled {
+		mux.HandleFunc("GET /v1/characters/{playerID}/context", s.handleGetAgentContext)
+		mux.HandleFunc("PUT /v1/characters/{playerID}/soul", s.handleUpdateSoul)
+		mux.HandleFunc("POST /v1/characters/{playerID}/memory", s.handleAddMemory)
+	}
 	mux.HandleFunc("POST /v1/agent/decide", s.handleAgentDecide)
 	mux.HandleFunc("POST /v1/npc/chat", s.handleNPCChat)
 	mux.HandleFunc("POST /v1/voice/session", s.handleVoiceSession)
@@ -158,6 +158,12 @@ func (s *Server) handleAgentDecide(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if strings.TrimSpace(req.Context.Player.PlayerID) == "" {
+		if !s.cfg.LegacyCharacterRoutesEnabled {
+			writeJSON(w, http.StatusBadRequest, map[string]any{
+				"error": "agent context is required; load durable profile state from Nakama before calling the LLM gateway",
+			})
+			return
+		}
 		playerID := "dev-player"
 		if trustedPlayerID != "" {
 			playerID = trustedPlayerID

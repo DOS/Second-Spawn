@@ -262,22 +262,25 @@ namespace SecondSpawn.AI
                 yield break;
             }
 
-            if (_seedSoulOnStart)
-            {
-                yield return _gateway.UpdateSoulForPlayer(_agentId, BuildSoulSeed(), ctx => _context = ctx, Debug.LogWarning);
-            }
-
             if (_context == null)
             {
-                yield return _gateway.GetContextForPlayer(_agentId, ctx => _context = ctx, Debug.LogWarning);
+                var seed = BuildSoulSeed();
+                if (!_seedSoulOnStart)
+                {
+                    seed.soul.player_notes = "Local prototype context without gateway persistence.";
+                }
+                _context = BuildLocalPrototypeContext(_agentId, _displayName, _visualVariant, seed);
             }
 
-            yield return _gateway.AddMemoryForPlayer(_agentId, new MemoryRecordDto
+            _context.body.memory = new[]
             {
-                kind = "system",
-                summary = "Prototype NPC brain patrols the hub, talks through bounded intent, and never mutates game state directly.",
-                importance = 7
-            }, ctx => _context = ctx, Debug.LogWarning);
+                new MemoryRecordDto
+                {
+                    kind = "system",
+                    summary = "Prototype NPC brain patrols the hub, talks through bounded intent, and never mutates game state directly.",
+                    importance = 7
+                }
+            };
 
             LogPhase(BrainPhase.Bootstrap, _context == null
                 ? "context unavailable after bootstrap"
@@ -322,6 +325,71 @@ namespace SecondSpawn.AI
                     preferred_activities = new[] { "patrol", "talk", "observe" },
                     forbidden_activities = new[] { "grant_items", "spend_body_time", "start_combat" },
                     stop_when_body_time_below = 900
+                }
+            };
+        }
+
+        private static AgentContextDto BuildLocalPrototypeContext(
+            string agentId,
+            string displayName,
+            int visualVariant,
+            UpdateSoulRequestDto seed)
+        {
+            var normalizedAgentId = string.IsNullOrWhiteSpace(agentId) ? "prototype-npc-guide" : agentId.Trim();
+            var normalizedDisplayName = string.IsNullOrWhiteSpace(displayName) ? normalizedAgentId : displayName.Trim();
+            const string role = "Prototype NPC guide";
+
+            return new AgentContextDto
+            {
+                player = new PlayerProfileDto
+                {
+                    player_id = normalizedAgentId,
+                    display_name = normalizedDisplayName,
+                    second_balance_seconds = 0,
+                    reincarnation_count = 0
+                },
+                body = new BodyProfileDto
+                {
+                    body_id = "body-" + normalizedAgentId,
+                    archetype_id = "prototype-npc",
+                    visual_prefab_key = $"generated_visual_{VisualPrefabCatalog.NormalizeVariant(visualVariant):00}",
+                    visual_variant = VisualPrefabCatalog.NormalizeVariant(visualVariant),
+                    stats = new CharacterStatsDto(),
+                    characteristics = seed.characteristics,
+                    time = new BodyTimeDto { remaining_seconds = 86400, max_seconds = 86400, danger_drain_rate = 1 },
+                    lifecycle = "alive",
+                    identity = new FrameIdentityDto
+                    {
+                        public_name = normalizedDisplayName,
+                        callsign = normalizedAgentId,
+                        public_role = role,
+                        profession = role,
+                        reputation_summary = "Local prototype context. Durable profile state belongs in Nakama."
+                    },
+                    story = new BodyStoryDto
+                    {
+                        origin = "A local prototype context used only when no Nakama actor profile is configured.",
+                        role = role,
+                        conflict = "It has no durable game-backend state.",
+                        rumor = "The real NPC profile should be loaded from Nakama."
+                    },
+                    animation_capabilities = new AnimationCapabilitiesDto
+                    {
+                        supports_jump = true,
+                        supports_roll = true,
+                        supports_melee = true,
+                        supports_ranged = false,
+                        weapon_stance = "one_hand_melee"
+                    },
+                    agent_policy = new AgentPolicyDto
+                    {
+                        enabled = true,
+                        mode = "observe_and_keep_safe",
+                        preferred_activities = new[] { "talk", "patrol" },
+                        forbidden_activities = new[] { "grant_items", "mutate_state", "unsafe_combat" },
+                        stop_when_body_time_below = 900
+                    },
+                    soul = seed.soul
                 }
             };
         }

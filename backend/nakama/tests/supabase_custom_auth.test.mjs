@@ -393,8 +393,12 @@ assert.equal(profile.body.tools[0].requires_validation, true);
 assert.equal(profile.body.heartbeat.cadence_seconds, 60);
 assert.equal(profile.body.heartbeat.offline_session_state, "online");
 assert.equal(profile.body.stats.level, 1);
+assert.equal(profile.body.stats.strength, 10);
+assert.equal(profile.body.stats.endurance, 9);
 assert.equal(profile.body.stats.vitality, 9);
 assert.equal(profile.body.stats.agility, 9);
+assert.equal(profile.body.stats.perception, 8);
+assert.equal(profile.body.stats.presence, 5);
 assert.equal(profile.body.stats.max_health, 100);
 assert.equal(profile.body.stats.attack_power, 12);
 assert.equal(profile.body.time.remaining_seconds, 86400);
@@ -556,7 +560,7 @@ const npcProfile = JSON.parse(harness.registeredRpcs.get("secondspawn_actor_prof
     actor_id: "npc-guide",
     actor_type: "npc",
     display_name: "Mira Guide",
-    stats: { level: 0, max_health: 0, max_energy: 0, attack_power: 0 },
+    stats: { level: 0, strength: 12, endurance: 14, agility: 10, perception: 11, focus: 9, presence: 8, max_health: 0, max_energy: 0, attack_power: 0 },
     characteristics: { curiosity: 8, sociability: 9 },
     time: { remaining_seconds: 0, max_seconds: 0, danger_drain_rate: 0 },
     soul: { core_drive: "help new bodies survive the hub" }
@@ -569,9 +573,16 @@ assert.equal(npcProfile.display_name, "Mira Guide");
 assert.equal(npcProfile.body.soul.name, "Mira Guide");
 assert.equal(npcProfile.body.soul.core_drive, "help new bodies survive the hub");
 assert.equal(npcProfile.body.stats.level, 1);
+assert.equal(npcProfile.body.stats.strength, 12);
+assert.equal(npcProfile.body.stats.endurance, 14);
 assert.equal(npcProfile.body.stats.max_health, 1);
 assert.equal(npcProfile.body.stats.max_energy, 0);
 assert.equal(npcProfile.body.stats.attack_power, 0);
+assert.equal(npcProfile.body.stats.force, 12);
+assert.equal(npcProfile.body.stats.vitality, 14);
+assert.equal(npcProfile.body.stats.resilience, 14);
+assert.equal(npcProfile.body.stats.perception, 11);
+assert.equal(npcProfile.body.stats.presence, 8);
 assert.equal(npcProfile.body.characteristics.sociability, 9);
 assert.equal(npcProfile.body.time.remaining_seconds, 0);
 assert.equal(npcProfile.body.time.max_seconds, 1);
@@ -601,6 +612,10 @@ assert.equal(permanentNpcProfile.body.identity.age_years, 39);
 assert.equal(permanentNpcProfile.body.identity.home_base, "Repair Bench 8");
 assert.equal(permanentNpcProfile.body.stats.level, 3);
 assert.equal(permanentNpcProfile.body.stats.focus, 12);
+assert.equal(permanentNpcProfile.body.stats.strength, 6);
+assert.equal(permanentNpcProfile.body.stats.endurance, 10);
+assert.equal(permanentNpcProfile.body.stats.perception, 8);
+assert.equal(permanentNpcProfile.body.stats.presence, 5);
 assert.equal(permanentNpcProfile.body.characteristics.discipline, 9);
 assert.equal(permanentNpcProfile.body.soul.name, "Clinic-0819 Craft");
 assert.equal(permanentNpcProfile.memory[0].id, "memory-repair-bench");

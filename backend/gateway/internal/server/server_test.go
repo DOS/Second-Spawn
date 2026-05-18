@@ -51,7 +51,7 @@ func TestHandleReady(t *testing.T) {
 }
 
 func TestCharacterContextLifecycle(t *testing.T) {
-	srv := New(&config.Config{Env: "test"})
+	srv := New(&config.Config{Env: "test", LegacyCharacterRoutesEnabled: true})
 
 	getReq := httptest.NewRequest(http.MethodGet, "/v1/characters/player-1/context", nil)
 	getRec := httptest.NewRecorder()
@@ -110,6 +110,35 @@ func TestCharacterContextLifecycle(t *testing.T) {
 	}
 	if !bytes.Contains(memoryRec.Body.Bytes(), []byte("direct prototype progress")) {
 		t.Fatalf("expected persisted memory in response, got %s", memoryRec.Body.String())
+	}
+}
+
+func TestLegacyCharacterContextRoutesDisabledByDefault(t *testing.T) {
+	srv := New(&config.Config{Env: "test"})
+	req := httptest.NewRequest(http.MethodGet, "/v1/characters/player-1/context", nil)
+	rec := httptest.NewRecorder()
+
+	srv.Routes().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected legacy character route 404, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestAgentDecideRequiresCallerProvidedContextByDefault(t *testing.T) {
+	srv := New(&config.Config{Env: "test"})
+	req := httptest.NewRequest(http.MethodPost, "/v1/agent/decide", bytes.NewReader([]byte(`{
+		"allowed": ["stop"]
+	}`)))
+	rec := httptest.NewRecorder()
+
+	srv.Routes().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected missing context 400, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), "Nakama") {
+		t.Fatalf("expected Nakama boundary error, got %s", rec.Body.String())
 	}
 }
 
@@ -314,6 +343,10 @@ func TestAgentDecideUsesConfiguredDecider(t *testing.T) {
 	srv := NewWithDependencies(&config.Config{Env: "test"}, nil, decider)
 
 	req := httptest.NewRequest(http.MethodPost, "/v1/agent/decide", bytes.NewReader([]byte(`{
+		"context": {
+			"player": {"player_id": "player-1"},
+			"body": {"body_id": "body-1"}
+		},
 		"world_snapshot": {
 			"zone_id": "hub",
 			"position": {"x": 0, "z": 0},
@@ -353,6 +386,10 @@ func TestAgentDecideRejectsConfiguredDeciderActionOutsideAllowed(t *testing.T) {
 	srv := NewWithDependencies(&config.Config{Env: "test"}, nil, decider)
 
 	req := httptest.NewRequest(http.MethodPost, "/v1/agent/decide", bytes.NewReader([]byte(`{
+		"context": {
+			"player": {"player_id": "player-1"},
+			"body": {"body_id": "body-1"}
+		},
 		"world_snapshot": {
 			"zone_id": "hub",
 			"position": {"x": 0, "z": 0},

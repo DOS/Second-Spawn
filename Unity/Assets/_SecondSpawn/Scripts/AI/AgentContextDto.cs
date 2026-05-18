@@ -137,6 +137,10 @@ namespace SecondSpawn.AI
     public sealed class CharacterStatsDto
     {
         public int level = 1;
+        public int strength = 8;
+        public int endurance = 10;
+        public int perception = 8;
+        public int presence = 5;
         public int vitality = 10;
         public int force = 8;
         public int agility = 8;

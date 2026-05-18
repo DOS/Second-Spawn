@@ -136,6 +136,7 @@ namespace SecondSpawn.AI
             onSuccess?.Invoke();
         }
 
+        [Obsolete("Character profile state belongs in Nakama. Use GetNakamaContext for runtime profile sync.")]
         public IEnumerator GetContext(Action<AgentContextDto> onSuccess, Action<string> onError = null)
         {
             yield return GetContextForPlayer(PlayerId, onSuccess, onError);
@@ -251,6 +252,7 @@ namespace SecondSpawn.AI
             yield return SendNakamaRpc("secondspawn_npc_intent_submit", request, onSuccess, onError);
         }
 
+        [Obsolete("Character profile state belongs in Nakama. Use GetNakamaContext for runtime profile sync.")]
         public IEnumerator GetContextForPlayer(string playerId, Action<AgentContextDto> onSuccess, Action<string> onError = null)
         {
             yield return Send<AgentContextDto>(
@@ -259,11 +261,13 @@ namespace SecondSpawn.AI
                 onError);
         }
 
+        [Obsolete("Character memory belongs in Nakama. Use AddNakamaMemory for runtime memory writes.")]
         public IEnumerator AddMemory(MemoryRecordDto memory, Action<AgentContextDto> onSuccess = null, Action<string> onError = null)
         {
             yield return AddMemoryForPlayer(PlayerId, memory, onSuccess, onError);
         }
 
+        [Obsolete("Character memory belongs in Nakama. Use AddNakamaMemory for runtime memory writes.")]
         public IEnumerator AddMemoryForPlayer(string playerId, MemoryRecordDto memory, Action<AgentContextDto> onSuccess = null, Action<string> onError = null)
         {
             yield return SendJson(
@@ -274,11 +278,13 @@ namespace SecondSpawn.AI
                 onError);
         }
 
+        [Obsolete("Soul/profile state belongs in Nakama. Use UpdateNakamaSoul for runtime profile writes.")]
         public IEnumerator UpdateSoul(UpdateSoulRequestDto request, Action<AgentContextDto> onSuccess = null, Action<string> onError = null)
         {
             yield return UpdateSoulForPlayer(PlayerId, request, onSuccess, onError);
         }
 
+        [Obsolete("Soul/profile state belongs in Nakama. Use UpdateNakamaSoul for runtime profile writes.")]
         public IEnumerator UpdateSoulForPlayer(string playerId, UpdateSoulRequestDto request, Action<AgentContextDto> onSuccess = null, Action<string> onError = null)
         {
             yield return SendJson(

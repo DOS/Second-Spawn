@@ -130,12 +130,13 @@ should not be mixed into combat stats.
 
 `Appeal` is not a core stat and should not be treated as "beauty score".
 It is a presentation attribute that can shape initial reactions and LLM flavor
-inside backend-approved social rules. It should never replace `charisma`, unlock
+inside backend-approved social rules. It should never replace `presence`, unlock
 rewards by itself, or bypass consent and moderation.
 
-Do not add `presence` as a buildable stat. If the game needs a presence label,
-derive it from charisma, reputation, body scale, gear, visual threat, and the
-current social context.
+`presence` is the MVP social core stat. It represents command weight,
+confidence, negotiation pressure, and intimidation attempts. Reputation, body
+scale, gear, visual threat, and current social context can modify how presence
+is read, but they are not the stat itself.
 
 ---
 

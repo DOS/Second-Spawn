@@ -66,13 +66,7 @@ namespace SecondSpawn.AI
                 }
             }
 
-            yield return _gateway.GetContext(ctx =>
-            {
-                _context = ctx;
-                var soulName = ctx?.body?.soul?.name ?? "unknown";
-                Debug.Log($"[CharacterMemorySync] Loaded gateway prototype soul '{soulName}'.");
-            }, Debug.LogWarning);
-            yield return ApplyProfileToLocalPlayerWhenAvailable();
+            Debug.LogWarning("[CharacterMemorySync] Profile sync requires Nakama. The LLM gateway no longer owns character profile state.");
         }
 
         public IEnumerator ApplyBodyTimeEvent(BodyTimeEventRequestDto request)
@@ -167,7 +161,7 @@ namespace SecondSpawn.AI
                 yield break;
             }
 
-            yield return _gateway.AddMemory(memory, ctx => _context = ctx, Debug.LogWarning);
+            Debug.LogWarning("[CharacterMemorySync] Memory writes require Nakama. The LLM gateway no longer persists character memory.");
         }
 
         private IEnumerator ApplyProfileToLocalPlayerWhenAvailable()
@@ -236,13 +230,16 @@ namespace SecondSpawn.AI
             var stats = body.stats ?? new CharacterStatsDto();
             var time = body.time ?? new BodyTimeDto();
             var account = _context?.player ?? new PlayerProfileDto();
+            var strength = ResolveStat(stats.strength, stats.force, 8);
+            var endurance = ResolveStat(stats.endurance, stats.vitality, 10);
+            var resilience = ResolveStat(stats.resilience, endurance, 8);
             player.ApplyProfileStats(
                 stats.level,
-                stats.vitality,
-                stats.force,
+                endurance,
+                strength,
                 stats.agility,
                 stats.focus,
-                stats.resilience,
+                resilience,
                 stats.max_health,
                 stats.max_energy,
                 stats.attack_power,
@@ -253,6 +250,21 @@ namespace SecondSpawn.AI
                 body.lifecycle,
                 ToNetworkSeconds(account.second_balance_seconds),
                 ToNetworkSeconds(account.reincarnation_count));
+        }
+
+        private static int ResolveStat(int primary, int legacy, int fallback)
+        {
+            if (primary > 0)
+            {
+                return primary;
+            }
+
+            if (legacy > 0)
+            {
+                return legacy;
+            }
+
+            return fallback;
         }
 
         private static void ApplyVisual(NetworkPlayer player, BodyProfileDto body)
