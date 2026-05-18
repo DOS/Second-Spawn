@@ -10,9 +10,6 @@ namespace SecondSpawn.EditorTools
 {
     public static class SecondSpawnVisualPrefabUtility
     {
-        private const string SharedAnimatorControllerPath =
-            "Assets/ExplosiveLLC/RPG Character Mecanim Animation Pack/Animation Controller/RPG-Character-Animation-Controller.controller";
-
         [MenuItem("Second Spawn/Art/Rebuild Generated Visual Prefabs")]
         public static void RebuildGeneratedVisualPrefabs()
         {
@@ -160,10 +157,10 @@ namespace SecondSpawn.EditorTools
 
         private static void AssignSharedAnimatorController(GameObject root)
         {
-            var sharedController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(SharedAnimatorControllerPath);
+            var sharedController = VisualAnimatorControllerCatalog.LoadSharedController();
             if (sharedController == null)
             {
-                Debug.LogWarning($"[SecondSpawnVisualPrefabUtility] Shared animator controller not found at '{SharedAnimatorControllerPath}'.");
+                Debug.LogWarning($"[SecondSpawnVisualPrefabUtility] Shared animator controller not found at '{VisualAnimatorControllerCatalog.GetSharedControllerLookupLabel()}'.");
                 return;
             }
 

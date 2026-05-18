@@ -28,11 +28,6 @@ namespace SecondSpawn.AI
             Cooldown
         }
 
-#if UNITY_EDITOR
-        private const string SharedAnimatorControllerPath =
-            "Assets/ExplosiveLLC/RPG Character Mecanim Animation Pack/Animation Controller/RPG-Character-Animation-Controller.controller";
-#endif
-
         [SerializeField] private bool _startOnPlay = true;
         [SerializeField] private string _agentId = "prototype-npc-guide";
         [SerializeField] private string _displayName = "Prototype Guide";
@@ -1341,20 +1336,23 @@ namespace SecondSpawn.AI
         private static void EnsureSharedController(Animator animator)
         {
 #if UNITY_EDITOR
+            var sharedController = VisualAnimatorControllerCatalog.LoadSharedController();
+            if (sharedController != null)
+            {
+                if (animator.runtimeAnimatorController != sharedController)
+                {
+                    animator.runtimeAnimatorController = sharedController;
+                }
+
+                return;
+            }
+
             if (animator.runtimeAnimatorController != null && ExposesLocomotionContract(animator))
             {
                 return;
             }
 
-            var sharedController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(SharedAnimatorControllerPath);
-            if (sharedController != null)
-            {
-                animator.runtimeAnimatorController = sharedController;
-            }
-            else
-            {
-                Debug.LogWarning($"[PrototypeAgentBrain] Shared animator controller not found at '{SharedAnimatorControllerPath}'.");
-            }
+            Debug.LogWarning($"[PrototypeAgentBrain] Shared animator controller not found at '{VisualAnimatorControllerCatalog.GetSharedControllerLookupLabel()}'.");
 #endif
         }
 
