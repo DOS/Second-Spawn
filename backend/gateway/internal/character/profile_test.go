@@ -80,6 +80,9 @@ func TestBuildAgentContextPromptSortsAndBoundsMemories(t *testing.T) {
 				PublicRole:        "Ranged survey body",
 				FactionTitle:      "Relay Runner",
 				Profession:        "Perimeter scout",
+				AgeYears:          34,
+				AgeBand:           "adult",
+				HomeBase:          "Gate Seraph Hub",
 				ReputationSummary: "Known for safe route work.",
 			},
 			Skills: []FrameSkill{
@@ -138,6 +141,9 @@ func TestBuildAgentContextPromptSortsAndBoundsMemories(t *testing.T) {
 	if !strings.Contains(prompt, "primary_weapon: one_hand_sword") {
 		t.Fatalf("expected equipment in prompt, got %s", prompt)
 	}
+	if !strings.Contains(prompt, "home_base=Gate Seraph Hub") {
+		t.Fatalf("expected home base in prompt, got %s", prompt)
+	}
 	if !strings.Contains(prompt, "visual_variant: 9") {
 		t.Fatalf("expected visual variant in prompt, got %s", prompt)
 	}
@@ -162,7 +168,7 @@ func TestBuildAgentContextPromptSortsAndBoundsMemories(t *testing.T) {
 	if !strings.Contains(prompt, "stats: level=2 vitality=12 force=9 agility=11 focus=8 resilience=10 max_health=140 max_energy=60 attack_power=15 defense_power=7") {
 		t.Fatalf("expected body stats in prompt, got %s", prompt)
 	}
-	if !strings.Contains(prompt, "frame_identity: public_name=Crossline Surveyor 4445; callsign=npc-crossline-hunter-4445; role=Ranged survey body; faction_title=Relay Runner; profession=Perimeter scout; reputation=Known for safe route work.") {
+	if !strings.Contains(prompt, "frame_identity: public_name=Crossline Surveyor 4445; callsign=npc-crossline-hunter-4445; role=Ranged survey body; faction_title=Relay Runner; profession=Perimeter scout; age_years=34; age_band=adult; home_base=Gate Seraph Hub; reputation=Known for safe route work.") {
 		t.Fatalf("expected frame identity in prompt, got %s", prompt)
 	}
 	if !strings.Contains(prompt, "frame_skills: Perimeter Scout(profession,r2): Can read threat patterns around the hub.") {

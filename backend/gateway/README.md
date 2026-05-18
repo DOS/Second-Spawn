@@ -1,7 +1,8 @@
 # SECOND SPAWN - Prototype LLM Gateway Contract
 
 Prototype Go HTTP service that fronts LLM-style calls from the Unity game
-server while the shared `api.dos.ai` integration is not wired yet.
+server and routes model-backed decisions through the shared `api.dos.ai`
+gateway when configured.
 The Unity client and the dedicated game server never hold LLM API keys -
 all calls are routed through this gateway. It is designed to enforce the
 following boundaries; the prototype has not wired every item yet:
@@ -10,15 +11,15 @@ following boundaries; the prototype has not wired every item yet:
 - Per-player rate limits + daily token budget (Redis)
 - Server-side intent validation (no LLM-driven state mutation)
 - Prompt injection defense (reuses DOSafe patterns)
-- Provider routing (Anthropic for boss / quest-critical dialogue,
-  Convai for general NPC dialogue in phase 1)
+- Provider routing through `api.dos.ai` for model-backed decisions, with
+  Convai reserved for general NPC dialogue in phase 1
 
 Reuses the operational pattern of `D:\Projects\DOSRouter` (the Go LLM
 router JOY already operates for DOSafe / DOS.AI).
 
 Boundary:
 
-- Production AI/LLM calls should move to the shared `api.dos.ai` Go gateway.
+- Production AI/LLM calls should go through the shared `api.dos.ai` Go gateway.
 - Game backend logic belongs in Nakama OSS runtime modules under
   `backend/nakama/`.
 - Do not add profile, inventory, matchmaking, guild, wallet mutation, or
@@ -35,8 +36,10 @@ curl localhost:8090/readyz
 
 Optional agent-decision env:
 
-- `ANTHROPIC_API_KEY` enables model-backed JSON decisions.
-- `AGENT_DECISION_MODEL` defaults to `claude-haiku-4-5`.
+- `DOS_AI_API_KEY` enables model-backed JSON decisions through `api.dos.ai`.
+- `DOS_AI_BASE_URL` defaults to `https://api.dos.ai/v1`.
+- `ANTHROPIC_API_KEY` is a local prototype fallback only.
+- `AGENT_DECISION_MODEL` defaults to `claude-haiku-4.5`.
 - Without a provider key, `/v1/agent/decide` keeps using the deterministic
   fallback path.
 
@@ -100,10 +103,10 @@ The scaffold compiles and has prototype handlers for:
 - `POST /v1/npc/chat`
 - `POST /v1/voice/session`
 
-`POST /v1/agent/decide` can call an Anthropic-backed JSON intent decider when
-`ANTHROPIC_API_KEY` is configured. Local development, provider errors, and
-invalid model output fall back to deterministic prototype decisions so the
-vertical slice remains playable.
+`POST /v1/agent/decide` calls a DOS.AI-backed JSON intent decider when
+`DOS_AI_API_KEY` is configured. Local development without a DOS.AI key,
+provider errors, and invalid model output fall back to deterministic prototype
+decisions so the vertical slice remains playable.
 
 Persistent storage, full route-level Supabase JWT enforcement, and rate limiting
 are still open work. Nakama custom authentication is handled inside

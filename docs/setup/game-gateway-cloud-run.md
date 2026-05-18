@@ -1,20 +1,21 @@
 # Prototype LLM Gateway Cloud Run Deployment
 
-*Last Verified: 2026-05-16 against Google Cloud Run container deployment docs*
+*Last Verified: 2026-05-18 against Google Cloud Run container deployment docs*
 
 The SECOND SPAWN prototype LLM gateway runs as a containerized HTTPS service, not
 as a local executable on JOY's workstation. Unity calls the public gateway URL,
-while provider API keys and Supabase server secrets stay in Cloud Run
+while the DOS.AI service key and Supabase server secrets stay in Cloud Run
 environment secrets.
 
-This is not the game backend. Nakama is the game backend. Production LLM and AI
-endpoints should move to the shared `api.dos.ai` Go gateway when ready.
+This is not the game backend. Nakama is the game backend. Model-backed
+decisions route through the shared `api.dos.ai` Go gateway when
+`DOS_AI_API_KEY` is configured.
 
 ## Why Cloud Run
 
 - Runs the existing `backend/gateway/Dockerfile` without changing the Go app.
 - Autoscaling to zero is fine for prototype traffic.
-- Keeps LLM, voice, and Supabase service credentials server-side.
+- Keeps the DOS.AI service key and Supabase service credentials server-side.
 - Avoids local Windows executable approvals during Unity playtesting.
 - Leaves room to move the same image to a VPS or Kubernetes later.
 
@@ -55,7 +56,8 @@ gcloud run deploy second-spawn-gateway \
   --region asia-southeast1 \
   --allow-unauthenticated \
   --env-vars-file backend/gateway/deploy/cloudrun.env.yaml \
-  --set-secrets ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest
+  --set-secrets DOS_AI_API_KEY=DOS_AI_API_KEY:latest \
+  --remove-env-vars ANTHROPIC_API_KEY
 ```
 
 `--allow-unauthenticated` is intentional for the public game endpoint. Application
@@ -67,12 +69,12 @@ not put Cloud Run behind IAM auth for normal game clients.
 Create secrets once, then paste values interactively:
 
 ```bash
-gcloud secrets create ANTHROPIC_API_KEY --replication-policy automatic
-gcloud secrets versions add ANTHROPIC_API_KEY --data-file -
+gcloud secrets create DOS_AI_API_KEY --replication-policy automatic
+gcloud secrets versions add DOS_AI_API_KEY --data-file -
 ```
 
-For the current prototype, provider keys can be omitted only if `GATEWAY_ENV` is
-not `production`. Production must have real provider credentials and a wired
+For the current prototype, the DOS.AI key can be omitted only if `GATEWAY_ENV`
+is not `production`. Production must have real DOS.AI credentials and a wired
 Supabase bearer-token path before setting `SUPABASE_JWT_SECRET`.
 
 ## Smoke Test

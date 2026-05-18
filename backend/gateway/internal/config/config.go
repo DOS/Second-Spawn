@@ -18,6 +18,8 @@ type Config struct {
 	SupabaseServiceRoleKey string
 
 	AnthropicAPIKey    string
+	DOSAIBaseURL       string
+	DOSAIAPIKey        string
 	OpenAIAPIKey       string
 	ConvaiAPIKey       string
 	AgentDecisionModel string
@@ -42,9 +44,11 @@ func Load() (*Config, error) {
 		SupabaseServiceRoleKey: os.Getenv("SUPABASE_SERVICE_ROLE_KEY"),
 
 		AnthropicAPIKey:    os.Getenv("ANTHROPIC_API_KEY"),
+		DOSAIBaseURL:       getEnv("DOS_AI_BASE_URL", "https://api.dos.ai/v1"),
+		DOSAIAPIKey:        os.Getenv("DOS_AI_API_KEY"),
 		OpenAIAPIKey:       os.Getenv("OPENAI_API_KEY"),
 		ConvaiAPIKey:       os.Getenv("CONVAI_API_KEY"),
-		AgentDecisionModel: getEnv("AGENT_DECISION_MODEL", "claude-haiku-4-5"),
+		AgentDecisionModel: getEnv("AGENT_DECISION_MODEL", "claude-haiku-4.5"),
 
 		RedisURL: getEnv("REDIS_URL", "redis://localhost:6379/0"),
 
@@ -60,8 +64,8 @@ func Load() (*Config, error) {
 		if cfg.SupabaseJWTSecret == "" {
 			missing = append(missing, "SUPABASE_JWT_SECRET")
 		}
-		if cfg.AnthropicAPIKey == "" {
-			missing = append(missing, "ANTHROPIC_API_KEY")
+		if cfg.DOSAIAPIKey == "" {
+			missing = append(missing, "DOS_AI_API_KEY")
 		}
 		if len(missing) > 0 {
 			return nil, fmt.Errorf("required env vars missing in production: %s", strings.Join(missing, ", "))

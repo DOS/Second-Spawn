@@ -1,7 +1,7 @@
 # SECOND SPAWN Roadmap
 
 Status: Pre-alpha, vertical slice foundation in development.
-Last updated: 2026-05-17.
+Last updated: 2026-05-18.
 
 This roadmap tracks implementation status. Detailed design remains in `docs/`,
 especially `docs/design/02-vertical-slice-spec.md` and
@@ -78,6 +78,8 @@ Recommended views:
 - [x] Unity project baseline upgraded to Unity `6000.5.0b8`.
 - [x] Cloud Run staging gateway smoke-tested with the current Unity player
   context payload.
+- [x] Cloud Run staging gateway accepts current Unity NPC body context payloads
+  and can return validated model-backed decisions with `source=model`.
 - [x] Local Nakama runtime smoke-tested with the current TypeScript module.
 - [x] PR review fallback policy documented for local `code-review`, Gemini, and
   Codex Cloud review availability.
