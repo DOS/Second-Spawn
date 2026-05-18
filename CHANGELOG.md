@@ -7,6 +7,9 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 
 ### Added
 
+- Character-model taxonomy covering core stats, derived stats, social
+  attributes, body presentation, identity fields, and multi-axis relationships
+  for NPC-like Frames and player-inhabitable bodies.
 - Human-believable NPC agent design doc covering trait axes, relationship
   ledger, memory tiers, needs, mood, stress, proactive communication, and
   research anchors for LLM-driven NPC behavior.

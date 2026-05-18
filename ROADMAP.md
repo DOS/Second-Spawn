@@ -74,6 +74,8 @@ Recommended views:
 - [x] Cloud Run deployment notes for the prototype gateway.
 - [x] Project docs and ADRs for Fusion, Unity 6.5 beta, Nakama OSS, LLM safety,
   AI offline control, agent workflow, and backend boundaries.
+- [x] Character-model taxonomy documented for core stats, secondary stats,
+  social attributes, body presentation, identity, and multi-axis relationships.
 - [x] Backend tests for gateway contracts and Nakama runtime behavior.
 - [x] Unity project baseline upgraded to Unity `6000.5.0b8`.
 - [x] Cloud Run staging gateway smoke-tested with the current Unity player

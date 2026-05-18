@@ -68,6 +68,7 @@ agent system has a similar file. The existing Frame layers are enough for MVP:
 | `FrameIdentity` | Public self: name, callsign, profession, faction, reputation, social mask |
 | `FrameSoul` | Deep self: drive, fear, desire, values, moral lines, contradictions |
 | `FrameBody` | Physical self: current vessel, stats, BodyTime, lifecycle, visual identity |
+| `BodyPresentation` | Perceived self: appeal band, visual tags, intimidation tags, and presentation style |
 | `CharacterTraits` | Stable numeric tendency vector used by backend and LLM prompts |
 | `FrameMemory` | Lived self: short-term memory, episodic memories, core reflections, relationship facts |
 | `Relationships` | Per-target social state such as affinity, trust, fear, respect, debt, and hostility |
@@ -86,6 +87,55 @@ If the layers become insufficient later, the first likely additions are:
 
 For MVP, these can be represented as structured fields inside `CharacterTraits`,
 `FrameMemory`, and `FrameHeartbeat` before introducing new storage layers.
+
+---
+
+## Identity, Presentation, and Social Surface
+
+Human-believable NPCs need identity and presentation data, but those fields
+should not be mixed into combat stats.
+
+`FrameIdentity` should carry stable public identity:
+
+- name
+- callsign
+- profession
+- faction
+- role
+- reputation summary
+- gender identity
+- pronouns
+- identity age or soul continuity age when known
+
+`FrameBody` should carry body-specific facts:
+
+- body ID
+- visual variant
+- apparent age
+- chronological body age
+- body sex marker or synthetic marker
+- lifecycle
+- BodyTime
+- body-bound story hook
+
+`BodyPresentation` should carry passive social surface:
+
+| Field | Meaning |
+| ---- | ---- |
+| `appeal_band` | Passive first-impression band such as `low`, `normal`, `notable`, `high`, or `exceptional`. |
+| `appeal_tags` | Why the actor is appealing, such as `elegant`, `warm`, `synthetic-perfect`, `cute`, or `mysterious`. |
+| `visual_tags` | Objective visual read such as `scarred`, `military-grade`, `clean-silhouette`, or `uncanny`. |
+| `intimidation_tags` | Threat read such as `armed`, `massive`, `boss-like`, or `damaged`. |
+| `presentation_style` | Broad style such as masculine, feminine, androgynous, military, elegant, or utilitarian. |
+
+`Appeal` is not a core stat and should not be treated as "beauty score".
+It is a presentation attribute that can shape initial reactions and LLM flavor
+inside backend-approved social rules. It should never replace `charisma`, unlock
+rewards by itself, or bypass consent and moderation.
+
+Do not add `presence` as a buildable stat. If the game needs a presence label,
+derive it from charisma, reputation, body scale, gear, visual threat, and the
+current social context.
 
 ---
 
@@ -172,10 +222,12 @@ Recommended per-target relationship fields:
 | `respect` | `0..100` | Recognition of competence, rank, sacrifice, or moral force. |
 | `debt` | `-100..100` | Social or material obligation. Positive means this actor owes the target. Negative means the target owes this actor. |
 | `familiarity` | `0..100` | Amount of shared contact and history. |
+| `affection` | `0..100` | Warmth, care, attachment, or romantic pull where content rules allow it. |
 | `attachment` | `0..100` | Emotional bond that can survive conflict. |
 | `rivalry` | `0..100` | Competitive tension that can coexist with respect or affinity. |
 | `last_tone` | enum | Last interaction tone such as `friendly`, `tense`, `hostile`, `intimate`, `transactional`, or `protective`. |
 | `tags` | list | Relationship facts such as `mentor`, `rival`, `saved-by-target`, `debtor`, `suspect`, `old-crew`, or `betrayed`. |
+| `memory_refs` | list | Memory record IDs that justify the current relationship state. |
 
 MVP minimum:
 
@@ -186,6 +238,11 @@ MVP minimum:
 - `respect`
 - `debt`
 - `familiarity`
+
+Do not collapse this into one `like_score`. A character can love someone they
+distrust, respect someone they hate, fear someone they need, or owe a debt to a
+rival. Multiple axes make NPC behavior more believable and give the LLM better
+bounded context without granting it authority.
 
 Relationship state should be updated only through validated game events and
 approved memory updates. LLM output may propose an update, but the backend owns
@@ -349,12 +406,13 @@ numbers, bounded text context, and runtime world state.
 
 | Section | Backend Owned Fields | LLM Context Fields |
 | ---- | ---- | ---- |
-| Identity | `actor_id`, `body_id`, `controller_type`, `zone_id`, `faction_id`, `role_id` | public name, callsign, profession, faction summary, reputation, social mask |
-| Body | level, HP, energy, stats, BodyTime seconds, lifecycle, visual variant, equipment key | appearance summary, body condition, body origin, inherited role |
+| Identity | `actor_id`, `body_id`, `controller_type`, `zone_id`, `faction_id`, `role_id`, gender identity, pronouns, identity age | public name, callsign, profession, faction summary, reputation, social mask |
+| Body | level, HP, energy, stats, BodyTime seconds, lifecycle, visual variant, equipment key, apparent age, body marker | appearance summary, body condition, body origin, inherited role |
+| Presentation | appeal band, appearance tags, intimidation tags, presentation style | first-impression cues and visual-social flavor |
 | Traits | normalized numeric trait vector | trait tags and a short behavior summary |
 | Soul | durable soul record ID and approved version | core drive, core fear, moral boundaries, social style, long-term goals |
 | Memory | memory IDs, kinds, importance, timestamps, retrieval tags | short memory summaries, unresolved promises, trauma, rumors, grudges |
-| Relationships | affinity, hostility, trust, fear, respect, debt, familiarity, cooldowns | relationship notes, known history, last tone, social hooks |
+| Relationships | affinity, hostility, trust, fear, respect, debt, familiarity, affection, rivalry, cooldowns | relationship notes, known history, last tone, social hooks |
 | Policy | allowed intents, denied intents, risk thresholds, rate limits, moderation state | soft guidance such as preferred activities, forbidden topics, role obligations |
 | Runtime | current goal ID, mood, stress, last action, failure count, model source | current situation summary and last decision reason |
 | World | authoritative position, nearby actors, danger, interactables | local situation summary, zone social rules, event hooks |

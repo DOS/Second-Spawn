@@ -54,6 +54,7 @@ This preserves:
 | `AgentPolicy` | Yes | Player | What the offline agent is allowed to do while player is away |
 | `BodyProfile` | No | Game server | Current Frame or body, visual archetype, loaded TIME, lifecycle |
 | `CharacterStats` | Mostly no | Game server | Combat and movement-affecting numbers for current body |
+| `RelationshipLedger` | Only by approved carryover rule, with decay | Backend | Per-target social state such as trust, affection, fear, respect, debt, and hostility |
 | `MemoryRecord` | Yes, with decay | Backend | Small curated memory facts for LLM context |
 | `AgentRuntime` | Yes, across bodies until reset policy exists | Backend | Counters for profile bootstrap, activity, decisions, fallback decisions, and offline time |
 | `AgentActivity` | Yes, bounded recent history | Backend | Compact audit trail for offline-agent sessions and Unity/Nakama bootstrap events |
@@ -153,6 +154,54 @@ Required fields:
 
 `BodyProfile` is replaced on reincarnation. The server decides which values carry forward.
 
+Target body-profile fields such as apparent age, chronological body age, and
+body marker are not required in the current runtime schema yet. Target
+presentation fields such as presentation style and appeal tags are also not
+required yet. The prototype currently carries age through `FrameIdentity` fields
+such as `age_years` and `age_band`, and visual details through `appearance`,
+`visual_prefab_key`, and `visual_variant`.
+
+---
+
+## Identity and Body Presentation
+
+Identity and body presentation are separate because SECOND SPAWN characters can
+move across synthetic bodies.
+
+`FrameIdentity` covers the public self:
+
+| Field | Meaning |
+| ---- | ---- |
+| `display_name` | Public name shown to players and NPCs |
+| `callsign` | Short combat or faction callsign |
+| `profession` | Public role or job |
+| `faction_title` | Public faction-facing title |
+| `reputation_summary` | Compact public reputation summary |
+| `gender_identity` | The actor's self-identified gender |
+| `pronouns` | Pronouns used by dialogue and UI |
+| `identity_age` | Age of the durable identity or consciousness, when known |
+| `soul_continuity_age` | How long the consciousness has existed across bodies, when known |
+| `memory_span` | Approximate remembered lifetime range |
+
+`BodyPresentation` covers how the current body is perceived:
+
+| Field | Meaning |
+| ---- | ---- |
+| `appeal_band` | Passive attraction or first-impression band: `low`, `normal`, `notable`, `high`, or `exceptional` |
+| `appeal_tags` | Social attraction tags such as `elegant`, `warm`, `synthetic-perfect`, `cute`, or `mysterious` |
+| `visual_tags` | Visual read tags such as `scarred`, `military-grade`, `clean-silhouette`, or `uncanny` |
+| `intimidation_tags` | Threat read tags such as `armed`, `massive`, `boss-like`, or `damaged` |
+| `presentation_style` | Broad presentation style such as masculine, feminine, androgynous, military, elegant, or utilitarian |
+| `voice_profile` | Dialogue and voice cue descriptor, not a voice API credential |
+
+`Appeal` is a social presentation attribute, not a core or secondary stat. It
+can bias first impressions and LLM social flavor inside backend-approved bounds,
+but it must not unlock rewards, bypass consent, or replace `Charisma`.
+
+Do not add `Presence` as an independent stat. If needed later, presence should
+be a derived label from charisma, reputation, visual threat, gear, body scale,
+and current social context.
+
 ---
 
 ## Profession and Relationship Placement
@@ -167,8 +216,10 @@ Profession and social state should not live in one catch-all profile field.
 - Profession routines for OpenClaw-connected NPCs live in the external
   OpenClaw agent. The game stores only the control binding, current policy, and
   recent activity needed to validate and audit requests.
-- Personal relationships, debts, promises, rivalries, and private social facts
-  belong in `FrameMemory` records.
+- Personal relationships, debts, promises, rivalries, affection, hostility,
+  fear, and trust belong in `RelationshipLedger` records.
+- The specific events that explain relationship changes belong in `FrameMemory`
+  records and may be referenced by relationship entries.
 - Relationships that become durable motivations can be promoted into
   `FrameSoul.long_term_goals` or `moral_boundaries`.
 
@@ -180,22 +231,111 @@ UI and backend design.
 
 ## Character Stats
 
-Start with a small stat surface:
+`CharacterStats` are body-bound gameplay numbers. They can scale with body
+level, gear, implants, buffs, injuries, and reincarnation rules. Do not hard
+cap core stats at 100. Balance should come from derived formulas, diminishing
+returns, encounter rules, and server validation.
+
+Current prototype runtime contract:
 
 | Stat | Purpose |
 | ---- | ---- |
 | `level` | Local body level |
-| `vitality` | Health scaling |
-| `force` | Physical damage |
-| `agility` | Movement and attack cadence |
-| `focus` | Energy and ability use |
-| `resilience` | Damage mitigation |
-| `max_health` | Derived or cached health cap |
-| `max_energy` | Derived or cached energy cap |
-| `attack_power` | Derived or cached attack output |
-| `defense_power` | Derived or cached defense output |
+| `vitality` | Current health scaling prototype stat |
+| `force` | Current physical damage prototype stat |
+| `agility` | Current movement and attack cadence prototype stat |
+| `focus` | Current energy and ability-use prototype stat |
+| `resilience` | Current damage mitigation prototype stat |
+| `max_health` | Current derived or cached health cap |
+| `max_energy` | Current derived or cached energy cap |
+| `attack_power` | Current derived or cached attack output |
+| `defense_power` | Current derived or cached defense output |
 
-Design note: derived values may be cached for performance, but the server must own recalculation rules.
+These keys are implemented today by the gateway, Nakama runtime, and Unity
+prototype HUD. Do not rename them in runtime payloads until a code migration,
+tests, and compatibility pass land together.
+
+Target core stat taxonomy:
+
+| Stat | Purpose |
+| ---- | ---- |
+| `level` | Local body level |
+| `strength` | Physical power, melee force, carry, heavy weapons, and forceful body actions |
+| `dexterity` | Handling, precision, finesse, attack cadence, and dodge scaling |
+| `endurance` | Health, energy reserve, body durability, recovery, and BodyTime efficiency hooks |
+| `intelligence` | Technical action, hacking, crafting, tactical analysis, and system understanding |
+| `perception` | Sensor quality, threat detection, stealth detection, weak-point read, and social or environmental cue input |
+| `focus` | Concentration, panic resistance, noise resistance, status pressure, and agent instruction stability |
+| `charisma` | Active social influence such as persuasion, negotiation, leadership, and intimidation attempts |
+| `luck` | Small backend-capped bias for allowed rare outcomes, clutch events, and variance rolls |
+
+This target taxonomy is a design direction, not the current serialized contract.
+Until runtime migration happens, target stats should be mapped from or stored
+alongside the current prototype stats by an explicit migration plan.
+
+Do not add `wisdom` as a core stat. Wisdom-like behavior is split across
+`perception`, `focus`, `SoulProfile`, `CharacterTraits`, `FrameMemory`, and
+`RelationshipLedger`.
+
+Do not expose `accuracy` as a player-facing secondary stat for MVP. If a future
+combat system needs hit checks, keep `hit_reliability` backend-only.
+
+Derived combat stats:
+
+| Stat | Purpose |
+| ---- | ---- |
+| `max_hp` | Health cap |
+| `max_energy` | Energy or skill-resource cap |
+| `attack_power` | Weapon and body attack output |
+| `skill_power` | Ability, tech, or non-weapon output |
+| `armor_rating` | Generic direct-damage mitigation rating |
+| `metal_resistance_rating` | Metal damage mitigation rating |
+| `wood_resistance_rating` | Wood damage mitigation rating |
+| `water_resistance_rating` | Water damage mitigation rating |
+| `fire_resistance_rating` | Fire damage mitigation rating |
+| `earth_resistance_rating` | Earth damage mitigation rating |
+| `dodge_rating` | Rating converted into `dodge_chance` through a diminishing curve |
+| `dodge_chance` | Effective direct-hit avoidance chance shown in UI |
+| `crit_chance` | Critical hit chance |
+| `crit_damage` | Critical damage multiplier or bonus |
+| `attack_speed` | Basic attack cadence |
+| `move_speed` | Movement speed cap under server validation |
+| `cooldown_reduction` | Cooldown recovery, capped and preferably multiplicative |
+| `resource_cost_reduction` | Skill cost reduction, capped and preferably multiplicative |
+
+Derived body and agent stats:
+
+| Stat | Purpose |
+| ---- | ---- |
+| `body_time_drain_rate` | Current body TIME drain speed |
+| `body_time_efficiency` | How efficiently the body spends or preserves TIME |
+| `body_stability` | Resistance to degradation, injury pressure, overload, or corruption |
+| `recovery_rate` | Health, energy, or injury recovery modifier |
+| `sensor_range` | Server-authored observation radius for the body |
+| `threat_detection` | Ability to detect danger or ambush signals |
+| `stealth_detection` | Ability to detect hidden or stealth actors |
+| `social_read` | Server-bounded social cue read quality |
+| `instruction_stability` | In-fiction ability to stay on goal under pressure |
+| `memory_recall_quality` | Retrieval quality for approved memory context |
+| `stress_resistance` | Resistance to panic, fear, and social pressure |
+
+Design notes:
+
+- Store base stats and modifiers. Derived values may be cached for performance,
+  but the server must own recalculation rules.
+- Armor and elemental resistances should use rating-to-effective-percent
+  formulas with diminishing returns. UI should show both the rating and the
+  effective percent.
+- Dodge applies only to direct hits such as melee strikes, projectiles, and
+  single-hit skill impacts. Dodge does not apply to damage-over-time ticks,
+  ground hazards, aura damage, environmental damage, or guaranteed boss
+  mechanics.
+- `focus` must never be connected to prompt-injection defense. Security and
+  moderation are harness constants, not stats.
+- `intelligence` must never make the model smarter or grant new authority. It
+  can only affect server-approved technical actions and rolls inside policy.
+- `luck` must never mint loot, TIME, or SECOND directly. It can only bias
+  backend-approved rolls inside strict caps.
 
 ---
 
@@ -268,9 +408,15 @@ bounded per-target ledger:
 | `respect` | Recognition of competence, rank, sacrifice, or moral force |
 | `debt` | Social or material obligation between actors |
 | `familiarity` | Amount of shared contact and history |
+| `affection` | Warmth, care, attachment, or romantic pull where permitted by content rules |
+| `rivalry` | Competitive tension that can coexist with respect or affection |
+| `last_tone` | Last interaction tone such as `friendly`, `tense`, `hostile`, `intimate`, `transactional`, or `protective` |
+| `tags` | Relationship facts such as `mentor`, `rival`, `saved-by-target`, `debtor`, `suspect`, `old-crew`, or `betrayed` |
+| `memory_refs` | Memory record IDs that justify the current relationship state |
 
-Additional relationship depth such as attachment, rivalry, last interaction
-tone, and tags can be added once the MVP social loop needs them.
+Do not collapse relationships into one `like_score`. A character can respect
+someone they hate, fear someone they trust, love someone who betrayed them, or
+owe a debt to a rival.
 
 The LLM may propose a relationship or memory update, but Nakama owns whether the
 update is accepted and persisted.
@@ -284,6 +430,7 @@ consciousness needs its own profile bundle:
 - `CharacterStats`
 - `CharacterTraits`
 - `SoulProfile`
+- `RelationshipLedger`
 - `MemoryRecord`
 - `AgentPolicy` or NPC policy equivalent
 - `AgentRuntime`

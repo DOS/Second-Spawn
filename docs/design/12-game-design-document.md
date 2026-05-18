@@ -377,10 +377,12 @@ Every important NPC-like actor should eventually resolve to a bundle with clear 
 | ---- | ---- |
 | `FrameIdentity` | Public-facing name, callsign, role, faction title, and reputation summary |
 | `BodyProfile` | Current vessel, archetype, visual key, lifecycle, loaded TIME, and body-bound state |
-| `CharacterStats` | Combat, movement, health, energy, attack, defense, and level values |
+| `BodyPresentation` | Appeal band, visual tags, intimidation tags, and presentation style |
+| `CharacterStats` | Body-bound core stats, derived combat stats, movement, health, energy, defense, and level values |
 | `CharacterTraits` | Numeric personality tendencies for human-believable agent decisions, including empathy, honesty, cunning, loyalty, ambition, self-preservation, courage, discipline, aggression, mercy, curiosity, sociability, paranoia, greed, pragmatism, and vengefulness |
 | `BodyStory` | Short origin, role, conflict, and rumor hooks for the specific body |
 | `SoulProfile` | Durable identity, name, drive, temperament, goals, and moral boundaries |
+| `RelationshipLedger` | Per-target social state such as trust, affection, hostility, fear, respect, debt, and familiarity |
 | `MemoryRecord` | Bounded memories used by LLM and deterministic agent context |
 | `AgentPolicy` or NPC policy | What the actor is allowed to attempt |
 | `AgentRuntime` | Counters, fallback visibility, and recent operational state |
@@ -388,10 +390,12 @@ Every important NPC-like actor should eventually resolve to a bundle with clear 
 
 Server-side systems decide which parts are editable, inherited, generated, or
 read-only for each actor type. Profession and social state should be split
-across the bundle: public role and reputation in `FrameIdentity`, usable job
-abilities in combat/profession systems until a real `FrameSkill` layer is
-needed, private relationships in `MemoryRecord`, and relationships that become
-core motivations in `SoulProfile`.
+across the bundle: public role and reputation in `FrameIdentity`, apparent age
+and body markers in `BodyProfile`, passive first-impression surface in
+`BodyPresentation`, usable job abilities in combat/profession systems until a
+real `FrameSkill` layer is needed, per-target social state in
+`RelationshipLedger`, memory evidence in `MemoryRecord`, and relationships that
+become core motivations in `SoulProfile`.
 
 `FrameSkill` and `FrameAgents` are names we may still use later, but they are
 not required backend layers for the MVP. For OpenClaw-connected NPCs, the
@@ -402,8 +406,37 @@ runtime audit state.
 The current NPC design target is a human-believable agent model, not a narrow
 scripted quest-giver model. Each important NPC should have a stable trait vector,
 `FrameSoul`, `FrameMemory`, relationship ledger, BodyTime state, current needs,
-mood or stress context, and validated action surface. See
+mood or stress context, body presentation data, and validated action surface. See
 [13-human-believable-npc-agent-model.md](13-human-believable-npc-agent-model.md).
+
+Target character-model taxonomy:
+
+This taxonomy is the design target. The current prototype runtime still uses
+the older serialized stat keys such as `vitality`, `force`, `agility`, `focus`,
+`resilience`, `max_health`, and `defense_power` until a coordinated backend,
+gateway, and Unity migration lands.
+
+- Core stats: body-bound gameplay numbers such as strength, dexterity,
+  endurance, intelligence, perception, focus, charisma, and luck. Do not add
+  wisdom as a core stat and do not expose accuracy as a player-facing stat for
+  MVP.
+- Secondary stats: derived gameplay values such as HP, energy, attack power,
+  skill power, armor rating, five elemental resistance ratings, dodge rating,
+  dodge chance, crit chance, crit damage, attack speed, move speed, cooldown
+  reduction, BodyTime efficiency, sensor range, social read, and instruction
+  stability.
+- Social attributes: non-combat social surface such as appeal, reputation,
+  faction standing, and relationship values. Appeal is a presentation attribute,
+  not a beauty score and not a buildable combat stat.
+- Identity: name, callsign, profession, gender identity, pronouns, identity age,
+  soul continuity age, and memory span.
+- Body profile: apparent age, chronological body age, and body sex or synthetic
+  marker.
+- Body presentation: appeal band, appeal tags, visual tags, intimidation tags,
+  and presentation style.
+- Relationships: multi-axis per-target values such as familiarity, trust,
+  affection, hostility, fear, respect, debt, and rivalry. Do not collapse them
+  into one `like_score`.
 
 Prototype body-model decisions:
 
