@@ -11,7 +11,7 @@
 - **AI Agent 24/7** - Your character keeps playing when you are offline. An LLM-driven agent farms, quests, and socializes on your behalf.
 - **Reincarnation** - Death is permanent for the body. Transfer your consciousness to a new synthetic body using SECOND tokens. Progression resets - this is a roguelike-MMO hybrid.
 - **Time-as-Currency** - Time is both your current body's survival resource and a spendable economy resource, adapted from MetaDOS.
-- **Sci-fi Cultivation** - 6-tier progression system (Awakening -> Ascension), explained through Nibirium-enhanced biotech and consciousness science.
+- **Body-bound Progression** - Level and stats are tied to the current body; advanced soul/body progression is deferred for a fresh design pass.
 - **LLM-Powered NPCs** - NPCs remember you, have personality, and react to your history.
 - **NFT Integration** - Inherit assets from the MetaDOS universe. Hunter skins, weapons, pets on DOS Chain.
 
@@ -21,7 +21,7 @@
 - Photon Fusion 2 (dedicated server mode in production)
 - Nakama OSS (game backend, auth bridge, profiles, memory, social primitives)
 - Supabase sidecar (identity bridge, analytics, storage, external product data)
-- Go LLM gateway (server-side provider calls and intent validation)
+- `api.dos.ai` model calls through Nakama server runtime with server-side intent validation
 - DOS Chain (NFT, wallet auth via thirdweb)
 - Convai (phase 1 NPC dialogue) -> custom LLM (phase 2)
 
@@ -29,7 +29,7 @@
 
 ```
 /Unity/           Unity project (Assets, Packages, ProjectSettings)
-/backend/        Nakama runtime modules and Go LLM gateway
+/backend/        Nakama runtime modules
 /docs/            Design docs, ADRs, architecture
 /.claude/         AI agent context, templates, conventions
 ```

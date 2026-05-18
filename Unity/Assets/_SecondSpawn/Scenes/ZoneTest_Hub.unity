@@ -191,7 +191,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e7ac6c7e9346bb541b4657dbc1e8581d, type: 3}
   m_Name:
   m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.SecondSpawnGatewayClient
-  _gatewayBaseUrl: https://second-spawn-gateway-535583621422.asia-southeast1.run.app
   _playerId: dev-player
   _authenticateOnStart: 1
   _supabaseUrl:
@@ -715,8 +714,7 @@ MonoBehaviour:
   _seedSoulOnStart: 1
   _alignFeetToGround: 1
   _logPhaseTransitions: 1
-  _gatewayFailureErrorThreshold: 3
-  _gatewayBudgetBackoffSeconds: 60
+  _decisionFailureErrorThreshold: 3
 --- !u!4 &529322320
 Transform:
   m_ObjectHideFlags: 0

@@ -13,7 +13,7 @@
 
 - [ ] Unity client (`Unity/`)
 - [ ] Dedicated server build flags / CI
-- [ ] Go gateway (`backend/gateway/`)
+- [ ] Nakama runtime (`backend/nakama/`)
 - [ ] Supabase schema / RLS policies
 - [ ] DOS Chain integration / NFT contracts
 - [ ] AI agent runtime
@@ -23,7 +23,7 @@
 ## Test plan
 
 <!-- For Unity: which scenes were play-tested, on which Unity version, with how many concurrent players? -->
-<!-- For Go gateway: `cd backend/gateway && make test` output, plus any manual curl. -->
+<!-- For Nakama runtime: `cd backend/nakama && npm run build && npm test` output, plus any local smoke. -->
 <!-- For server-authority changes: confirm no logic moved to client. -->
 
 ## Server-authority check (mandatory if touching gameplay)
@@ -32,7 +32,7 @@
 - [ ] No new API key embedded in the Unity client
 - [ ] LLM outputs are validated as intent server-side, never auto-applied
 - [ ] If this PR adds a new state mutation path, it goes through the
-      intent validator (`backend/gateway/internal/intent/`)
+      Nakama runtime validator before any gameplay system consumes it
 
 ## Reviewer pass
 

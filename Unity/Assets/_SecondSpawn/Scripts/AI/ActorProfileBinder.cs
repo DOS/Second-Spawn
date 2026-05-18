@@ -78,7 +78,7 @@ namespace SecondSpawn.AI
 
             if (_gateway == null)
             {
-                Debug.LogWarning($"[ActorProfileBinder] No gateway client found for actor {ActorId}.");
+                Debug.LogWarning($"[ActorProfileBinder] No Nakama client found for actor {ActorId}.");
                 yield break;
             }
 

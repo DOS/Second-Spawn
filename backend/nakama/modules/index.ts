@@ -461,12 +461,16 @@ function rpcAgentDecide(
   var context = state.context;
   var request = parseJson(payload || "{}", "agent decision payload");
   var world = request.world_snapshot || {};
-  var allowed = request.allowed || ["move", "interact", "say", "stop"];
+  var allowed = normalizeAllowedActions(request.allowed || ["move", "interact", "say", "stop"]);
+  // TODO(#6): enforce per-player model request limits and daily token budget
+  // before calling api.dos.ai. Config fields exist, but the authoritative
+  // Nakama counters need to land before non-local model playtests.
   var interactTargetId = selectInteractTargetId(world);
   var bodyTime = Number(world.body_time_seconds !== undefined && world.body_time_seconds !== null
     ? world.body_time_seconds
     : context.body.time.remaining_seconds || 0);
   var decision: any;
+  var modelFallbackReason = "";
 
   if (bodyTime <= context.body.agent_policy.stop_when_body_time_below) {
     decision = {
@@ -476,45 +480,56 @@ function rpcAgentDecide(
       source: "fallback",
       source_reason: "nakama_body_time_policy"
     };
-  } else if (arrayContains(allowed, "move")) {
-    var position = world.position || { x: 0, z: 0 };
-    decision = {
-      action: "move",
-      move: {
-        x: Number(position.x || 0) + 1.5,
-        z: Number(position.z || 0) + 0.75
-      },
-      reason: "prototype_safe_patrol",
-      confidence: 0.55,
-      source: "fallback",
-      source_reason: "nakama_prototype_patrol"
-    };
-  } else if (arrayContains(allowed, "interact") && interactTargetId) {
-    decision = {
-      action: "interact",
-      target_id: interactTargetId,
-      reason: "prototype_interact_fallback",
-      confidence: 0.55,
-      source: "fallback",
-      source_reason: "nakama_interact_fallback"
-    };
-  } else if (arrayContains(allowed, "say")) {
-    decision = {
-      action: "say",
-      say: "I am keeping this body safe until the player returns.",
-      reason: "prototype_social_fallback",
-      confidence: 0.6,
-      source: "fallback",
-      source_reason: "nakama_social_fallback"
-    };
   } else {
-    decision = {
-      action: "stop",
-      reason: "no_allowed_action",
-      confidence: 0.5,
-      source: "fallback",
-      source_reason: "nakama_no_allowed_action"
-    };
+    var modelResult = tryDosAiAgentDecision(ctx, logger, nk, context, request, world, allowed);
+    if (modelResult.decision) {
+      decision = modelResult.decision;
+    } else {
+      modelFallbackReason = modelResult.reason;
+    }
+  }
+
+  if (!decision) {
+    if (arrayContains(allowed, "move")) {
+      var position = world.position || { x: 0, z: 0 };
+      decision = {
+        action: "move",
+        move: {
+          x: Number(position.x || 0) + 1.5,
+          z: Number(position.z || 0) + 0.75
+        },
+        reason: "prototype_safe_patrol",
+        confidence: 0.55,
+        source: "fallback",
+        source_reason: modelFallbackReason || "nakama_prototype_patrol"
+      };
+    } else if (arrayContains(allowed, "interact") && interactTargetId) {
+      decision = {
+        action: "interact",
+        target_id: interactTargetId,
+        reason: "prototype_interact_fallback",
+        confidence: 0.55,
+        source: "fallback",
+        source_reason: modelFallbackReason || "nakama_interact_fallback"
+      };
+    } else if (arrayContains(allowed, "say")) {
+      decision = {
+        action: "say",
+        say: "I am keeping this body safe until the player returns.",
+        reason: "prototype_social_fallback",
+        confidence: 0.6,
+        source: "fallback",
+        source_reason: modelFallbackReason || "nakama_social_fallback"
+      };
+    } else {
+      decision = {
+        action: "stop",
+        reason: "no_allowed_action",
+        confidence: 0.5,
+        source: "fallback",
+        source_reason: modelFallbackReason || "nakama_no_allowed_action"
+      };
+    }
   }
 
   recordAgentDecision(context, decision, nk);
@@ -2901,6 +2916,196 @@ function selectInteractTargetId(world: any): string {
   }
 
   return "";
+}
+
+function tryDosAiAgentDecision(
+  ctx: nkruntime.Context,
+  logger: nkruntime.Logger,
+  nk: nkruntime.Nakama,
+  context: any,
+  request: any,
+  world: any,
+  allowed: string[]
+): any {
+  var apiKey = trimString(ctx.env["DOS_AI_API_KEY"]);
+  if (!apiKey) {
+    return { decision: null, reason: "dos_ai_unconfigured" };
+  }
+
+  var baseUrl = trimTrailingSlash(ctx.env["DOS_AI_BASE_URL"] || "https://api.dos.ai/v1");
+  var endpoint = baseUrl;
+  if (endpoint.indexOf("/chat/completions") < 0) {
+    endpoint += "/chat/completions";
+  }
+
+  var model = trimString(ctx.env["AGENT_DECISION_MODEL"] || "dos-ai") || "dos-ai";
+  var body = {
+    model: model,
+    messages: [
+      { role: "system", content: dosAiAgentDecisionSystemPrompt() },
+      { role: "user", content: dosAiAgentDecisionUserPrompt(context, request, world, allowed) }
+    ],
+    max_tokens: 400,
+    stream: false
+  };
+
+  try {
+    var response = nk.httpRequest(endpoint, "post", {
+      "content-type": "application/json",
+      "accept": "application/json",
+      "authorization": "Bearer " + apiKey
+    }, JSON.stringify(body));
+
+    if (response.code < 200 || response.code > 299) {
+      logger.info("DOS.AI decision request failed with status " + response.code);
+      return { decision: null, reason: "dos_ai_http_" + response.code };
+    }
+
+    var decoded = parseJsonOrNull(response.body);
+    var content = trimString(decoded && decoded.choices && decoded.choices[0] && decoded.choices[0].message && decoded.choices[0].message.content);
+    if (!content) {
+      return { decision: null, reason: "dos_ai_empty_content" };
+    }
+
+    var decision = parseModelDecisionContent(content);
+    var validationError = validateAgentDecisionIntent(decision, allowed, world);
+    if (validationError) {
+      logger.info("DOS.AI decision rejected: " + validationError);
+      return { decision: null, reason: "dos_ai_validate_error" };
+    }
+
+    decision.action = trimString(decision.action).toLowerCase();
+    decision.reason = trimString(decision.reason || "model_selected_intent");
+    decision.confidence = clampNumber(numberOrDefault(decision.confidence, 0.5), 0, 1);
+    decision.source = "model";
+    decision.source_reason = "dos_ai_validated_intent";
+    return { decision: decision, reason: "" };
+  } catch (err) {
+    logger.info("DOS.AI decision request threw: " + err);
+    return { decision: null, reason: "dos_ai_exception" };
+  }
+}
+
+function dosAiAgentDecisionSystemPrompt(): string {
+  return [
+    "You are the SECOND SPAWN NPC and offline-agent decision node.",
+    "Return exactly one JSON object and no prose.",
+    "Your JSON must match this shape:",
+    "{\"action\":\"stop|move|attack|interact|say\",\"target_id\":\"optional\",\"move\":{\"x\":0,\"z\":0},\"say\":\"optional\",\"reason\":\"short safety-grounded reason\",\"confidence\":0.0}",
+    "Never grant items, currency, XP, BodyTime, quest progress, inventory, wallet actions, or authoritative state.",
+    "Choose only an action present in the allowed list.",
+    "Use SOUL for motive and voice, MEMORY for relationship context, and world_snapshot for who is nearby.",
+    "Use stop when policy, BodyTime, danger, hostility, or uncertainty makes action unsafe."
+  ].join("\n");
+}
+
+function dosAiAgentDecisionUserPrompt(context: any, request: any, world: any, allowed: string[]): string {
+  return JSON.stringify({
+    agent_context: context,
+    allowed_actions: allowed,
+    world_snapshot: world,
+    request: {
+      player_id: context && context.player && context.player.player_id,
+      body_id: context && context.body && context.body.body_id
+    }
+  });
+}
+
+function parseModelDecisionContent(content: string): any {
+  var normalized = trimString(content);
+  if (normalized.indexOf("```json") === 0) {
+    normalized = trimString(normalized.substring(7));
+  } else if (normalized.indexOf("```") === 0) {
+    normalized = trimString(normalized.substring(3));
+  }
+  if (normalized.lastIndexOf("```") === normalized.length - 3) {
+    normalized = trimString(normalized.substring(0, normalized.length - 3));
+  }
+  return parseJson(normalized, "model decision");
+}
+
+function validateAgentDecisionIntent(decision: any, allowed: string[], world: any): string {
+  if (!decision || typeof decision !== "object") {
+    return "decision is required";
+  }
+
+  var action = trimString(decision.action).toLowerCase();
+  if (!arrayContains(allowed, action)) {
+    return "action is not allowed";
+  }
+
+  if (action === "move") {
+    if (!decision.move || isNaN(Number(decision.move.x)) || isNaN(Number(decision.move.z))) {
+      return "move requires coordinates";
+    }
+  } else if (action === "say") {
+    if (!trimString(decision.say)) {
+      return "say requires text";
+    }
+    var sayTarget = trimString(decision.target_id);
+    if (sayTarget && !isNearbyActor(world, sayTarget)) {
+      return "say target is not nearby";
+    }
+  } else if (action === "interact" || action === "attack") {
+    var targetId = trimString(decision.target_id);
+    if (!targetId) {
+      return action + " requires target_id";
+    }
+    if (!isNearbyObject(world, targetId) && !isNearbyActor(world, targetId) && !isNearbyTarget(world, targetId)) {
+      return action + " target is not nearby";
+    }
+  }
+
+  return "";
+}
+
+function normalizeAllowedActions(values: any): string[] {
+  var allowed = normalizeStringArray(values, ["stop"]);
+  for (var index = 0; index < allowed.length; index += 1) {
+    allowed[index] = trimString(allowed[index]).toLowerCase();
+  }
+  if (!arrayContains(allowed, "stop")) {
+    allowed.push("stop");
+  }
+  return allowed;
+}
+
+function isNearbyObject(world: any, targetId: string): boolean {
+  var nearbyObjects = world && world.nearby_objects ? world.nearby_objects : [];
+  for (var index = 0; index < nearbyObjects.length; index += 1) {
+    if (trimString(nearbyObjects[index] && nearbyObjects[index].id) === targetId) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function isNearbyActor(world: any, targetId: string): boolean {
+  var nearbyActors = world && world.nearby_actors ? world.nearby_actors : [];
+  for (var index = 0; index < nearbyActors.length; index += 1) {
+    if (trimString(nearbyActors[index] && nearbyActors[index].id) === targetId) {
+      return true;
+    }
+  }
+
+  var nearbyObjects = world && world.nearby_objects ? world.nearby_objects : [];
+  for (var objectIndex = 0; objectIndex < nearbyObjects.length; objectIndex += 1) {
+    var nearbyObject = nearbyObjects[objectIndex];
+    if (trimString(nearbyObject && nearbyObject.id) === targetId && trimString(nearbyObject && nearbyObject.kind) === "nearby_actor") {
+      return true;
+    }
+  }
+  return false;
+}
+
+function isNearbyTarget(world: any, targetId: string): boolean {
+  var nearbyTargets = world && world.nearby_targets ? world.nearby_targets : [];
+  for (var index = 0; index < nearbyTargets.length; index += 1) {
+    if (trimString(nearbyTargets[index] && nearbyTargets[index].id) === targetId) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function incrementDecisionAction(runtime: any, action: string): void {

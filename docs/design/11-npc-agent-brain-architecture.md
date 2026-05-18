@@ -4,7 +4,7 @@
 *Created: 2026-05-16*
 *Author: Codex*
 
-> **Quick reference** - Layer: `AI Agent / NPC` - Priority: `Prototype foundation` - Key deps: Fusion server authority, Nakama game backend, api.dos.ai / Go LLM Gateway, Behavior Designer, character memory
+> **Quick reference** - Layer: `AI Agent / NPC` - Priority: `Prototype foundation` - Key deps: Fusion server authority, Nakama game backend, api.dos.ai model service, Behavior Designer, character memory
 
 ---
 
@@ -175,8 +175,9 @@ The first prototype is local-only:
 - `PrototypeAgentBrain` drives one local NPC actor in the hub.
 - It uses Nakama RPCs for game profile, soul, policy, and compact memory when a
   Nakama session exists.
-- It uses the Cloud Run gateway for prototype LLM/chat/voice contracts and falls
-  back to Nakama deterministic decisions if the LLM gateway is unavailable.
+- It uses Nakama RPCs for prototype model decisions, hub chat, and placeholder
+  voice-session status. Nakama falls back to deterministic decisions if
+  `api.dos.ai` is unavailable or unconfigured.
 - It moves inside a small patrol radius.
 - It can speak with a text bubble and prototype voice cue.
 - It does not mutate game state.
@@ -184,7 +185,7 @@ The first prototype is local-only:
 Later production shape:
 
 - Behavior Designer handles action execution trees.
-- `api.dos.ai` / Go LLM Gateway hosts AI graph nodes and provider calls.
+- `api.dos.ai` hosts AI graph nodes and provider calls.
 - Nakama stores profile, policy, memory, consent, moderation, and audit logs.
 - Fusion server validates and applies in-world actions.
 
@@ -270,12 +271,12 @@ Current prototype boundary:
 
 1. `secondspawn_npc_context_get` returns server-owned NPC context, nearby actor
    context, relationship records, allowed intents, and interaction rules.
-2. Unity prototype NPC brains add nearby Frame actors to the gateway decision
+2. Unity prototype NPC brains add nearby Frame actors to the Nakama decision
    world snapshot when `say` is allowed.
-3. The model-backed gateway or a future worker chooses the NPC intent from
+3. Nakama calls `api.dos.ai` or a future worker chooses the NPC intent from
    `AgentPolicy`, `FrameSoul`, `FrameMemory`, relationships, and nearby actor
    context.
-4. Gateway validation rejects `say.target_id` values that are not nearby actors.
+4. Nakama validation rejects `say.target_id` values that are not nearby actors.
 5. `secondspawn_npc_intent_submit` validates the intent shape and interaction
    rules, then records activity and relationship memory.
 6. Deterministic NPC interaction ticks remain fallback smoke tests only, not the
@@ -289,7 +290,7 @@ Every brain implementation must keep these boundaries:
 
 1. LLM output is intent, not state.
 2. Unity client can visualize and request, not authorize.
-3. Gateway can validate shape and policy, not own authoritative world state.
+3. Nakama can validate shape and policy, not own authoritative world state.
 4. Fusion server owns movement/combat/world application.
 5. Nakama owns durable game profile, memory, policy, moderation, and audit.
 
@@ -298,14 +299,16 @@ Every brain implementation must keep these boundaries:
 ## Current Prototype Acceptance
 
 - [x] Character profile, soul, policy, and memory exist in Nakama runtime RPCs.
-- [x] Gateway keeps prototype LLM/chat/voice contracts separate from game backend.
-- [x] Unity can call gateway from Play Mode.
+- [x] Nakama keeps prototype model/chat/voice-status contracts on the game
+  backend boundary.
+- [x] Unity can call Nakama from Play Mode.
 - [x] Unity can authenticate to Nakama with local device fallback.
 - [x] Local player agent prototype can move through bounded input intent.
 - [x] Local NPC brain exists in scene and runs the brain loop.
 - [x] Brain loop logs phase transitions in a debug-friendly way.
 - [x] NPC can patrol and speak without Unity console errors.
-- [x] Backend decision endpoint is upgraded from deterministic fallback to model-backed JSON intent.
+- [x] Nakama decision RPC is upgraded from deterministic fallback to
+  model-backed JSON intent.
 - [x] Permanent NPC brains include nearby actor context in model-backed
   decisions.
 - [x] Model-selected `say` intents can target nearby actors and persist through

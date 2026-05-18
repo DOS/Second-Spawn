@@ -27,7 +27,7 @@ Recommended GitHub Project fields:
 | Field | Values |
 | ---- | ---- |
 | Status | Inbox, Ready, In Progress, In Review, Blocked, Done |
-| Area | Unity, Nakama, Gateway, AI Agent, Design, Docs, DevOps, Economy, Combat, UX |
+| Area | Unity, Nakama, AI Agent, Design, Docs, DevOps, Economy, Combat, UX |
 | Milestone | Foundation, Vertical Slice, Alpha, Beta, Post-Launch |
 | Priority | P0, P1, P2, P3 |
 | Size | XS, S, M, L, XL |
@@ -57,31 +57,27 @@ Recommended views:
 - [x] Nakama OSS local backend base with TypeScript runtime modules, custom
   Supabase-auth bridge, profile bootstrap, soul update, memory write, and
   bounded agent decision RPC.
-- [x] Go LLM gateway scaffold with health/readiness, character context, memory,
-  soul update, NPC chat, voice-session contract, and agent decision routes.
+- [x] Nakama runtime scaffold with health, character context, memory, soul
+  update, NPC chat, BodyTime, reincarnation, OpenClaw, and agent decision RPCs.
 - [x] Agent context contract covering player profile, body state, soul,
   traits, level/stats, BodyTime, agent policy, and compact memory.
 - [x] Server-owned prototype body archetype pool for random NPC-like player
   bodies, story hooks, stat bias, weapon visuals, visual variants, and animation
   capability flags.
-- [x] Prototype Unity gateway client with Nakama fallback, profile/memory sync,
-  NPC chat, local voice cue, and speech bubble.
+- [x] Prototype Unity Nakama client with profile/memory sync, NPC chat, local
+  voice cue, and speech bubble.
 - [x] Local player agent prototype toggle for bounded movement intent.
 - [x] Local NPC agent brain prototype with patrol, speech, and debug-friendly
   phase tracing.
-- [x] Model-backed JSON intent path for `/v1/agent/decide` with Anthropic
-  provider wiring and deterministic fallback when no provider key is present.
-- [x] Cloud Run deployment notes for the prototype gateway.
+- [x] Model-backed JSON intent path for `secondspawn_agent_decide` through
+  Nakama runtime and `api.dos.ai`, with deterministic fallback when no
+  `DOS_AI_API_KEY` is present.
 - [x] Project docs and ADRs for Fusion, Unity 6.5 beta, Nakama OSS, LLM safety,
   AI offline control, agent workflow, and backend boundaries.
 - [x] Character-model taxonomy documented for core stats, secondary stats,
   social attributes, body presentation, identity, and multi-axis relationships.
-- [x] Backend tests for gateway contracts and Nakama runtime behavior.
+- [x] Backend tests for Nakama runtime behavior and model-backed fallback.
 - [x] Unity project baseline upgraded to Unity `6000.5.0b8`.
-- [x] Cloud Run staging gateway smoke-tested with the current Unity player
-  context payload.
-- [x] Cloud Run staging gateway accepts current Unity NPC body context payloads
-  and can return validated model-backed decisions with `source=model`.
 - [x] Local Nakama runtime smoke-tested with the current TypeScript module.
 - [x] PR review fallback policy documented for local `code-review`, Gemini, and
   Codex Cloud review availability.
@@ -128,8 +124,8 @@ Recommended views:
   enemy or objective rewards that grant BodyTime without client-supplied
   amounts.
 - [x] `_AgentNPC_Prototype` can bind to an actor profile, patrol, speak, use the
-  model-backed gateway decision path, and recover through Nakama deterministic
-  fallback when the gateway is unavailable or rate-limited.
+  Nakama model-backed decision path, and visibly degrade to deterministic
+  fallback when `api.dos.ai` is unavailable or unconfigured.
 - [x] Permanent NPC brains send nearby actor context to the model-backed
   decision path and persist model-selected `say` intents through Nakama memory
   and relationship records.
@@ -177,11 +173,10 @@ MVP, and a visible offline-agent prototype.
 - [x] Add Nakama channel-based basic chat for the vertical slice.
 - [x] Surface agent runtime stats and recent activity in an in-editor or
   prototype debug UI.
-- [ ] Add route-level gateway authentication before non-local AI or voice
-  playtests.
-- [ ] Add per-player LLM rate limit and token-budget enforcement.
-- [ ] Persist gateway-side prototype context or remove in-memory fallback once
-  Nakama is the only source of durable game profile truth.
+- [ ] Add per-player LLM rate limit and token-budget enforcement in Nakama for
+  `secondspawn_agent_decide`.
+- [ ] Add the future voice-session Nakama RPC that mints short-lived
+  `api.dos.ai` voice tokens without exposing provider keys to Unity.
 - [ ] Wire Convai phase 1 NPC dialogue through the server-side intent boundary.
 - [x] Add BodyTime meter MVP with one earn source and one spend sink.
 - [x] Add reincarnation placeholder flow: death -> SECOND token check ->
@@ -206,7 +201,8 @@ MVP, and a visible offline-agent prototype.
 
 ## Alpha
 
-- [ ] Move production AI/LLM traffic to the shared `api.dos.ai` gateway path.
+- [x] Move prototype agent decisions to Nakama -> `api.dos.ai`; remove the
+  separate Second Spawn Go adapter from the active game path.
 - [ ] Add RAG memory for NPCs with Supabase pgvector or Qdrant.
 - [ ] Expand quest system beyond the first vertical slice questline.
 - [ ] Add multiple zones with travel.

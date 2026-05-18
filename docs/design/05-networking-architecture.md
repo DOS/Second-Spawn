@@ -4,13 +4,13 @@
 *Created: 2026-05-14*
 *Implements Pillar*: AI agent 24/7, LLM as world citizen, Server-authoritative gameplay
 
-> **Quick reference** - Layer: `Core` (foundation - everything else depends on this) - Priority: `MVP` - Key deps: `Nakama auth/session, api.dos.ai / Go LLM Gateway (for LLM intent)`
+> **Quick reference** - Layer: `Core` (foundation - everything else depends on this) - Priority: `MVP` - Key deps: `Nakama auth/session, api.dos.ai model service (for LLM intent)`
 
 ---
 
 ## Summary
 
-Photon Fusion 2 in **Server Mode dedicated** is the canonical multiplayer runtime for SECOND SPAWN. The Unity client is a thin input + render surface; the dedicated Unity headless server is the authority for all gameplay state. Nakama owns game backend sessions and durable game APIs. `api.dos.ai` / Go LLM Gateway handles AI and LLM calls only; the Fusion server consumes validated intents and mutates `[Networked]` state.
+Photon Fusion 2 in **Server Mode dedicated** is the canonical multiplayer runtime for SECOND SPAWN. The Unity client is a thin input + render surface; the dedicated Unity headless server is the authority for all gameplay state. Nakama owns game backend sessions and durable game APIs. `api.dos.ai` / api.dos.ai model service handles AI and LLM calls only; the Fusion server consumes validated intents and mutates `[Networked]` state.
 
 The integration is built from scratch per ADR 0006 (no template drop-in). Patterns are extracted from BR200, Tanknarok, and Fusion Starter samples (read locally, not copied).
 
@@ -43,7 +43,7 @@ Anything less than server-authoritative breaks the fantasy on day one of public 
          ▼                                         │ HTTPS
 ┌──────────────────┐                               │ + backend token
 │ api.dos.ai /     │ ◄─────────────────────────────┘
-│ Go LLM Gateway   │ ──────────► Anthropic / OpenAI / Convai
+│ api.dos.ai model service   │ ──────────► Anthropic / OpenAI / Convai
 └──────────────────┘
          │
          ▼
@@ -111,14 +111,14 @@ The actual implementations land in `Assets/_SecondSpawn/Scripts/Networking/` (as
 
 ### `IntentBridge` (MonoBehaviour, server-only)
 
-- Receives AI intents from `api.dos.ai` / Go LLM Gateway over authenticated HTTP.
+- Receives AI intents from `api.dos.ai` / api.dos.ai model service over authenticated HTTP.
 - Translates intent into Fusion state mutation (e.g. `NPCGrantItem` -> add item to `NetworkPlayer.Inventory` after server-side checks).
 - Never trusts the intent blindly - re-validates against current authoritative state.
 
 ### `OfflineAgentRunner` (server-only)
 
 - Per offline player whose character is still in a zone, runs a server-side decision loop:
-  pull state -> call `api.dos.ai` / Go LLM Gateway with capability-cap + rate-limit headers -> receive intent -> validate -> apply.
+  pull state -> call `api.dos.ai` / api.dos.ai model service with capability-cap + rate-limit headers -> receive intent -> validate -> apply.
 - Inherits the player's rate limit + LLM token budget (no double-charging).
 - Death of agent = body death = reincarnation flow same as player.
 
@@ -158,8 +158,8 @@ These are non-negotiable per the AGPL-3.0 open-source threat model + Pillar 4 (S
    - Nakama endpoint and public client key
    - Gateway base URL (public)
    - Photon App ID (semi-public, client-visible by design)
-3. **All LLM calls server-side via `api.dos.ai` / Go LLM Gateway.** The dedicated server or Nakama backend is the only game-side caller that requests Anthropic / OpenAI / Convai work.
-4. **All NFT mutations server-side.** Use Nakama runtime modules or a dedicated wallet/blockchain service. Do not place game inventory or wallet mutation APIs in the LLM gateway.
+3. **All LLM calls server-side via `api.dos.ai` / api.dos.ai model service.** The dedicated server or Nakama backend is the only game-side caller that requests Anthropic / OpenAI / Convai work.
+4. **All NFT mutations server-side.** Use Nakama runtime modules or a dedicated wallet/blockchain service. Do not place game inventory or wallet mutation APIs in the model service.
 5. **Rate limit + capability cap apply to AI agent the same way they apply to the player.** No "agent gets unlimited LLM tokens" - it inherits the offline player's budget.
 6. **No `Host Mode` build in production.** CI staging build must use Server Mode dedicated; PR review checks this.
 
@@ -201,7 +201,7 @@ Numbers will be re-validated with Fusion bot load test (per `02-vertical-slice-s
 | `NetworkInputProvider` | Phase B keyboard input provider | `Unity/Assets/_SecondSpawn/Scripts/Networking/NetworkInputProvider.cs` |
 | `PlayerSpawner` | Phase B server-authoritative join spawn/despawn | `Unity/Assets/_SecondSpawn/Scripts/Networking/PlayerSpawner.cs` |
 | `NetworkZone` | Not started | TBD |
-| `IntentBridge` | Not started | server-only bridge from Fusion server to `api.dos.ai` / Go LLM Gateway |
+| `IntentBridge` | Not started | server-only bridge from Fusion server to `api.dos.ai` / api.dos.ai model service |
 | `OfflineAgentRunner` | Not started | server-only, Phase 7 |
 | Test scene | `ZoneTest_Hub.unity` with scene-root `_NetworkBootstrap` | `Unity/Assets/_SecondSpawn/Scenes/ZoneTest_Hub.unity` |
 | Load test (Fusion bots) | Not started | Phase 8 |

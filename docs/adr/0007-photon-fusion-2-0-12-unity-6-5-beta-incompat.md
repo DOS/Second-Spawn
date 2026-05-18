@@ -115,7 +115,7 @@ Rationale:
 
 If JOY wants to stay on Unity 6.5 beta despite this: pick Option A and mình applies all ~17 patches across one focused commit, accepting the maintenance debt.
 
-If JOY is willing to wait but doesn't want to downgrade: pick Option C and we proceed with non-Fusion work (Go gateway, design docs, Supabase setup) until Photon ships.
+If JOY is willing to wait but doesn't want to downgrade: pick Option C and we proceed with non-Fusion work (Nakama runtime, design docs, Supabase setup) until Photon ships.
 
 ## Consequences (per option)
 

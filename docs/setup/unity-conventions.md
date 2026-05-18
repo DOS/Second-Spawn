@@ -156,7 +156,7 @@ Phase B networking note (2026-05-14): `_NetworkBootstrap` is intentionally a sce
 Cross-reference `.claude/CLAUDE.md` and `AGENTS.md` Hard Rules:
 
 - **Hard Rule #2**: NEVER let LLM mutate authoritative game state. Server validates all intent. Code-level: every NPC dialogue path MUST pass through server-side intent validation before any `[Networked]` field is written.
-- **Hard Rule #3**: NEVER put API keys in Unity client. Code-level: `SecondSpawnConfig` only stores public-safe values (Nakama endpoint, LLM gateway URL, Photon App ID, DOS Chain RPC). Secrets stay in server environments.
+- **Hard Rule #3**: NEVER put API keys in Unity client. Code-level: `SecondSpawnConfig` only stores public-safe values (Nakama endpoint, Supabase URL, Photon App ID, DOS Chain RPC). Secrets stay in server environments.
 - **Hard Rule #4**: NEVER use Host Mode for production. Code-level: `NetworkRunnerSetup.cs` selects mode by `Application.isBatchMode`. CI build flag `-batchmode -nographics -server` enforces.
 - **Hard Rule #6**: NEVER change Asset Serialization away from Force Text. Pin in `ProjectSettings/EditorSettings.asset` (`m_SerializationMode: 2`).
 - **Hard Rule #7**: NEVER claim "done" without reviewer pass. Per PR template `.github/pull_request_template.md`.

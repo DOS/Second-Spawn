@@ -11,7 +11,7 @@
 
 ## Validation Question
 
-Can a solo player, in their first 30 minutes of unguided play in a single zone, experience the signature hooks (AI agent autoplay, reincarnation, and the TIME / SECOND economy) while also feeling basic ARPG level/stat progression AND can a 1-person team (JOY + AI agents) build this slice at representative quality in 3-6 months on the chosen tech stack (Unity 6.5 beta + Photon Fusion 2 + Nakama OSS + api.dos.ai / Go LLM Gateway + thirdweb)?
+Can a solo player, in their first 30 minutes of unguided play in a single zone, experience the signature hooks (AI agent autoplay, reincarnation, and the TIME / SECOND economy) while also feeling basic ARPG level/stat progression AND can a 1-person team (JOY + AI agents) build this slice at representative quality in 3-6 months on the chosen tech stack (Unity 6.5 beta + Photon Fusion 2 + Nakama OSS + api.dos.ai model service + thirdweb)?
 
 This is two questions in one: **does the design loop fun?** AND **is the architecture buildable?**
 
@@ -55,7 +55,7 @@ Already implemented:
 - TIME earn, spend, drain, zero-time death, and reincarnation are available
   through server-side prototype RPCs and Unity debug controls.
 - NPC-like actor profiles exist, and `_AgentNPC_Prototype` can patrol, speak,
-  and use the gateway decision path with deterministic fallback.
+  and use the Nakama decision path with deterministic fallback.
 
 Still missing from the playable slice:
 
@@ -98,7 +98,7 @@ The slice is considered "done" when ALL of the following are true and verified b
 
 ### Technical (verifiable in code + tests)
 - [ ] Server-authoritative invariant: no client-side damage, position, or item validation. Verified by `code-review` skill pass on combat + inventory + NFT modules.
-- [ ] LLM intent validation: every NPC action goes through `api.dos.ai` / Go LLM Gateway. No API key in Unity client. Verified by grep + security audit.
+- [ ] LLM intent validation: every NPC action goes through `api.dos.ai` / api.dos.ai model service. No API key in Unity client. Verified by grep + security audit.
 - [ ] AI agent inherits player rate limit + capability cap. Verified by integration test.
 - [ ] NFT escrow on equip; release on unequip. Verified on DOS Chain test net.
 - [ ] Photon Fusion 2 dedicated Server Mode build runs on Hetzner VPS, accepts 4-20 player connections in load test.

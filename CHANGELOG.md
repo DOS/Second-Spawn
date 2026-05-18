@@ -26,12 +26,12 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   soul, memory, policy, runtime, and activity state.
 - Prototype NPC brain phase tracing for `Sense -> Decide -> Validate -> Act ->
   Reflect -> Cooldown`, with a serialized toggle for local debugging.
-- Model-backed JSON intent path for `/v1/agent/decide`.
-- Anthropic Messages API provider wiring for gateway-side agent decisions.
-- Deterministic fallback when no provider key exists, the provider call fails,
+- Model-backed JSON intent path for `secondspawn_agent_decide`, implemented in
+  the Nakama runtime and routed to `api.dos.ai`.
+- Deterministic fallback when no `DOS_AI_API_KEY` exists, the model call fails,
   or the model returns invalid intent.
-- Tests for model decision parsing, fallback behavior, Anthropic request shape,
-  and endpoint decider injection.
+- Tests for Nakama model decision routing, fallback behavior, request shape,
+  and intent validation.
 - Fallback observability for model-backed decisions, including decision source
   metadata and structured warning logs.
 - Nakama agent runtime counters for profile bootstrap, fallback decisions,
@@ -109,7 +109,7 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   role, archetype, weapon stance, animation capabilities, soul, and story hook.
 - Prototype HUD now includes agent runtime counters and recent activity rows
   from the synced Nakama body profile.
-- Nakama and gateway profile contracts now carry prototype Frame context fields
+- Nakama profile contracts now carry prototype Frame context fields
   for identity, policy-aware intent schema, runtime heartbeat, and debug
   visibility. Skill and agent-playbook fields remain prototype placeholders,
   not required MVP layers.
@@ -118,37 +118,35 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   policy, intent schema, and heartbeat/audit state.
 - Current visible progression baseline is level and body-bound stats. Advanced
   body progression, cultivation tiers, and Nibiru-derived XP remain deferred.
-- Gateway config now supports `AGENT_DECISION_MODEL`.
-- Gateway docs and Cloud Run env examples now describe the model-backed decision
-  path.
+- Nakama runtime config now supports `DOS_AI_API_KEY`, `DOS_AI_BASE_URL`, and
+  `AGENT_DECISION_MODEL`.
 - Agent design docs now mark brain phase tracing and model-backed JSON intent as
   implemented prototype foundation.
-- Unity prototype brain now warns on gateway decision failures, recovers through
-  Nakama deterministic decisions when available, and escalates only unrecovered
-  repeated failures to errors.
+- Unity prototype brain now reads model or fallback source from Nakama,
+  surfaces degraded fallback in nameplates, and escalates only repeated Nakama
+  decision failures to errors.
 - Unity Nakama auth now bootstraps the player profile immediately and records a
   profile activity event after successful authentication.
 - Nakama deterministic decision RPC now records runtime decision counters before
   returning prototype fallback intent.
-- Unity gateway client now has a Nakama BodyTime event wrapper and exposes body
+- Unity Nakama client now has a BodyTime event wrapper and exposes body
   lifecycle state in the shared profile DTO.
-- Unity gateway client now exposes SECOND balance, reincarnation count, and a
+- Unity Nakama client now exposes SECOND balance, reincarnation count, and a
   Nakama reincarnation wrapper for prototype UI and playtest flows.
-- Gateway player profile schema now accepts `second_balance_seconds` and
+- Nakama player profile schema accepts `second_balance_seconds` and
   `reincarnation_count` in Unity-originated agent context payloads.
 - Nakama storage writes now use create/update version handling compatible with
   refreshed local runtime state.
 
 ### Fixed
 
-- Gateway `/v1/agent/decide` now accepts forward-compatible Unity body context
-  fields for prompt-safe decisions, preventing new body or identity metadata
-  from forcing Unity NPC brains into Nakama deterministic fallback.
-- Gateway Frame identity now includes age band, age years, and home base so
+- Nakama `secondspawn_agent_decide` now accepts forward-compatible Unity body
+  context fields for prompt-safe decisions.
+- Nakama Frame identity now includes age band, age years, and home base so
   model-backed NPC decisions receive the same public identity summary Unity
   shows over permanent NPCs.
-- Gateway model-backed decisions now prefer `api.dos.ai` via `DOS_AI_API_KEY`
-  instead of calling Anthropic directly from the Second Spawn gateway.
+- Nakama now calls `api.dos.ai` via `DOS_AI_API_KEY` for model-backed agent
+  decisions, replacing the separate Second Spawn Go adapter.
 - Model-backed agent decisions now receive explicit proactive-social guidance:
   `AgentPolicy` decides when to initiate, SOUL shapes motive and voice, MEMORY
   shapes relationship context, and nearby actor data grounds who is present.
@@ -177,16 +175,17 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 - Prototype HUD now shows a lightweight FPS counter in the top-right corner with
   green, yellow, and red performance bands.
 - Permanent NPC brain labels now include source reasons such as
-  `provider_error`, making DOS.AI gateway degradation visible in Play Mode.
-- Gateway agent decisions now default to the `dos-ai` model on `api.dos.ai`;
+  `dos_ai_http_502` or `dos_ai_unconfigured`, making degraded model decisions
+  visible in Play Mode.
+- Nakama agent decisions now default to the `dos-ai` model on `api.dos.ai`;
   Claude aliases are not the default path for the prototype NPC brain.
-- Nakama and gateway character stats now use the six canonical MVP core stats:
+- Nakama character stats now use the six canonical MVP core stats:
   `strength`, `agility`, `endurance`, `perception`, `focus`, and `presence`.
   Legacy `force`, `vitality`, and `resilience` fields remain as compatibility
   aliases for the current Unity prototype.
-- The Go gateway no longer exposes in-memory character profile routes by
-  default. Durable profile, soul, stats, memory, BodyTime, and activity state
-  now stay clearly on the Nakama side of the backend boundary.
+- Removed the in-repo Second Spawn Go LLM adapter. Durable profile, soul,
+  stats, memory, BodyTime, activity state, and model-backed intent validation
+  now stay on the Nakama side of the backend boundary.
 - Prototype debug panel hotkeys now use Unity Input System keyboard polling
   instead of the disabled legacy input API, stopping Play Mode console spam.
 - Prototype Nakama world storage now scopes permanent NPC profiles and hub chat
@@ -223,15 +222,11 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   the prototype HUD/debug text is larger for QHD Play Mode readability.
 - Permanent NPC agent visuals now load only after the server profile has picked
   the fixed body variant, avoiding duplicate startup prefab/animator warmup.
-- Prototype agent brain now backs off model gateway retries after daily decision
-  token budget exhaustion and uses Nakama fallback during the cooldown, reducing
-  repeated Play Mode warning spam.
+- Prototype agent brain now avoids duplicate fallback HTTP calls; Nakama returns
+  either a model-backed decision or a deterministic fallback in one RPC.
 
 ### Verification
 
-- `go test -count=1 ./...` and `go vet ./...` in `backend/gateway`.
-- Cloud Run staging gateway `/readyz` and `/v1/agent/decide` smoke on revision
-  `second-spawn-gateway-00008-cnn`.
 - `npm run build` and `npm test` in `backend/nakama`.
 - Local Nakama runtime `secondspawn_health` smoke with the current module.
 - Unity Play Mode smoke for `ZoneTest_Hub`, including profile/stat sync,
@@ -250,8 +245,7 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 - Unity UI is still prototype IMGUI, not production HUD.
 - Supabase anonymous auth can be used when configured, but the local prototype
   still supports Nakama device fallback for development.
-- Gateway route-level JWT enforcement is not complete.
-- LLM rate limiting and token budget enforcement are tracked in issue #6.
+- Nakama LLM rate limiting and token budget enforcement are tracked in issue #6.
 - Real voice still waits for an ephemeral-token provider flow.
 
 ## Pre-Alpha Foundation Snapshot - 2026-05-16
@@ -264,17 +258,14 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   network input, top-down camera, animation bridge, and visual prefab catalog.
 - Simple KCC prototype movement spike.
 - Prototype hub scene `ZoneTest_Hub`.
-- Go LLM gateway scaffold with health/readiness, character context, memory,
-  soul update, NPC chat, voice-session contract, and agent decision routes.
 - Nakama OSS backend base with TypeScript runtime modules, local config, custom
   Supabase-auth bridge, profile bootstrap, soul update, memory write, and agent
   decision RPC.
 - Agent context, soul, character trait, BodyTime, level/stats, policy, and memory
   contracts.
-- Unity gateway client with Nakama fallback, local memory seeding, NPC chat,
-  speech bubble, and prototype voice cue.
+- Unity Nakama client with local memory seeding, NPC chat, speech bubble, and
+  prototype voice cue.
 - Local player agent prototype and local NPC agent brain prototype.
-- Cloud Run deployment notes for the prototype gateway.
 - Public GitBook docs, architecture docs, setup docs, and ADRs through ADR 0010.
 
 ### Changed
@@ -289,7 +280,7 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 ### Fixed
 
 - Tightened prototype agent authority and parser behavior after review.
-- Scoped backend CI so the gateway can build without a committed `go.sum`.
+- Scoped backend CI to the Nakama runtime build and test path.
 - Relaxed and scoped markdown lint to match the public docs structure.
 - Added a Fusion runtime access workaround for the Unity 6.5 beta compatibility
   path.
@@ -298,8 +289,7 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 
 - No shipped gameplay build yet.
 - Paid asset imports are still pending.
-- Route-level gateway auth, rate limiting, and durable gateway storage are not
-  production-ready.
+- LLM rate limiting and token budgets are not production-ready.
 - Convai and real voice integration are still future work.
 - Dedicated server build path is not ready yet.
 

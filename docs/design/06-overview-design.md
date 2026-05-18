@@ -5,7 +5,7 @@
 *Author: Codex*
 *Last Verified: 2026-05-14 against `AGENTS.md`, `00-game-concept.md`, `01-pillars.md`, `02-vertical-slice-spec.md`, and `05-networking-architecture.md`*
 
-> **Quick reference** - Layer: `Core` - Priority: `Vertical Slice` - Key deps: `Photon Fusion 2`, `Nakama OSS`, `api.dos.ai / Go LLM Gateway`, `DOS Chain`, `Convai phase 1`
+> **Quick reference** - Layer: `Core` - Priority: `Vertical Slice` - Key deps: `Photon Fusion 2`, `Nakama OSS`, `api.dos.ai model service`, `DOS Chain`, `Convai phase 1`
 
 ---
 

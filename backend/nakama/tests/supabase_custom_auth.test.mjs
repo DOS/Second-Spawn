@@ -36,6 +36,9 @@ function createRuntimeHarness(module) {
     info: () => {},
   };
   const nk = {
+    httpRequest: () => {
+      throw new Error("unexpected httpRequest call");
+    },
     storageRead: (requests) => requests
       .map((request) => storage.get(storageKey(request.userId, request.collection, request.key)))
       .filter(Boolean),
@@ -727,6 +730,132 @@ assert.equal(afterMoveDecision.body.agent_activity[0].kind, "agent_decision");
 assert.match(afterMoveDecision.body.agent_activity[0].id, /^act-user-1-00000000-0000-4000-8000-[0-9]{12}-2$/);
 assert.equal(afterMoveDecision.body.agent_activity[0].metrics.decisions_made, 1);
 
+const modelHarness = createRuntimeHarness(module);
+const modelCalls = [];
+modelHarness.nk.httpRequest = (url, method, headers, body) => {
+  modelCalls.push({ url, method, headers, body: JSON.parse(body) });
+  return {
+    code: 200,
+    body: JSON.stringify({
+      model: "dos-ai",
+      choices: [{
+        message: {
+          content: JSON.stringify({
+            action: "say",
+            target_id: "npc-wasteland-courier-0244",
+            say: "Route-0244, keep the east lane quiet.",
+            reason: "nearby ally can coordinate patrol",
+            confidence: 0.77
+          })
+        }
+      }]
+    })
+  };
+};
+const modelDecision = JSON.parse(modelHarness.registeredRpcs.get("secondspawn_agent_decide")(
+  {
+    userId: "model-user",
+    env: {
+      DOS_AI_API_KEY: "dos-ai-test-key",
+      DOS_AI_BASE_URL: "https://api.dos.ai/v1",
+      AGENT_DECISION_MODEL: "dos-ai"
+    }
+  },
+  modelHarness.logger,
+  modelHarness.nk,
+  JSON.stringify({
+    world_snapshot: {
+      position: { x: 2, z: 3 },
+      body_time_seconds: 3600,
+      nearby_objects: [{ id: "npc-wasteland-courier-0244", kind: "nearby_actor", distance: 3 }]
+    },
+    allowed: ["say", "stop"]
+  })
+));
+assert.equal(modelDecision.action, "say");
+assert.equal(modelDecision.source, "model");
+assert.equal(modelDecision.source_reason, "dos_ai_validated_intent");
+assert.equal(modelDecision.target_id, "npc-wasteland-courier-0244");
+assert.equal(modelCalls.length, 1);
+assert.equal(modelCalls[0].url, "https://api.dos.ai/v1/chat/completions");
+assert.equal(modelCalls[0].method, "post");
+assert.equal(modelCalls[0].headers.authorization, "Bearer dos-ai-test-key");
+assert.equal(modelCalls[0].body.model, "dos-ai");
+
+const invalidModelHarness = createRuntimeHarness(module);
+invalidModelHarness.nk.httpRequest = () => ({
+  code: 200,
+  body: JSON.stringify({
+    choices: [{
+      message: { content: JSON.stringify({ action: "attack", target_id: "not-nearby", reason: "bad", confidence: 0.9 }) }
+    }]
+  })
+});
+const invalidModelDecision = JSON.parse(invalidModelHarness.registeredRpcs.get("secondspawn_agent_decide")(
+  {
+    userId: "invalid-model-user",
+    env: {
+      DOS_AI_API_KEY: "dos-ai-test-key",
+      DOS_AI_BASE_URL: "https://api.dos.ai/v1",
+      AGENT_DECISION_MODEL: "dos-ai"
+    }
+  },
+  invalidModelHarness.logger,
+  invalidModelHarness.nk,
+  JSON.stringify({
+    world_snapshot: { position: { x: 2, z: 3 }, body_time_seconds: 3600 },
+    allowed: ["say", "stop"]
+  })
+));
+assert.equal(invalidModelDecision.source, "fallback");
+assert.equal(invalidModelDecision.source_reason, "dos_ai_validate_error");
+
+const modelFallbackCases = [
+  {
+    name: "prose",
+    response: { code: 200, body: JSON.stringify({ choices: [{ message: { content: "I cannot help" } }] }) },
+    reason: "dos_ai_exception"
+  },
+  {
+    name: "empty content",
+    response: { code: 200, body: JSON.stringify({ choices: [{ message: { content: "" } }] }) },
+    reason: "dos_ai_empty_content"
+  },
+  {
+    name: "429",
+    response: { code: 429, body: "rate limited" },
+    reason: "dos_ai_http_429"
+  },
+  {
+    name: "500",
+    response: { code: 500, body: "origin error" },
+    reason: "dos_ai_http_500"
+  }
+];
+for (const testCase of modelFallbackCases) {
+  const fallbackHarness = createRuntimeHarness(module);
+  fallbackHarness.nk.httpRequest = () => testCase.response;
+  const fallbackDecision = JSON.parse(fallbackHarness.registeredRpcs.get("secondspawn_agent_decide")(
+    {
+      userId: "fallback-" + testCase.name,
+      env: {
+        DOS_AI_API_KEY: "dos-ai-test-key",
+        DOS_AI_BASE_URL: "https://api.dos.ai/v1",
+        AGENT_DECISION_MODEL: "dos-ai"
+      }
+    },
+    fallbackHarness.logger,
+    fallbackHarness.nk,
+    JSON.stringify({
+      world_snapshot: { position: { x: 2, z: 3 }, body_time_seconds: 3600 },
+      allowed: ["move", "stop"]
+    })
+  ));
+  assert.equal(fallbackDecision.source, "fallback");
+  assert.equal(fallbackDecision.source_reason, testCase.reason);
+  assert.equal(fallbackDecision.action, "move");
+}
+
 const lowTimeDecision = JSON.parse(harness.registeredRpcs.get("secondspawn_agent_decide")(
   { userId: "user-1", env: {} },
   harness.logger,
@@ -1096,7 +1225,7 @@ const missingInteractTargetDecision = JSON.parse(interactHarness.registeredRpcs.
   })
 ));
 assert.equal(missingInteractTargetDecision.action, "stop");
-assert.equal(missingInteractTargetDecision.source_reason, "nakama_no_allowed_action");
+assert.equal(missingInteractTargetDecision.source_reason, "dos_ai_unconfigured");
 
 const dedupeHarness = createRuntimeHarness(module);
 dedupeHarness.registeredRpcs.get("secondspawn_profile_get")(

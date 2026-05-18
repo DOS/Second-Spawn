@@ -32,4 +32,4 @@ Need backend for auth, durable game state, social features (chat, presence, frie
 - **Supabase Realtime is NOT used for combat / movement sync.** That is Photon Fusion's job.
 - Game-specific features (matchmaking, guild system, leaderboards) implemented in custom Go services on top of Supabase.
 - Migration to Nakama is possible later if Supabase becomes a bottleneck for guild war / cross-shard features.
-- Phase 2 LLM gateway is a separate Go service, not Supabase Edge Function (latency + GPU local inference future-proofing).
+- Phase 2 LLM calls go through server-side game runtimes to `api.dos.ai`, not Supabase Edge Function or Unity client.
