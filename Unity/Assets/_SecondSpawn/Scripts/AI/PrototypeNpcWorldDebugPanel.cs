@@ -14,7 +14,7 @@ namespace SecondSpawn.AI
         [SerializeField] private bool _showPanel = true;
         [SerializeField] private Key _toggleKey = Key.F5;
         [SerializeField] private Vector2 _panelPosition = new Vector2(552f, 280f);
-        [SerializeField] private Vector2 _panelSize = new Vector2(480f, 420f);
+        [SerializeField] private Vector2 _panelSize = new Vector2(540f, 460f);
         [SerializeField] private string _actorAId = "npc-synthetic-sentinel-0101";
         [SerializeField] private string _actorBId = "npc-wasteland-courier-0244";
         [SerializeField] private string _topic = "patrol";
@@ -299,7 +299,7 @@ namespace SecondSpawn.AI
         {
             _labelStyle ??= new GUIStyle(GUI.skin.label)
             {
-                fontSize = 13,
+                fontSize = 15,
                 normal = { textColor = Color.white },
                 wordWrap = true
             };

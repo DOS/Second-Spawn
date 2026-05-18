@@ -49,7 +49,7 @@ namespace SecondSpawn.Networking
                 ? sourcePath[fileNameStart..fileNameEnd]
                 : $"Visual{index:00}";
 
-            return $"Visual_{index:00}_{SanitizeFileName(sourceName)}.prefab";
+            return $"Visual_{index:00}_{SanitizeFileName(CleanGeneratedAssetName(sourceName))}.prefab";
         }
 
         public static int NormalizeVariant(int variant)
@@ -76,6 +76,15 @@ namespace SecondSpawn.Networking
             }
 
             return new string(chars);
+        }
+
+        private static string CleanGeneratedAssetName(string value)
+        {
+            var normalized = value.Trim();
+            const string freeSuffix = " FREE";
+            return normalized.EndsWith(freeSuffix, System.StringComparison.OrdinalIgnoreCase)
+                ? normalized[..^freeSuffix.Length]
+                : normalized;
         }
     }
 }

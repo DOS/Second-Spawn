@@ -151,7 +151,7 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   so the scene focuses on the 10 persistent NPC agents.
 - Visual body catalog now includes the 4 Fighter Pack variants in addition to
   the RPG Character and 12 Warrior variants, for 17 source body variants total.
-- Visual body catalog now also includes the Crafter FREE body as variant 17,
+- Visual body catalog now also includes the Crafter body as variant 17,
   bringing the local source body variant count to 18.
 - Permanent NPC profiles now carry per-NPC identity, profession, apparent age,
   home base, stats, traits, soul, story, and seed memory instead of only
@@ -166,7 +166,9 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   generated materials from `_SecondSpawn/Materials`, while vendor asset packs
   remain immutable under `Assets/ExplosiveLLC`.
 - Clean generated visual prefabs and URP materials now exist for variants
-  13-17: Berserker, Female, Heavy, Male, and Crafter FREE.
+  13-17: Berserker, Female, Heavy, Male, and Crafter.
+- Prototype NPC labels now render as camera-fixed screen-space nameplates, and
+  the prototype HUD/debug text is larger for QHD Play Mode readability.
 - Prototype agent brain now backs off model gateway retries after daily decision
   token budget exhaustion and uses Nakama fallback during the cooldown, reducing
   repeated Play Mode warning spam.

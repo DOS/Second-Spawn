@@ -317,9 +317,10 @@ MonoBehaviour:
   _spacing: 4
   _markerHeight: 1.8
   _markerRadius: 0.45
-  _labelHeight: 2.35
-  _labelCharacterSize: 0.05
-  _labelMaxLineLength: 22
+  _labelHeight: 2.65
+  _labelFontSize: 18
+  _labelMaxLineLength: 20
+  _labelMaxWidth: 260
   _labelVisibleDistance: 24
   _refreshKey: 99
   _logStatus: 1

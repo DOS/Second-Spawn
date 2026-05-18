@@ -1619,7 +1619,7 @@ GameObject:
   - component: {fileID: 5780475536655607974}
   - component: {fileID: 7184620819463655803}
   m_Layer: 0
-  m_Name: Visual_17_Crafter_FREE
+  m_Name: Visual_17_Crafter
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
