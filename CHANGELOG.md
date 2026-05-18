@@ -165,6 +165,8 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 - Generated character prefabs now resolve from `_SecondSpawn/Prefabs` and
   generated materials from `_SecondSpawn/Materials`, while vendor asset packs
   remain immutable under `Assets/ExplosiveLLC`.
+- Clean generated visual prefabs and URP materials now exist for variants
+  13-17: Berserker, Female, Heavy, Male, and Crafter FREE.
 - Prototype agent brain now backs off model gateway retries after daily decision
   token budget exhaustion and uses Nakama fallback during the cooldown, reducing
   repeated Play Mode warning spam.
