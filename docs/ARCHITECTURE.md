@@ -90,6 +90,54 @@ High-level architecture overview. For detailed component design see `docs/design
 - Default home for game backend custom logic. Do not add a separate game API
   gateway unless a Nakama module is the wrong tool for the feature.
 
+#### Nakama OSS Scaling Boundary
+
+- Nakama OSS is treated as a single-node game backend per shard. Do not run
+  multiple Nakama OSS instances against the same logical Nakama database and
+  assume this is horizontal scaling. A shared database does not coordinate
+  realtime sessions, presence, match state, chat fanout, matchmaker state,
+  scheduled jobs, or split-brain recovery.
+- Multiple shards may share the same physical Postgres server or cluster, but
+  each shard should use a separate logical database and a separate Nakama OSS
+  instance, for example `nakama_asia_1`, `nakama_asia_2`, and `nakama_us_1`.
+- A global identity or wallet directory may map accounts to home shards and
+  owned entitlements. Shard-local databases own current body, stats, inventory,
+  `BodyTime`, memories, relationships, NPC state, and agent runtime logs.
+- Mature open-source multi-node Nakama clustering was not found in the May 2026
+  research pass. The known community attempt (`doublemo/nakama-cluster`) is
+  archived and too small to treat as production infrastructure.
+- If SECOND SPAWN needs high-availability Nakama clustering, use Heroic
+  Enterprise/Heroic Cloud or create a new ADR before building custom
+  distributed backend services.
+
+#### Nakama Operating Practices
+
+- Keep game state writes server-owned by default. Unity may request an action,
+  but Nakama runtime modules or the Fusion dedicated server decide whether the
+  write is allowed.
+- Split durable game state into explicit collections such as `player_profile`,
+  `body_profile`, `body_stats`, `body_traits`, `soul_profile`, `npc_frame`,
+  `memory_record`, `relationship_ledger`, `agent_activity`, `inventory`, and
+  economy ledgers. Avoid one large mutable profile blob for unrelated systems.
+- Use optimistic concurrency for sensitive storage writes whenever possible.
+  `BodyTime`, SECOND balance, inventory, reincarnation, reward claims, and NPC
+  relationship or memory updates must not be vulnerable to double-spend or
+  duplicate-claim races.
+- Keep append-only ledgers for sensitive systems. Current state is a snapshot;
+  ledgers provide audit, debugging, replay, rollback, and abuse investigation.
+- Separate client RPCs, internal server or worker RPCs, and admin RPCs. Client
+  RPCs must be authenticated and narrow. Internal and admin RPCs require server
+  secrets or deployment-only access.
+- Export Nakama metrics and add application-level structured logs for AI
+  decisions, fallback reasons, rate limits, token budget state, storage
+  conflicts, reward claims, and BodyTime changes.
+- Keep long-running agent simulation outside request handlers. Periodic offline
+  agent or NPC sweeps should run in the Fusion server, a worker process, or a
+  scheduler that calls bounded Nakama RPCs.
+- Store production secrets only in deployment secret managers. Local developer
+  config may use private ignored files, but public Docker and example configs
+  must contain placeholders only.
+
 ### Supabase Sidecar
 
 - Optional identity bridge, wallet/profile integration, storage, analytics, or external product data

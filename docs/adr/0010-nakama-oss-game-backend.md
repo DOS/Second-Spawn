@@ -71,6 +71,11 @@ Use:
   replacement stack still require a new ADR and JOY approval.
 - If Nakama OSS operations become too heavy, the upgrade path is Heroic Cloud or
   another managed platform, not rewriting gameplay code blindly.
+- Nakama OSS is not assumed to be a multi-node cluster. Multiple Nakama OSS
+  instances must not share one logical Nakama database as a fake horizontal
+  scale-out plan. If the project shards Nakama OSS, each shard gets its own
+  logical database, even if those databases live on the same physical Postgres
+  server or cluster.
 
 ## Implementation Notes
 
@@ -87,6 +92,17 @@ Use:
 - Keep local Docker config public-safe with placeholders only.
 - Keep module code small and testable because JOY is a non-coder and agents
   must be able to review it.
+- For early scale, prefer explicit region or world shards:
+  `Nakama asia-1 -> nakama_asia_1`, `Nakama asia-2 -> nakama_asia_2`,
+  `Nakama us-1 -> nakama_us_1`. A shared global identity and entitlement layer
+  may route players to shards, but shard-local Nakama databases own current
+  body, stats, inventory, `BodyTime`, memories, relationships, NPC state, and
+  agent runtime logs.
+- Mature open-source Nakama multi-node clustering was not found in the May 2026
+  backend research pass. The known community attempt,
+  `doublemo/nakama-cluster`, is archived and too small to rely on for
+  production. Heroic Enterprise/Heroic Cloud remains the official clustering
+  path unless a future ADR chooses a custom distributed service.
 
 ## Alternatives Considered
 

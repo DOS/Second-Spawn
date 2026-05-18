@@ -31,7 +31,7 @@ work queue visible and easier to monitor.
 | Field | Values |
 | ---- | ---- |
 | Status | Inbox, Ready, In Progress, In Review, Blocked, Done |
-| Area | Unity, Nakama, Gateway, AI Agent, Design, Docs, DevOps, Economy, Combat, UX |
+| Area | Unity, Nakama, AI Agent, Design, Docs, DevOps, Economy, Combat, UX |
 | Milestone | Foundation, Vertical Slice, Alpha, Beta, Post-Launch |
 | Priority | P0, P1, P2, P3 |
 | Size | XS, S, M, L, XL |
@@ -52,8 +52,8 @@ The repository mirrors the most important project fields with labels so issues
 remain useful even before they are added to Project #5.
 
 - Milestones: `Foundation`, `Vertical Slice`.
-- Area labels: `area:unity`, `area:nakama`, `area:gateway`, `area:ai-agent`,
-  `area:design`, `area:devops`, `area:economy`, `area:combat`, `area:docs`.
+- Area labels: `area:unity`, `area:nakama`, `area:ai-agent`, `area:design`,
+  `area:devops`, `area:economy`, `area:combat`, `area:docs`.
 - Priority labels: `priority:p0`, `priority:p1`, `priority:p2`,
   `priority:p3`.
 - Size labels: `size:xs`, `size:s`, `size:m`, `size:l`, `size:xl`.
@@ -64,10 +64,16 @@ Open issues that should be added to the project:
 
 ### Foundation
 
-- [#6 Track gateway agent-decision rate limiting and token budget](https://github.com/DOS/Second-Spawn/issues/6)
+- [#6 Add Nakama agent-decision rate limits and token budgets](https://github.com/DOS/Second-Spawn/issues/6)
 - [#7 Track Unity Fusion CodeGen AssetDatabase path error during Play Mode smoke](https://github.com/DOS/Second-Spawn/issues/7)
 - [#9 Track Nakama runtime UUID helper migration](https://github.com/DOS/Second-Spawn/issues/9)
-- [#13 Track distributed agent decision limiter storage](https://github.com/DOS/Second-Spawn/issues/13)
+- [#13 Track shared LLM budget storage for multi-shard Nakama scale](https://github.com/DOS/Second-Spawn/issues/13)
+- [#79 Harden Nakama storage permissions and optimistic concurrency](https://github.com/DOS/Second-Spawn/issues/79)
+- [#80 Add append-only Nakama ledgers for economy and agent audit](https://github.com/DOS/Second-Spawn/issues/80)
+- [#81 Add Nakama metrics and structured AI decision observability](https://github.com/DOS/Second-Spawn/issues/81)
+- [#82 Separate Nakama client, internal worker, and admin RPC boundaries](https://github.com/DOS/Second-Spawn/issues/82)
+- [#83 Define shard-ready Nakama account routing and database operations](https://github.com/DOS/Second-Spawn/issues/83)
+- [#84 Define external scheduler path for offline-agent and NPC simulation](https://github.com/DOS/Second-Spawn/issues/84)
 
 ### Vertical Slice
 
