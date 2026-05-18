@@ -341,6 +341,82 @@ all required before the first vertical slice.
 
 ---
 
+## MVP Agent Characteristic Sheet
+
+Every important NPC or inhabitable Frame should have a compact characteristic
+sheet. The sheet is not a single prompt blob. It is a mix of backend-owned
+numbers, bounded text context, and runtime world state.
+
+| Section | Backend Owned Fields | LLM Context Fields |
+| ---- | ---- | ---- |
+| Identity | `actor_id`, `body_id`, `controller_type`, `zone_id`, `faction_id`, `role_id` | public name, callsign, profession, faction summary, reputation, social mask |
+| Body | level, HP, energy, stats, BodyTime seconds, lifecycle, visual variant, equipment key | appearance summary, body condition, body origin, inherited role |
+| Traits | normalized numeric trait vector | trait tags and a short behavior summary |
+| Soul | durable soul record ID and approved version | core drive, core fear, moral boundaries, social style, long-term goals |
+| Memory | memory IDs, kinds, importance, timestamps, retrieval tags | short memory summaries, unresolved promises, trauma, rumors, grudges |
+| Relationships | affinity, hostility, trust, fear, respect, debt, familiarity, cooldowns | relationship notes, known history, last tone, social hooks |
+| Policy | allowed intents, denied intents, risk thresholds, rate limits, moderation state | soft guidance such as preferred activities, forbidden topics, role obligations |
+| Runtime | current goal ID, mood, stress, last action, failure count, model source | current situation summary and last decision reason |
+| World | authoritative position, nearby actors, danger, interactables | local situation summary, zone social rules, event hooks |
+
+Rule of thumb:
+
+- Numbers decide authority, balance, validation, and persistence.
+- Text gives the agent a mind and a voice.
+- Runtime state explains what is happening right now.
+- LLM output remains intent only.
+
+### Proactive Communication Ownership
+
+Proactive communication is not owned only by `Memory` or only by `Soul`.
+
+The intended decision path is:
+
+```text
+WorldContext detects nearby actors
+-> Relationships rank who matters
+-> AgentPolicy decides whether initiating is allowed
+-> SoulProfile supplies motive and voice
+-> Memory supplies specific content and history
+-> LLM selects a structured intent
+-> Gateway, Nakama, and Fusion validate
+```
+
+Examples:
+
+| State | Expected Agent Choice |
+| ---- | ---- |
+| High sociability, positive affinity, safe zone | Initiate a short in-character check-in. |
+| High empathy, target has low BodyTime | Ask what happened or suggest a safer route. |
+| High paranoia, unknown actor nearby | Keep distance or ask a guarded question. |
+| High loyalty, ally near danger | Warn, approach, or request retreat. |
+| High cunning, low trust | Probe for information without exposing the real motive. |
+| High hostility | Avoid, threaten, or request backup depending on policy and danger. |
+
+Hardcoded scripts may provide fallback smoke tests only. They must not become
+the primary NPC brain.
+
+## Starter NPC Archetypes
+
+These archetypes are seed material for permanent NPC profiles. They should be
+implemented as structured profiles plus prompt context, not as scripted
+dialogue trees.
+
+| Archetype | Profession | Trait Shape | Soul Drive | Memory Seed | Relationship Hook |
+| ---- | ---- | ---- | ---- | ---- | ---- |
+| Gate Sentinel | Perimeter guard | High loyalty, discipline, perception, low trust | Keep the gate standing after a past breach | A friend did not return during a gate failure | Respects couriers, distrusts scavengers |
+| Route Courier | Runner between safe nodes | High agility, sociability, pragmatism | Prove that speed is still freedom | Knows abandoned paths and missing names | Builds affinity through route intel |
+| Clinic Operator | Field medic and memory triage worker | High empathy, willpower, discipline, low aggression | Save personhood, not only bodies | Keeps fragments from reincarnated patients | Protects damaged bodies, dislikes reckless fighters |
+| Scrap Warden | Salvage foreman | High resilience, territorial loyalty, blunt social style | Turn ruins into shelter | Lost a crew to a bad salvage call | Respects useful workers, hates thieves |
+| Crossline Surveyor | Boundary mapmaker | High curiosity, perception, self-preservation | Make the world legible before it changes again | Saw a zone boundary move | Trades secrets for protection |
+| Signal Marksman | Overwatch and relay | High patience, attack, perception, low sociability | Never let allies die unseen | Watched an ambush unfold too late | Bonds with sentinels and couriers |
+| Memory Broker | Rumor and identity-fragment trader | High social, cunning, ambition, low honesty | Own the truth before someone edits it | Knows a secret about a retired body | Creates debt and suspicion |
+| Frame Shepherd | Empty-body caretaker | High patience, ritual, empathy, low aggression | Bodies deserve dignity even without occupants | Heard an empty body speak once | Central to reincarnation and body ethics |
+| Blackout Mechanic | Power and body-rig repair worker | High willpower, pragmatism, anti-authority | Keep systems running because leaders fail | Survived a station blackout by locking others out | Clashes with authority, helps under pressure |
+| Debt Chaplain | BodyTime debt mediator | High social, willpower, honesty, unsettling calm | Make every owed second mean something | Carries final messages from retired bodies | Good trigger for emotional NPC interactions |
+
+---
+
 ## MVP Implementation Guidance
 
 Do not implement all research ideas at once. The first practical slice should
