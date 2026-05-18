@@ -80,7 +80,6 @@ namespace SecondSpawn.AI
             _speechBubble = GetOrAdd<PrototypeSpeechBubble>();
             _voiceCue = GetOrAdd<PrototypeVoiceCue>();
             _gateway = FindAnyObjectByType<SecondSpawnGatewayClient>();
-            EnsureVisual();
         }
 
         private void Start()
@@ -117,6 +116,7 @@ namespace SecondSpawn.AI
                 _gateway = FindAnyObjectByType<SecondSpawnGatewayClient>();
             }
 
+            EnsureVisual();
             if (_gateway == null)
             {
                 Debug.LogWarning("[PrototypeAgentBrain] No SecondSpawnGatewayClient found in scene.");
@@ -163,15 +163,17 @@ namespace SecondSpawn.AI
             _seedSoulOnStart = false;
             _context = BuildContextFromActorProfile(profile);
 
+            var previousVariant = VisualPrefabCatalog.NormalizeVariant(_visualVariant);
             var resolvedVariant = ResolveActorVisualVariant(profile);
-            if (VisualPrefabCatalog.NormalizeVariant(resolvedVariant) != VisualPrefabCatalog.NormalizeVariant(_visualVariant))
+            var nextVariant = VisualPrefabCatalog.NormalizeVariant(resolvedVariant);
+            _visualVariant = resolvedVariant;
+            if (_visualRoot != null && nextVariant != previousVariant)
             {
-                _visualVariant = resolvedVariant;
                 ReloadVisual();
             }
             else
             {
-                _visualVariant = resolvedVariant;
+                EnsureVisual();
             }
 
             ApplyContextToPrototypeBody();
