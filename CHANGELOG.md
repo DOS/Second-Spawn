@@ -155,6 +155,8 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 - Unity prototype NPC brains now persist model-selected `say` intents through
   Nakama so NPC social actions become memory and relationship records instead
   of only local speech bubbles.
+- Docs now align the GDD, NPC brain architecture, character profile design, and
+  roadmap with the proactive NPC social path merged in PR #67.
 - Prototype debug panel hotkeys now use Unity Input System keyboard polling
   instead of the disabled legacy input API, stopping Play Mode console spam.
 - Prototype Nakama world storage now scopes permanent NPC profiles and hub chat

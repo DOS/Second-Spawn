@@ -484,6 +484,8 @@ The gateway validator checks:
 - attack actions reference a nearby target from the safe snapshot
 - interact actions reference a nearby object from the safe snapshot
 - say actions include text
+- say actions may include a target only when that target is a nearby actor from
+  the safe world snapshot
 
 This does not replace authoritative game-server validation. It is only the first filter between model output and the gameplay server.
 
@@ -523,6 +525,13 @@ Implemented surfaces:
   bounded context and safe world snapshots. If no provider key is configured,
   provider calls fail, or the model returns invalid intent, the endpoint falls
   back to deterministic prototype decisions.
+- Model-backed NPC decisions now receive nearby actor context. Proactive social
+  behavior is chosen by the model from `AgentPolicy`, `SoulProfile`,
+  `MemoryRecord`, relationship state, and the safe world snapshot, while the
+  gateway and Nakama validate targets and persistence.
+- Unity prototype NPC brains persist model-selected `say` intents through
+  Nakama so social speech becomes activity, memory, and relationship state
+  instead of only a local speech bubble.
 - Cloud Run staging gateway:
   `https://second-spawn-gateway-535583621422.asia-southeast1.run.app`
 - Unity `SecondSpawnGatewayClient` authenticates with Nakama, reads/writes
@@ -551,8 +560,8 @@ Current limitations:
 - Most gateway routes are prototype-public. The Nakama runtime auth hook
   verifies Supabase access tokens for game login, but route-level JWT
   enforcement is still required before any non-local LLM or voice playtest.
-- Agent decisions have an Anthropic-backed JSON intent path, but local
-  development and provider failures still use deterministic fallback logic.
+- Agent decisions have a DOS.AI-backed JSON intent path, but local development
+  and provider failures still use deterministic fallback logic.
 - Voice is a local cue only. Real voice waits for OpenAI Realtime or ElevenLabs
   server-side token minting.
 
@@ -614,6 +623,9 @@ The first playable version should support only a small intent set: move within s
 - [x] Backend data contract exists for profile, body, stats, soul, policy, and memory.
 - [x] LLM context builder is deterministic and bounded.
 - [x] Random visual selection has a server-owned key contract.
+- [x] Permanent NPCs can expose nearby actor context to model-backed decisions.
+- [x] Model-selected NPC speech can be recorded as Nakama memory and
+  relationship state after validation.
 - [ ] OpenClaw-connected NPCs have identity binding, consent scope, moderation state, and rate limits before any prototype.
 - [x] Unity never sends provider keys or direct state mutations.
 - [x] Offline-agent intent flow uses the same network input shape as player input for prototype movement.

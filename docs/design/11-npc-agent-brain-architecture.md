@@ -270,10 +270,15 @@ Current prototype boundary:
 
 1. `secondspawn_npc_context_get` returns server-owned NPC context, nearby actor
    context, relationship records, allowed intents, and interaction rules.
-2. The LLM worker or gateway chooses the NPC intent.
-3. `secondspawn_npc_intent_submit` validates the intent shape and interaction
+2. Unity prototype NPC brains add nearby Frame actors to the gateway decision
+   world snapshot when `say` is allowed.
+3. The model-backed gateway or a future worker chooses the NPC intent from
+   `AgentPolicy`, `FrameSoul`, `FrameMemory`, relationships, and nearby actor
+   context.
+4. Gateway validation rejects `say.target_id` values that are not nearby actors.
+5. `secondspawn_npc_intent_submit` validates the intent shape and interaction
    rules, then records activity and relationship memory.
-4. Deterministic NPC interaction ticks remain fallback smoke tests only, not the
+6. Deterministic NPC interaction ticks remain fallback smoke tests only, not the
    primary NPC brain.
 
 ---
@@ -301,3 +306,9 @@ Every brain implementation must keep these boundaries:
 - [x] Brain loop logs phase transitions in a debug-friendly way.
 - [x] NPC can patrol and speak without Unity console errors.
 - [x] Backend decision endpoint is upgraded from deterministic fallback to model-backed JSON intent.
+- [x] Permanent NPC brains include nearby actor context in model-backed
+  decisions.
+- [x] Model-selected `say` intents can target nearby actors and persist through
+  Nakama as activity, memory, and relationship state.
+- [x] Deterministic fallback remains degraded behavior, not the intended NPC
+  brain path.

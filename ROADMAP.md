@@ -128,6 +128,9 @@ Recommended views:
 - [x] `_AgentNPC_Prototype` can bind to an actor profile, patrol, speak, use the
   model-backed gateway decision path, and recover through Nakama deterministic
   fallback when the gateway is unavailable or rate-limited.
+- [x] Permanent NPC brains send nearby actor context to the model-backed
+  decision path and persist model-selected `say` intents through Nakama memory
+  and relationship records.
 - [ ] Real combat damage, enemy rewards, loot drops, quest progress, and player
   time-loot from other users are not implemented yet.
 
@@ -143,6 +146,8 @@ Recommended views:
 - [x] Merge reincarnation placeholder flow into `dev`.
 - [x] Merge Unity `6000.5.0b8` upgrade and backend smoke fixes into `dev`.
 - [x] Merge PR review fallback policy into `dev`.
+- [x] Merge PR #67: proactive NPC social context and model-selected intent
+  persistence.
 
 ## Vertical Slice - Current Milestone
 
@@ -165,6 +170,8 @@ MVP, and a visible offline-agent prototype.
   in the hub while proper prefabs and Fusion server spawning are pending.
 - [x] Add the LLM-driven NPC context and intent boundary so NPC brains choose
   actions while Nakama validates range, hostility, affinity, and intent shape.
+- [x] Add model-backed proactive NPC social decisions with nearby actor context
+  and validated Nakama memory or relationship persistence.
 - [x] Add Nakama channel-based basic chat for the vertical slice.
 - [x] Surface agent runtime stats and recent activity in an in-editor or
   prototype debug UI.

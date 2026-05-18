@@ -2,7 +2,7 @@
 
 *Status: Pre-alpha GDD*
 *Created: 2026-05-16*
-*Last updated: 2026-05-17*
+*Last updated: 2026-05-18*
 *Source of truth level: Consolidates current design decisions from `docs/design/`, `AGENTS.md`, and accepted architecture direction. Per-system docs remain authoritative for implementation details.*
 
 ---
@@ -46,7 +46,7 @@ When the player is offline, a bounded AI agent can continue controlling the char
 | Phase 1 NPC dialogue | Convai SDK for MVP NPC dialogue |
 | Chain integration | DOS Chain via thirdweb for wallet, NFT, and SECOND surfaces |
 
-### Current Implementation Snapshot - 2026-05-17
+### Current Implementation Snapshot - 2026-05-18
 
 This snapshot tracks what exists in the running prototype today. It is not a
 promise that the same UI or tuning will ship.
@@ -56,11 +56,12 @@ promise that the same UI or tuning will ship.
 | Unity scene | `ZoneTest_Hub` can enter Play Mode and spawn a Fusion local player. |
 | Player visible stats | The prototype HUD shows level, HP, energy, attack, defense, agility, prototype `BodyTime` / TIME, lifecycle, SECOND balance, and reincarnation count. |
 | Player profile sync | Unity loads the Nakama profile and applies current-body stats, prototype `BodyTime` / TIME, lifecycle, SECOND balance, reincarnation count, and visual key to the authoritative local `NetworkPlayer`. |
-| Default player body | New profiles start at level 1 with vitality 10, force 8, agility 8, focus 8, resilience 8, health 100, energy 50, attack 10, and defense 5. |
+| Default player body | New profiles start at level 1 with server-selected stats from the prototype body archetype pool. |
 | TIME loop | Nakama supports prototype earn, spend, drain, duplicate-earn cooldown, zero-time death, and activity logging. Current implementation field names still use `BodyTime`. |
 | Reincarnation loop | Nakama supports dead-body reincarnation into a fresh prototype body. The current test balance is 7 days of SECOND and the current test cost is 5 days. |
-| NPC/actor profiles | NPC-like actors can have their own body, stats, traits, soul, memory, policy, runtime, and activity records. |
-| Prototype NPC brain | `_AgentNPC_Prototype` can patrol, speak, and use the gateway decision path with deterministic fallback. |
+| NPC/actor profiles | NPC-like actors can have their own body, stats, traits, soul, memory, relationships, policy, runtime, and activity records. |
+| Permanent NPCs | `ZoneTest_Hub` can seed and display 10 permanent prototype NPC Frames from Nakama, each with fixed body identity and visual variant. |
+| Prototype NPC brain | Permanent NPC brains sense nearby actors, call the model-backed gateway decision path, speak through model-selected `say` intent, and persist model speech through Nakama memory and relationship records. |
 | Backend foundation | Nakama owns durable game profile state. The Go gateway owns AI contracts and Cloud Run smoke tests. |
 | Not implemented yet | Real combat damage, enemy loot, quest rewards, production HUD, player-vs-player time loot, wallet escrow, dungeon boss, and dedicated server deployment. |
 
@@ -881,7 +882,7 @@ The first slice should list content volume explicitly so scope cannot silently i
 | Basic enemies | 1-2 | Enough to test combat and rewards |
 | Elite or boss | 1 | Includes LLM dialogue trigger if feasible |
 | Questline | 1 | 3-5 steps |
-| NPCs | 2-3 | Hub NPC, quest NPC, boss or mentor, all backed by actor profiles |
+| NPCs | 10 prototype permanent Frames plus 2-3 authored quest roles | The 10 permanent Frames prove the actor-profile and AI-agent substrate. The vertical-slice quest should still focus on a smaller authored cast. |
 | Items | 4-8 | Weapon, armor or module, consumable, objective item, optional cosmetic |
 | Offline-agent policies | 2-3 | Observe, safe farm, stop below threshold |
 | Reincarnation flow | 1 | Placeholder but server-authoritative |
@@ -946,6 +947,8 @@ Already proven in prototype:
   `BodyTime` / TIME, and reincarnation storage paths.
 - Prototype NPC/agent brain loop with gateway model decision and deterministic
   fallback.
+- Proactive NPC social path: nearby actor sensing, model-selected `say` intent,
+  gateway target validation, and Nakama memory or relationship persistence.
 - TIME and reincarnation smoke path through debug controls.
 
 Still required before this feels like a game:
@@ -1012,6 +1015,7 @@ Useful source documents:
 - [08-time-as-currency.md](08-time-as-currency.md)
 - [10-character-profile-agent-memory.md](10-character-profile-agent-memory.md)
 - [11-npc-agent-brain-architecture.md](11-npc-agent-brain-architecture.md)
+- [13-human-believable-npc-agent-model.md](13-human-believable-npc-agent-model.md)
 
 ---
 
