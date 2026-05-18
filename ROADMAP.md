@@ -76,6 +76,9 @@ Recommended views:
   AI offline control, agent workflow, and backend boundaries.
 - [x] Character-model taxonomy documented for core stats, secondary stats,
   social attributes, body presentation, identity, and multi-axis relationships.
+- [x] Character stat and relationship system GDD added for the six-stat MVP
+  backend contract, secondary stat direction, presentation attributes, and
+  reincarnation carryover boundaries.
 - [x] Backend tests for Nakama runtime behavior and model-backed fallback.
 - [x] Unity project baseline upgraded to Unity `6000.5.0b8`.
 - [x] Local Nakama runtime smoke-tested with the current TypeScript module.
