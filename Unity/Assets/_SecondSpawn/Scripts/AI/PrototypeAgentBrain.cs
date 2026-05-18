@@ -39,6 +39,7 @@ namespace SecondSpawn.AI
         [SerializeField] private string _zoneId = "prototype-hub";
         [SerializeField] private int _visualVariant = 10;
         [SerializeField] private float _decisionIntervalSeconds = 1.6f;
+        [SerializeField, Min(1f)] private float _modelFailureCooldownSeconds = 120f;
         [SerializeField] private float _initialDecisionDelaySeconds;
         [SerializeField] private float _moveSpeed = 2.4f;
         [SerializeField] private float _patrolRadius = 5f;
@@ -224,7 +225,7 @@ namespace SecondSpawn.AI
                 }
 
                 LogPhase(BrainPhase.Reflect, "no reflection write in local prototype loop");
-                var cooldownSeconds = Mathf.Max(0.25f, _decisionIntervalSeconds);
+                var cooldownSeconds = DecisionCooldownSeconds(decision, decisionError);
                 LogPhase(BrainPhase.Cooldown, $"waiting {cooldownSeconds:0.00}s");
                 yield return new WaitForSeconds(cooldownSeconds);
             }
@@ -512,6 +513,41 @@ namespace SecondSpawn.AI
                 : $", source={decision.source}, source_reason={decision.source_reason}";
         }
 
+        private float DecisionCooldownSeconds(AgentDecisionDto decision, string decisionError)
+        {
+            var baseCooldown = Mathf.Max(0.25f, _decisionIntervalSeconds);
+            if (!string.IsNullOrWhiteSpace(decisionError))
+            {
+                return Mathf.Max(baseCooldown, 30f);
+            }
+
+            if (decision != null &&
+                string.Equals(decision.source, "fallback", System.StringComparison.OrdinalIgnoreCase) &&
+                IsModelBackoffReason(decision.source_reason))
+            {
+                return Mathf.Max(baseCooldown, _modelFailureCooldownSeconds);
+            }
+
+            return baseCooldown;
+        }
+
+        private static bool IsModelBackoffReason(string reason)
+        {
+            if (string.IsNullOrWhiteSpace(reason))
+            {
+                return false;
+            }
+
+            return reason == "dos_ai_exception" ||
+                reason == "dos_ai_timeout" ||
+                reason == "dos_ai_circuit_open" ||
+                reason == "dos_ai_http_429" ||
+                reason == "dos_ai_http_500" ||
+                reason == "dos_ai_http_502" ||
+                reason == "dos_ai_http_503" ||
+                reason == "dos_ai_http_504";
+        }
+
         private void TrackDecisionResult(string decisionError)
         {
             if (string.IsNullOrWhiteSpace(decisionError))
@@ -549,6 +585,15 @@ namespace SecondSpawn.AI
             if (string.Equals(decision.source, "fallback", System.StringComparison.OrdinalIgnoreCase) ||
                 !string.IsNullOrWhiteSpace(decisionError))
             {
+                if (IsModelBackoffReason(decision.source_reason))
+                {
+                    SetBrainStatus(
+                        "AI ERROR",
+                        new Color(1f, 0.24f, 0.22f),
+                        FirstNonEmpty(decision.source_reason, ExtractDecisionReason(decisionError)));
+                    return;
+                }
+
                 SetBrainStatus(
                     "AI FALLBACK",
                     new Color(1f, 0.62f, 0.16f),
@@ -563,7 +608,37 @@ namespace SecondSpawn.AI
         {
             BrainStatusLabel = string.IsNullOrWhiteSpace(label) ? "AI unknown" : label.Trim();
             BrainStatusColor = color;
-            BrainStatusReason = string.IsNullOrWhiteSpace(reason) ? "" : reason.Trim();
+            BrainStatusReason = FormatBrainStatusReason(reason);
+        }
+
+        private static string FormatBrainStatusReason(string reason)
+        {
+            if (string.IsNullOrWhiteSpace(reason))
+            {
+                return "";
+            }
+
+            var normalized = reason.Trim();
+            if (normalized.StartsWith("dos_ai_http_", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return "DOS.AI HTTP " + normalized["dos_ai_http_".Length..];
+            }
+
+            return normalized switch
+            {
+                "dos_ai_exception" => "DOS.AI timeout",
+                "dos_ai_timeout" => "DOS.AI timeout",
+                "dos_ai_circuit_open" => "DOS.AI backoff",
+                "dos_ai_empty_content" => "DOS.AI empty",
+                "dos_ai_validate_error" => "intent rejected",
+                "dos_ai_unconfigured" => "DOS.AI off",
+                "nakama_body_time_policy" => "BodyTime policy",
+                "nakama_prototype_patrol" => "safe patrol",
+                "nakama_interact_fallback" => "safe interact",
+                "nakama_social_fallback" => "safe social",
+                "nakama_no_allowed_action" => "no safe action",
+                _ => normalized
+            };
         }
 
         private static string FirstNonEmpty(params string[] values)
@@ -838,6 +913,8 @@ namespace SecondSpawn.AI
             visualRoot.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
             visualRoot.transform.localScale = Vector3.one;
             DisablePhysics(visualRoot);
+            EquipmentVisualCatalog.ApplyEquipmentVisual(visualRoot, ResolveEquipmentVisualId());
+            SanitizeVariantVisuals(visualRoot);
             if (_alignFeetToGround)
             {
                 AlignVisualFeetToGround(visualRoot, transform.position.y);
@@ -853,6 +930,81 @@ namespace SecondSpawn.AI
             {
                 _intentDriver = _animator.gameObject.AddComponent<VisualAnimationIntentDriver>();
             }
+        }
+
+        private int ResolveEquipmentVisualId()
+        {
+            var equipmentId = _context?.body?.equipment?.equipment_visual_id ?? EquipmentVisualCatalog.None;
+            return equipmentId != EquipmentVisualCatalog.None
+                ? equipmentId
+                : EquipmentVisualCatalog.GetDefaultForVisualVariant(_visualVariant);
+        }
+
+        private void SanitizeVariantVisuals(GameObject visualRoot)
+        {
+            if (visualRoot == null)
+            {
+                return;
+            }
+
+            if (VisualPrefabCatalog.NormalizeVariant(_visualVariant) == 14)
+            {
+                KeepSingleFemaleHairMesh(visualRoot);
+            }
+        }
+
+        private static void KeepSingleFemaleHairMesh(GameObject visualRoot)
+        {
+            Renderer selectedHair = null;
+            var selectedPriority = -1;
+            var hairRenderers = new List<Renderer>();
+            foreach (var renderer in visualRoot.GetComponentsInChildren<Renderer>(includeInactive: true))
+            {
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                var objectName = renderer.gameObject.name;
+                if (string.IsNullOrWhiteSpace(objectName) ||
+                    objectName.IndexOf("hair", System.StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    continue;
+                }
+
+                hairRenderers.Add(renderer);
+                var priority = FemaleHairPriority(objectName);
+                if (selectedHair == null || priority > selectedPriority)
+                {
+                    selectedHair = renderer;
+                    selectedPriority = priority;
+                }
+            }
+
+            if (selectedHair == null || hairRenderers.Count <= 1)
+            {
+                return;
+            }
+
+            foreach (var hairRenderer in hairRenderers)
+            {
+                hairRenderer.enabled = hairRenderer == selectedHair;
+            }
+        }
+
+        private static int FemaleHairPriority(string objectName)
+        {
+            if (objectName.Equals("Female-Hair", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return 3;
+            }
+
+            if (objectName.Equals("Mesh-Hair", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return 2;
+            }
+
+            return 1;
         }
 
         private void ReloadVisual()

@@ -50,6 +50,9 @@ var bodyTimeDebugFatalDrainSource = "prototype_reincarnation_debug";
 var secondPrototypeMaxBalanceSeconds = 86400 * 365;
 var secondPrototypeStartingBalanceSeconds = 86400 * 7;
 var secondPrototypeReincarnationCostSeconds = 86400 * 5;
+var dosAiDecisionBackoffSeconds = 30;
+var dosAiDecisionMaxTokens = 96;
+var dosAiDecisionMemoryCap = 3;
 var prototypeVisualVariantMax = 17;
 var bodyArchetypePool = [
   {
@@ -457,9 +460,18 @@ function rpcAgentDecide(
   nk: nkruntime.Nakama,
   payload: string
 ): string {
-  var state = getOrCreateAgentContextState(ctx, nk);
-  var context = state.context;
+  var userId = requireUserId(ctx);
   var request = parseJson(payload || "{}", "agent decision payload");
+  var state: any = null;
+  var context: any;
+  var shouldPersistDecision = true;
+  if (isStatelessAgentDecisionRequest(userId, request)) {
+    context = normalizeStatelessAgentDecisionContext(request.context, userId);
+    shouldPersistDecision = false;
+  } else {
+    state = getOrCreateAgentContextState(ctx, nk);
+    context = state.context;
+  }
   var world = request.world_snapshot || {};
   var allowed = normalizeAllowedActions(request.allowed || ["move", "interact", "say", "stop"]);
   // TODO(#6): enforce per-player model request limits and daily token budget
@@ -481,11 +493,15 @@ function rpcAgentDecide(
       source_reason: "nakama_body_time_policy"
     };
   } else {
-    var modelResult = tryDosAiAgentDecision(ctx, logger, nk, context, request, world, allowed);
-    if (modelResult.decision) {
-      decision = modelResult.decision;
+    if (isAgentModelBackoffActive(context)) {
+      modelFallbackReason = "dos_ai_circuit_open";
     } else {
-      modelFallbackReason = modelResult.reason;
+      var modelResult = tryDosAiAgentDecision(ctx, logger, nk, context, request, world, allowed);
+      if (modelResult.decision) {
+        decision = modelResult.decision;
+      } else {
+        modelFallbackReason = modelResult.reason;
+      }
     }
   }
 
@@ -532,8 +548,9 @@ function rpcAgentDecide(
     }
   }
 
-  recordAgentDecision(context, decision, nk);
-  writeAgentContext(nk, context, state.version);
+  if (shouldPersistDecision) {
+    recordAndWriteAgentDecisionWithRetry(nk, userId, context, state.version, decision);
+  }
   return JSON.stringify(decision);
 }
 
@@ -571,6 +588,27 @@ function rpcAgentActivityAdd(
     }
   }
   return JSON.stringify(context);
+}
+
+function isStatelessAgentDecisionRequest(userId: string, request: any): boolean {
+  var requestedPlayerId = trimString(request && request.context && request.context.player && request.context.player.player_id);
+  return !!requestedPlayerId && requestedPlayerId !== userId;
+}
+
+function normalizeStatelessAgentDecisionContext(context: any, fallbackUserId: string): any {
+  var cloned = cloneJson(context || {});
+  var requestedPlayerId = trimString(cloned && cloned.player && cloned.player.player_id) || fallbackUserId;
+  return ensureAgentContext(cloned, requestedPlayerId);
+}
+
+function shouldBackoffModelDecision(reason: string): boolean {
+  return reason === "dos_ai_timeout" ||
+    reason === "dos_ai_exception" ||
+    reason === "dos_ai_http_429" ||
+    reason === "dos_ai_http_500" ||
+    reason === "dos_ai_http_502" ||
+    reason === "dos_ai_http_503" ||
+    reason === "dos_ai_http_504";
 }
 
 function rpcActorProfileGet(
@@ -2876,6 +2914,9 @@ function recordAgentDecision(context: any, decision: any, nk: nkruntime.Nakama):
   if (decision.source === "fallback") {
     runtime.fallback_decision_count += 1;
   }
+  if (decision.source === "fallback" && shouldBackoffModelDecision(decision.source_reason)) {
+    runtime.model_backoff_until = new Date(new Date().getTime() + dosAiDecisionBackoffSeconds * 1000).toISOString();
+  }
 
   incrementDecisionAction(runtime, decision.action);
   var summary = "Agent chose " + trimString(decision.action || "unknown") + ": " + trimString(decision.reason || "no reason provided");
@@ -2889,6 +2930,42 @@ function recordAgentDecision(context: any, decision: any, nk: nkruntime.Nakama):
       }
     }, nk);
   }
+}
+
+function recordAndWriteAgentDecisionWithRetry(
+  nk: nkruntime.Nakama,
+  userId: string,
+  context: any,
+  version: string,
+  decision: any
+): void {
+  var latestContext = context;
+  var latestVersion = version;
+  var lastError: any = null;
+
+  for (var attempt = 0; attempt < 4; attempt += 1) {
+    var writableContext = cloneJson(latestContext);
+    recordAgentDecision(writableContext, decision, nk);
+    try {
+      writeAgentContext(nk, writableContext, latestVersion);
+      return;
+    } catch (err) {
+      if (!isStorageVersionConflict(err)) {
+        throw err;
+      }
+
+      lastError = err;
+      var latest = readAgentContext(nk, userId);
+      if (!latest) {
+        throw err;
+      }
+
+      latestContext = ensureAgentContext(latest.value || {}, userId);
+      latestVersion = latest.version;
+    }
+  }
+
+  throw lastError || new Error("agent decision write conflict");
 }
 
 function shouldRecordDecisionActivity(context: any, summary: string): boolean {
@@ -2945,22 +3022,28 @@ function tryDosAiAgentDecision(
       { role: "system", content: dosAiAgentDecisionSystemPrompt() },
       { role: "user", content: dosAiAgentDecisionUserPrompt(context, request, world, allowed) }
     ],
-    max_tokens: 400,
+    max_tokens: dosAiDecisionMaxTokens,
     stream: false
   };
 
+  var response: any;
   try {
-    var response = nk.httpRequest(endpoint, "post", {
+    response = nk.httpRequest(endpoint, "post", {
       "content-type": "application/json",
       "accept": "application/json",
       "authorization": "Bearer " + apiKey
     }, JSON.stringify(body));
+  } catch (err) {
+    logger.info("DOS.AI decision request threw: " + err);
+    return { decision: null, reason: isTimeoutLikeError(err) ? "dos_ai_timeout" : "dos_ai_exception" };
+  }
 
-    if (response.code < 200 || response.code > 299) {
-      logger.info("DOS.AI decision request failed with status " + response.code);
-      return { decision: null, reason: "dos_ai_http_" + response.code };
-    }
+  if (response.code < 200 || response.code > 299) {
+    logger.info("DOS.AI decision request failed with status " + response.code);
+    return { decision: null, reason: "dos_ai_http_" + response.code };
+  }
 
+  try {
     var decoded = parseJsonOrNull(response.body);
     var content = trimString(decoded && decoded.choices && decoded.choices[0] && decoded.choices[0].message && decoded.choices[0].message.content);
     if (!content) {
@@ -2986,6 +3069,25 @@ function tryDosAiAgentDecision(
   }
 }
 
+function isTimeoutLikeError(err: any): boolean {
+  var message = lowercase(String(err || ""));
+  return message.indexOf("timeout") >= 0 ||
+    message.indexOf("timed out") >= 0 ||
+    message.indexOf("deadline exceeded") >= 0 ||
+    message.indexOf("context deadline") >= 0;
+}
+
+function isAgentModelBackoffActive(context: any): boolean {
+  ensureAgentRuntime(context);
+  var backoffUntil = trimString(context.body.agent_runtime.model_backoff_until);
+  if (!backoffUntil) {
+    return false;
+  }
+
+  var backoffMs = new Date(backoffUntil).getTime();
+  return !isNaN(backoffMs) && isFinite(backoffMs) && backoffMs > new Date().getTime();
+}
+
 function dosAiAgentDecisionSystemPrompt(): string {
   return [
     "You are the SECOND SPAWN NPC and offline-agent decision node.",
@@ -3001,14 +3103,92 @@ function dosAiAgentDecisionSystemPrompt(): string {
 
 function dosAiAgentDecisionUserPrompt(context: any, request: any, world: any, allowed: string[]): string {
   return JSON.stringify({
-    agent_context: context,
+    agent_context: compactAgentDecisionContext(context),
     allowed_actions: allowed,
-    world_snapshot: world,
+    world_snapshot: compactDecisionWorld(world),
     request: {
       player_id: context && context.player && context.player.player_id,
       body_id: context && context.body && context.body.body_id
     }
   });
+}
+
+function compactAgentDecisionContext(context: any): any {
+  var body = context && context.body ? context.body : {};
+  var identity = body.identity || {};
+  var soul = body.soul || {};
+  var policy = body.agent_policy || {};
+  return {
+    player: {
+      player_id: context && context.player && context.player.player_id,
+      display_name: context && context.player && context.player.display_name
+    },
+    body: {
+      body_id: body.body_id,
+      display_name: body.display_name,
+      level: body.level,
+      lifecycle_state: body.lifecycle_state,
+      time: {
+        remaining_seconds: body.time && body.time.remaining_seconds,
+        drain_per_tick: body.time && body.time.drain_per_tick
+      },
+      stats: body.stats || {},
+      identity: {
+        public_name: identity.public_name,
+        public_role: identity.public_role,
+        faction_title: identity.faction_title,
+        profession: identity.profession,
+        age_years: identity.age_years,
+        reputation_summary: identity.reputation_summary
+      },
+      characteristics: body.characteristics || {},
+      soul: {
+        core_drive: soul.core_drive,
+        temperament: soul.temperament,
+        combat_style: soul.combat_style,
+        social_style: soul.social_style,
+        moral_boundaries: soul.moral_boundaries,
+        long_term_goals: soul.long_term_goals
+      },
+      memory: compactDecisionMemories(body.memory || []),
+      agent_policy: {
+        stop_when_body_time_below: policy.stop_when_body_time_below,
+        allow_autonomous_combat: policy.allow_autonomous_combat,
+        allow_social: policy.allow_social,
+        allow_loot: policy.allow_loot
+      }
+    }
+  };
+}
+
+function compactDecisionMemories(memories: any[]): any[] {
+  var sorted = sortAndBoundMemories((memories || []).slice());
+  var result: any[] = [];
+  for (var index = 0; index < sorted.length && result.length < dosAiDecisionMemoryCap; index += 1) {
+    result.push({
+      kind: sorted[index].kind,
+      summary: sorted[index].summary,
+      importance: sorted[index].importance
+    });
+  }
+  return result;
+}
+
+function compactDecisionWorld(world: any): any {
+  var nearbyActors = world && world.nearby_actors && typeof world.nearby_actors.length === "number"
+    ? world.nearby_actors.slice(0, 6)
+    : [];
+  var nearbyObjects = world && world.nearby_objects && typeof world.nearby_objects.length === "number"
+    ? world.nearby_objects.slice(0, 6)
+    : [];
+  return {
+    position: world && world.position,
+    body_time_seconds: world && world.body_time_seconds,
+    threat_level: world && world.threat_level,
+    zone_id: world && world.zone_id,
+    nearby_actors: nearbyActors,
+    nearby_objects: nearbyObjects
+  };
 }
 
 function parseModelDecisionContent(content: string): any {

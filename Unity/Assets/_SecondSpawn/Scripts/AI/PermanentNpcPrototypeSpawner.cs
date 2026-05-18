@@ -30,8 +30,8 @@ namespace SecondSpawn.AI
         [SerializeField] private bool _logStatus = true;
         [SerializeField] private string _zoneId = "prototype-hub";
         [SerializeField] private bool _attachAgentBrains = true;
-        [SerializeField, Min(0.25f)] private float _agentDecisionIntervalSeconds = 12f;
-        [SerializeField, Min(0f)] private float _agentStartStaggerSeconds = 0.75f;
+        [SerializeField, Min(0.25f)] private float _agentDecisionIntervalSeconds = 30f;
+        [SerializeField, Min(0f)] private float _agentStartStaggerSeconds = 2.5f;
         [SerializeField, Min(0.5f)] private float _agentPatrolRadius = 5f;
         [SerializeField] private bool _agentPhaseLogs = false;
 
