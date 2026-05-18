@@ -37,6 +37,9 @@ namespace SecondSpawn.AI
         [SerializeField, Min(1), Tooltip("Seconds before Nakama or Supabase HTTP requests fail fast in Play Mode.")]
         private int _requestTimeoutSeconds = 10;
 
+        [SerializeField, Min(1), Tooltip("Seconds before the agent decision RPC fails. DOS.AI model decisions can take longer than normal Nakama calls.")]
+        private int _agentDecisionRequestTimeoutSeconds = 135;
+
         private bool _authAttempted;
         private bool _authInProgress;
         private string _supabaseAccessToken;
@@ -240,7 +243,7 @@ namespace SecondSpawn.AI
 
         public IEnumerator Decide(AgentDecisionRequestDto request, Action<AgentDecisionDto> onSuccess, Action<string> onError = null)
         {
-            yield return SendNakamaRpc("secondspawn_agent_decide", request, onSuccess, onError);
+            yield return SendNakamaRpc("secondspawn_agent_decide", request, onSuccess, onError, _agentDecisionRequestTimeoutSeconds);
         }
 
         public IEnumerator Chat(NpcChatRequestDto request, Action<NpcChatResponseDto> onSuccess, Action<string> onError = null)
@@ -291,7 +294,12 @@ namespace SecondSpawn.AI
             });
         }
 
-        private IEnumerator SendNakamaRpc<TResponse>(string rpcId, object payload, Action<TResponse> onSuccess, Action<string> onError)
+        private IEnumerator SendNakamaRpc<TResponse>(
+            string rpcId,
+            object payload,
+            Action<TResponse> onSuccess,
+            Action<string> onError,
+            int timeoutSecondsOverride = 0)
         {
             if (!HasNakamaSession)
             {
@@ -314,7 +322,7 @@ namespace SecondSpawn.AI
                 }
 
                 onError?.Invoke(error);
-            });
+            }, timeoutSecondsOverride);
         }
 
         private UnityWebRequest BuildNakamaRpcRequest(string rpcId, string json)
@@ -429,9 +437,13 @@ namespace SecondSpawn.AI
             yield return Send(request, onSuccess, onError);
         }
 
-        private IEnumerator Send<TResponse>(UnityWebRequest request, Action<TResponse> onSuccess, Action<string> onError)
+        private IEnumerator Send<TResponse>(
+            UnityWebRequest request,
+            Action<TResponse> onSuccess,
+            Action<string> onError,
+            int timeoutSecondsOverride = 0)
         {
-            request.timeout = Mathf.Max(1, _requestTimeoutSeconds);
+            request.timeout = Mathf.Max(1, timeoutSecondsOverride > 0 ? timeoutSecondsOverride : _requestTimeoutSeconds);
             yield return request.SendWebRequest();
 
             if (request.result != UnityWebRequest.Result.Success)

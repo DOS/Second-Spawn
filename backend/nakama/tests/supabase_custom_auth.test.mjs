@@ -283,21 +283,20 @@ assert.equal(npcIntent.actor.relationships[0].affinity, 4);
 assert.equal(npcIntent.actor.relationships[0].familiarity_count, 1);
 assert.ok(npcIntent.actor.memory.some((memory) => /Route check complete/.test(memory.summary)));
 assert.ok(npcIntent.target_actor.memory.some((memory) => /Route check complete/.test(memory.summary)));
-assert.throws(
-  () => harness.registeredRpcs.get("secondspawn_npc_intent_submit")(
-    { userId: "user-1", env: {} },
-    harness.logger,
-    harness.nk,
-    JSON.stringify({
-      actor_id: "npc-synthetic-sentinel-0101",
-      target_actor_id: "npc-wasteland-courier-0244",
-      intent: "say",
-      text: "Too far.",
-      distance_meters: 13
-    })
-  ),
-  /too far away/
-);
+const tooFarNpcIntent = JSON.parse(harness.registeredRpcs.get("secondspawn_npc_intent_submit")(
+  { userId: "user-1", env: {} },
+  harness.logger,
+  harness.nk,
+  JSON.stringify({
+    actor_id: "npc-synthetic-sentinel-0101",
+    target_actor_id: "npc-wasteland-courier-0244",
+    intent: "say",
+    text: "Too far.",
+    distance_meters: 13
+  })
+));
+assert.equal(tooFarNpcIntent.accepted, false);
+assert.equal(tooFarNpcIntent.status, "npc_target_too_far");
 assert.throws(
   () => harness.registeredRpcs.get("secondspawn_npc_intent_submit")(
     { userId: "user-1", env: {} },
@@ -759,8 +758,8 @@ assert.equal(profileAfterDecisionConflict.body.agent_activity[0].kind, "agent_de
 
 const modelHarness = createRuntimeHarness(module);
 const modelCalls = [];
-modelHarness.nk.httpRequest = (url, method, headers, body) => {
-  modelCalls.push({ url, method, headers, body: JSON.parse(body) });
+modelHarness.nk.httpRequest = (url, method, headers, body, timeout) => {
+  modelCalls.push({ url, method, headers, body: JSON.parse(body), timeout });
   return {
     code: 200,
     body: JSON.stringify({
@@ -808,11 +807,14 @@ assert.equal(modelCalls[0].url, "https://api.dos.ai/v1/chat/completions");
 assert.equal(modelCalls[0].method, "post");
 assert.equal(modelCalls[0].headers.authorization, "Bearer dos-ai-test-key");
 assert.equal(modelCalls[0].body.model, "dos-ai");
+assert.equal(modelCalls[0].body.temperature, 0);
+assert.equal(modelCalls[0].body.max_completion_tokens, 96);
+assert.equal(modelCalls[0].timeout, 120000);
 
 const statelessNpcHarness = createRuntimeHarness(module);
 const statelessNpcCalls = [];
-statelessNpcHarness.nk.httpRequest = (url, method, headers, body) => {
-  statelessNpcCalls.push({ url, method, headers, body: JSON.parse(body) });
+statelessNpcHarness.nk.httpRequest = (url, method, headers, body, timeout) => {
+  statelessNpcCalls.push({ url, method, headers, body: JSON.parse(body), timeout });
   return {
     code: 200,
     body: JSON.stringify({
@@ -856,19 +858,24 @@ const statelessNpcDecision = JSON.parse(statelessNpcHarness.registeredRpcs.get("
 ));
 assert.equal(statelessNpcDecision.source, "model");
 assert.equal(statelessNpcCalls.length, 1);
+assert.equal(statelessNpcCalls[0].timeout, 120000);
 assert.match(statelessNpcCalls[0].body.messages[1].content, /npc-synthetic-wasteland-courier-0244/);
 assert.doesNotMatch(statelessNpcCalls[0].body.messages[1].content, /agent_activity/);
 assert.equal(statelessNpcHarness.storage.has(storageKey("local-playtest-user", "secondspawn_agent", "context")), false);
 
 const invalidModelHarness = createRuntimeHarness(module);
-invalidModelHarness.nk.httpRequest = () => ({
-  code: 200,
-  body: JSON.stringify({
-    choices: [{
-      message: { content: JSON.stringify({ action: "attack", target_id: "not-nearby", reason: "bad", confidence: 0.9 }) }
-    }]
-  })
-});
+let invalidModelCalls = 0;
+invalidModelHarness.nk.httpRequest = () => {
+  invalidModelCalls += 1;
+  return {
+    code: 200,
+    body: JSON.stringify({
+      choices: [{
+        message: { content: JSON.stringify({ action: "attack", target_id: "not-nearby", reason: "bad", confidence: 0.9 }) }
+      }]
+    })
+  };
+};
 const invalidModelDecision = JSON.parse(invalidModelHarness.registeredRpcs.get("secondspawn_agent_decide")(
   {
     userId: "invalid-model-user",
@@ -887,6 +894,24 @@ const invalidModelDecision = JSON.parse(invalidModelHarness.registeredRpcs.get("
 ));
 assert.equal(invalidModelDecision.source, "fallback");
 assert.equal(invalidModelDecision.source_reason, "dos_ai_validate_error");
+const invalidModelCircuitDecision = JSON.parse(invalidModelHarness.registeredRpcs.get("secondspawn_agent_decide")(
+  {
+    userId: "invalid-model-user",
+    env: {
+      DOS_AI_API_KEY: "dos-ai-test-key",
+      DOS_AI_BASE_URL: "https://api.dos.ai/v1",
+      AGENT_DECISION_MODEL: "dos-ai"
+    }
+  },
+  invalidModelHarness.logger,
+  invalidModelHarness.nk,
+  JSON.stringify({
+    world_snapshot: { position: { x: 2, z: 3 }, body_time_seconds: 3600 },
+    allowed: ["say", "stop"]
+  })
+));
+assert.equal(invalidModelCircuitDecision.source_reason, "dos_ai_circuit_open");
+assert.equal(invalidModelCalls, 1);
 
 const modelFallbackCases = [
   {
@@ -975,6 +1000,58 @@ const circuitOpenDecision = JSON.parse(timeoutCircuitHarness.registeredRpcs.get(
 ));
 assert.equal(circuitOpenDecision.source_reason, "dos_ai_circuit_open");
 assert.equal(timeoutCircuitCalls, 1);
+
+const statelessNpcTimeoutHarness = createRuntimeHarness(module);
+let statelessNpcTimeoutCalls = 0;
+statelessNpcTimeoutHarness.nk.httpRequest = () => {
+  statelessNpcTimeoutCalls += 1;
+  throw new Error("context deadline exceeded");
+};
+const statelessNpcTimeoutPayload = {
+  context: {
+    player: {
+      player_id: "npc-wasteland-courier-0244",
+      display_name: "Route Courier 0244"
+    },
+    body: {
+      body_id: "body-npc-0244",
+      archetype_id: "courier",
+      time: { remaining_seconds: 3600 },
+      agent_policy: { stop_when_body_time_below: 900 }
+    }
+  },
+  world_snapshot: { position: { x: 2, z: 3 }, body_time_seconds: 3600 },
+  allowed: ["move", "stop"]
+};
+const statelessNpcTimeoutDecision = JSON.parse(statelessNpcTimeoutHarness.registeredRpcs.get("secondspawn_agent_decide")(
+  {
+    userId: "local-playtest-user",
+    env: {
+      DOS_AI_API_KEY: "dos-ai-test-key",
+      DOS_AI_BASE_URL: "https://api.dos.ai/v1",
+      AGENT_DECISION_MODEL: "dos-ai"
+    }
+  },
+  statelessNpcTimeoutHarness.logger,
+  statelessNpcTimeoutHarness.nk,
+  JSON.stringify(statelessNpcTimeoutPayload)
+));
+assert.equal(statelessNpcTimeoutDecision.source_reason, "dos_ai_timeout");
+const statelessNpcCircuitDecision = JSON.parse(statelessNpcTimeoutHarness.registeredRpcs.get("secondspawn_agent_decide")(
+  {
+    userId: "local-playtest-user",
+    env: {
+      DOS_AI_API_KEY: "dos-ai-test-key",
+      DOS_AI_BASE_URL: "https://api.dos.ai/v1",
+      AGENT_DECISION_MODEL: "dos-ai"
+    }
+  },
+  statelessNpcTimeoutHarness.logger,
+  statelessNpcTimeoutHarness.nk,
+  JSON.stringify(statelessNpcTimeoutPayload)
+));
+assert.equal(statelessNpcCircuitDecision.source_reason, "dos_ai_circuit_open");
+assert.equal(statelessNpcTimeoutCalls, 1);
 
 const lowTimeDecision = JSON.parse(harness.registeredRpcs.get("secondspawn_agent_decide")(
   { userId: "user-1", env: {} },

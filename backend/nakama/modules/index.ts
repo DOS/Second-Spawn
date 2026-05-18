@@ -50,9 +50,10 @@ var bodyTimeDebugFatalDrainSource = "prototype_reincarnation_debug";
 var secondPrototypeMaxBalanceSeconds = 86400 * 365;
 var secondPrototypeStartingBalanceSeconds = 86400 * 7;
 var secondPrototypeReincarnationCostSeconds = 86400 * 5;
-var dosAiDecisionBackoffSeconds = 30;
+var dosAiDecisionBackoffSeconds = 180;
 var dosAiDecisionMaxTokens = 96;
 var dosAiDecisionMemoryCap = 3;
+var dosAiDecisionDefaultTimeoutMs = 120000;
 var prototypeVisualVariantMax = 17;
 var bodyArchetypePool = [
   {
@@ -463,10 +464,17 @@ function rpcAgentDecide(
   var userId = requireUserId(ctx);
   var request = parseJson(payload || "{}", "agent decision payload");
   var state: any = null;
+  var statelessActorState: any = null;
   var context: any;
   var shouldPersistDecision = true;
   if (isStatelessAgentDecisionRequest(userId, request)) {
-    context = normalizeStatelessAgentDecisionContext(request.context, userId);
+    var statelessActorId = statelessAgentDecisionActorId(request);
+    if (findPermanentNpcFrame(statelessActorId)) {
+      statelessActorState = getOrCreateWorldNpcProfileState(nk, userId, statelessActorId);
+      context = agentDecisionContextFromActorProfile(statelessActorState.profile);
+    } else {
+      context = normalizeStatelessAgentDecisionContext(request.context, userId);
+    }
     shouldPersistDecision = false;
   } else {
     state = getOrCreateAgentContextState(ctx, nk);
@@ -550,6 +558,8 @@ function rpcAgentDecide(
 
   if (shouldPersistDecision) {
     recordAndWriteAgentDecisionWithRetry(nk, userId, context, state.version, decision);
+  } else if (statelessActorState) {
+    recordAndWriteWorldActorDecisionWithRetry(nk, userId, statelessActorState, context, decision);
   }
   return JSON.stringify(decision);
 }
@@ -595,15 +605,38 @@ function isStatelessAgentDecisionRequest(userId: string, request: any): boolean 
   return !!requestedPlayerId && requestedPlayerId !== userId;
 }
 
+function statelessAgentDecisionActorId(request: any): string {
+  return normalizeActorId(request && request.context && request.context.player && request.context.player.player_id);
+}
+
 function normalizeStatelessAgentDecisionContext(context: any, fallbackUserId: string): any {
   var cloned = cloneJson(context || {});
   var requestedPlayerId = trimString(cloned && cloned.player && cloned.player.player_id) || fallbackUserId;
   return ensureAgentContext(cloned, requestedPlayerId);
 }
 
+function agentDecisionContextFromActorProfile(profile: any): any {
+  var clonedBody = cloneJson(profile && profile.body ? profile.body : {});
+  clonedBody.memory = cloneJson(profile && profile.memory ? profile.memory : []);
+  clonedBody.relationships = cloneJson(profile && profile.relationships ? profile.relationships : []);
+  clonedBody.agent_runtime = cloneJson(profile && profile.agent_runtime ? profile.agent_runtime : defaultAgentRuntime(new Date().toISOString()));
+  clonedBody.agent_activity = cloneJson(profile && profile.agent_activity ? profile.agent_activity : []);
+  return ensureAgentContext({
+    player: {
+      player_id: profile.actor_id,
+      display_name: profile.display_name,
+      second_balance_seconds: 0,
+      reincarnation_count: 0
+    },
+    body: clonedBody
+  }, profile.actor_id);
+}
+
 function shouldBackoffModelDecision(reason: string): boolean {
   return reason === "dos_ai_timeout" ||
     reason === "dos_ai_exception" ||
+    reason === "dos_ai_empty_content" ||
+    reason === "dos_ai_validate_error" ||
     reason === "dos_ai_http_429" ||
     reason === "dos_ai_http_500" ||
     reason === "dos_ai_http_502" ||
@@ -874,7 +907,17 @@ function rpcNpcIntentSubmit(
   var targetState = intent.target_actor_id
     ? getOrCreateWorldNpcProfileState(nk, userId, intent.target_actor_id)
     : null;
-  validateNpcIntentRules(state.profile, targetState ? targetState.profile : null, request);
+  var validationError = validateNpcIntentRules(state.profile, targetState ? targetState.profile : null, request);
+  if (validationError) {
+    logger.info("NPC intent rejected: " + validationError);
+    return JSON.stringify({
+      accepted: false,
+      status: validationError,
+      intent: intent,
+      actor: state.profile,
+      target_actor: targetState ? targetState.profile : null
+    });
+  }
   var timestamp = intent.requested_at;
   var targetName = targetState ? targetState.profile.display_name : "the hub";
   addActorActivity(state.profile, {
@@ -1961,25 +2004,27 @@ function npcInteractionRules(): any {
   };
 }
 
-function validateNpcIntentRules(actor: any, target: any, request: any): void {
+function validateNpcIntentRules(actor: any, target: any, request: any): string {
   var distanceMeters = finiteNumberOrDefault(firstDefined(request.distance_meters, request.distance), 0);
   if (distanceMeters > npcInteractionMaxDistanceMeters) {
-    throw new Error("NPC target is too far away for interaction");
+    return "npc_target_too_far";
   }
   if (!target) {
-    return;
+    return "";
   }
 
   var relationship = findRelationshipRecord(actor.relationships || [], target.actor_id);
   if (relationship.hostility >= npcHostilityBlockThreshold) {
-    throw new Error("NPC relationship hostility blocks voluntary interaction");
+    return "npc_relationship_hostility_block";
   }
   if (
     relationship.familiarity_count >= npcFrequentInteractionCount &&
     relationship.affinity < npcRelationshipMinAffinityForFrequent
   ) {
-    throw new Error("NPC relationship affinity is too low for frequent interaction");
+    return "npc_relationship_affinity_too_low";
   }
+
+  return "";
 }
 
 function normalizeNpcInteractionTopic(value: any): string {
@@ -2968,6 +3013,50 @@ function recordAndWriteAgentDecisionWithRetry(
   throw lastError || new Error("agent decision write conflict");
 }
 
+function recordAndWriteWorldActorDecisionWithRetry(
+  nk: nkruntime.Nakama,
+  ownerId: string,
+  actorState: any,
+  context: any,
+  decision: any
+): void {
+  var profile = actorState.profile;
+  var version = actorState.version;
+  var lastError: any = null;
+
+  for (var attempt = 0; attempt < 4; attempt += 1) {
+    var writableContext = cloneJson(context);
+    recordAgentDecision(writableContext, decision, nk);
+    applyDecisionContextRuntimeToActorProfile(profile, writableContext);
+    try {
+      writeWorldActorProfile(nk, ownerId, profile, version);
+      return;
+    } catch (err) {
+      if (!isStorageVersionConflict(err)) {
+        throw err;
+      }
+
+      lastError = err;
+      var latest = readWorldActorProfile(nk, ownerId, profile.actor_id);
+      if (!latest) {
+        throw err;
+      }
+
+      profile = ensureActorProfile(latest.value || {}, ownerId, profile.actor_id);
+      version = latest.version;
+      context = agentDecisionContextFromActorProfile(profile);
+    }
+  }
+
+  throw lastError || new Error("world actor decision write conflict");
+}
+
+function applyDecisionContextRuntimeToActorProfile(profile: any, context: any): void {
+  profile.agent_runtime = cloneJson(context.body.agent_runtime || defaultAgentRuntime(new Date().toISOString()));
+  profile.agent_activity = cloneJson(context.body.agent_activity || []);
+  profile.updated_at = new Date().toISOString();
+}
+
 function shouldRecordDecisionActivity(context: any, summary: string): boolean {
   var activities = context.body.agent_activity || [];
   if (activities.length === 0) {
@@ -3016,6 +3105,7 @@ function tryDosAiAgentDecision(
   }
 
   var model = trimString(ctx.env["AGENT_DECISION_MODEL"] || "dos-ai") || "dos-ai";
+  var timeoutMs = dosAiDecisionTimeoutMs(ctx);
   var body = {
     model: model,
     messages: [
@@ -3023,6 +3113,8 @@ function tryDosAiAgentDecision(
       { role: "user", content: dosAiAgentDecisionUserPrompt(context, request, world, allowed) }
     ],
     max_tokens: dosAiDecisionMaxTokens,
+    max_completion_tokens: dosAiDecisionMaxTokens,
+    temperature: 0,
     stream: false
   };
 
@@ -3032,7 +3124,7 @@ function tryDosAiAgentDecision(
       "content-type": "application/json",
       "accept": "application/json",
       "authorization": "Bearer " + apiKey
-    }, JSON.stringify(body));
+    }, JSON.stringify(body), timeoutMs);
   } catch (err) {
     logger.info("DOS.AI decision request threw: " + err);
     return { decision: null, reason: isTimeoutLikeError(err) ? "dos_ai_timeout" : "dos_ai_exception" };
@@ -3067,6 +3159,11 @@ function tryDosAiAgentDecision(
     logger.info("DOS.AI decision request threw: " + err);
     return { decision: null, reason: "dos_ai_exception" };
   }
+}
+
+function dosAiDecisionTimeoutMs(ctx: nkruntime.Context): number {
+  var configured = finiteNumberOrDefault(ctx.env["DOS_AI_DECISION_TIMEOUT_MS"], dosAiDecisionDefaultTimeoutMs);
+  return Math.floor(clampNumber(configured, 1000, 120000));
 }
 
 function isTimeoutLikeError(err: any): boolean {
