@@ -15,11 +15,6 @@ namespace SecondSpawn.Networking
     [DisallowMultipleComponent]
     public sealed class LocalVisualPrefabLoader : MonoBehaviour
     {
-#if UNITY_EDITOR
-        private const string SharedAnimatorControllerPath =
-            "Assets/ExplosiveLLC/RPG Character Mecanim Animation Pack/Animation Controller/RPG-Character-Animation-Controller.controller";
-#endif
-
         [SerializeField, Tooltip("Resources path fallback for a local-only visual prefab. Missing resources leave the committed cube visible.")]
         private string _resourcePath = "SecondSpawn/RPGCharacterVisual";
 
@@ -378,20 +373,23 @@ namespace SecondSpawn.Networking
         private static void EnsureSharedController(Animator animator)
         {
 #if UNITY_EDITOR
+            var sharedController = VisualAnimatorControllerCatalog.LoadSharedController();
+            if (sharedController != null)
+            {
+                if (animator.runtimeAnimatorController != sharedController)
+                {
+                    animator.runtimeAnimatorController = sharedController;
+                }
+
+                return;
+            }
+
             if (animator.runtimeAnimatorController != null && ExposesLocomotionContract(animator))
             {
                 return;
             }
 
-            var sharedController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(SharedAnimatorControllerPath);
-            if (sharedController != null)
-            {
-                animator.runtimeAnimatorController = sharedController;
-            }
-            else
-            {
-                Debug.LogWarning($"[LocalVisualPrefabLoader] Shared animator controller not found at '{SharedAnimatorControllerPath}'.");
-            }
+            Debug.LogWarning($"[LocalVisualPrefabLoader] Shared animator controller not found at '{VisualAnimatorControllerCatalog.GetSharedControllerLookupLabel()}'.");
 #endif
         }
 

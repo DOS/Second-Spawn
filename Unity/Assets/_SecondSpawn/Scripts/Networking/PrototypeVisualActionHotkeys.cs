@@ -48,6 +48,13 @@ namespace SecondSpawn.Networking
             if (keyboard.rKey.wasPressedThisFrame) _driver.TryPlay(VisualAnimationIntent.DodgeRight);
             if (keyboard.kKey.wasPressedThisFrame) _driver.TryPlay(VisualAnimationIntent.Death);
             if (keyboard.lKey.wasPressedThisFrame) _driver.TryPlay(VisualAnimationIntent.Revive);
+            if (keyboard.fKey.wasPressedThisFrame) _driver.TryPlay(VisualAnimationIntent.Gather);
+            if (keyboard.vKey.wasPressedThisFrame) _driver.TryPlay(VisualAnimationIntent.PickUpItem);
+            if (keyboard.bKey.wasPressedThisFrame) _driver.TryPlay(VisualAnimationIntent.Bored);
+            if (keyboard.xKey.wasPressedThisFrame) _driver.TryPlay(VisualAnimationIntent.ChopVertical);
+            if (keyboard.gKey.wasPressedThisFrame) _driver.TryPlay(VisualAnimationIntent.DigScoop);
+            if (keyboard.hKey.wasPressedThisFrame) _driver.TryPlay(VisualAnimationIntent.HammerTable);
+            if (keyboard.mKey.wasPressedThisFrame) _driver.TryPlay(VisualAnimationIntent.ChairSit);
         }
 
         private void ResolveDriver()
