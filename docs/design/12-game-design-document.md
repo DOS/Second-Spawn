@@ -414,7 +414,9 @@ Target character-model taxonomy:
 The MVP backend uses six canonical body-bound core stats: `strength`, `agility`,
 `endurance`, `perception`, `focus`, and `presence`. The older serialized keys
 `vitality`, `force`, and `resilience` remain compatibility aliases until the
-Unity networked prototype stats are renamed safely.
+Unity networked prototype stats are renamed safely. See
+[14-character-stat-and-relationship-system.md](14-character-stat-and-relationship-system.md)
+for the detailed stat, secondary stat, presentation, and relationship baseline.
 
 - Core stats: body-bound gameplay numbers such as strength, agility, endurance,
   perception, focus, and presence. Do not add wisdom as a core stat and do not
