@@ -171,6 +171,10 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   warnings during Play Mode spawn.
 - Generated NPC visual prefabs now serialize the shared prototype animator
   controller, and the visual rebuild tool preserves that rule for future imports.
+- Prototype HUD now shows a lightweight FPS counter in the top-right corner with
+  green, yellow, and red performance bands.
+- Permanent NPC brain labels now include source reasons such as
+  `provider_error`, making DOS.AI gateway degradation visible in Play Mode.
 - Prototype debug panel hotkeys now use Unity Input System keyboard polling
   instead of the disabled legacy input API, stopping Play Mode console spam.
 - Prototype Nakama world storage now scopes permanent NPC profiles and hub chat
