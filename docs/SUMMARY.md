@@ -7,11 +7,12 @@
 
 ## Design
 
+- [Game Design Document](design/12-game-design-document.md)
 - [Game Concept](design/00-game-concept.md)
 - [Game Pillars](design/01-pillars.md)
 - [Vertical Slice Spec](design/02-vertical-slice-spec.md)
 - [Systems Index](design/03-systems-index.md)
-- [Cultivation System](design/04-cultivation-system.md)
+- [Deferred Advanced Body Progression](design/04-cultivation-system.md)
 - [Networking Architecture](design/05-networking-architecture.md)
 - [Overview Design](design/06-overview-design.md)
 - [Networked Player Controller Prototype](design/07-player-controller-prototype.md)
@@ -37,6 +38,6 @@
 
 - [Agent Handoff](setup/agent-handoff.md)
 - [Fusion Install](setup/fusion-install.md)
-- [Game Gateway Cloud Run Deployment](setup/game-gateway-cloud-run.md)
+- [GitHub Project Tracking](setup/github-project-tracking.md)
 - [Paid Asset Setup](setup/paid-assets.md)
 - [Unity Conventions](setup/unity-conventions.md)

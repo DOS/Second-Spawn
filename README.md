@@ -11,7 +11,7 @@
 - **AI Agent 24/7** - Your character keeps playing when you are offline. An LLM-driven agent farms, quests, and socializes on your behalf.
 - **Reincarnation** - Death is permanent for the body. Transfer your consciousness to a new synthetic body using SECOND tokens. Progression resets - this is a roguelike-MMO hybrid.
 - **Time-as-Currency** - Time is both your current body's survival resource and a spendable economy resource, adapted from MetaDOS.
-- **Sci-fi Cultivation** - 6-tier progression system (Awakening -> Ascension), explained through Nibirium-enhanced biotech and consciousness science.
+- **Body-bound Progression** - Level and stats are tied to the current body; advanced soul/body progression is deferred for a fresh design pass.
 - **LLM-Powered NPCs** - NPCs remember you, have personality, and react to your history.
 - **NFT Integration** - Inherit assets from the MetaDOS universe. Hunter skins, weapons, pets on DOS Chain.
 
@@ -19,8 +19,9 @@
 
 - Unity 6.5 beta + URP
 - Photon Fusion 2 (dedicated server mode in production)
-- Supabase (auth, Postgres, realtime, storage)
-- Go LLM gateway (server-authoritative LLM intent validation)
+- Nakama OSS (game backend, auth bridge, profiles, memory, social primitives)
+- Supabase sidecar (identity bridge, analytics, storage, external product data)
+- `api.dos.ai` model calls through Nakama server runtime with server-side intent validation
 - DOS Chain (NFT, wallet auth via thirdweb)
 - Convai (phase 1 NPC dialogue) -> custom LLM (phase 2)
 
@@ -28,7 +29,7 @@
 
 ```
 /Unity/           Unity project (Assets, Packages, ProjectSettings)
-/backend/        Go LLM gateway, server-side services
+/backend/        Nakama runtime modules
 /docs/            Design docs, ADRs, architecture
 /.claude/         AI agent context, templates, conventions
 ```
@@ -41,10 +42,11 @@ Public docs are published from `/docs` to GitBook:
 
 Requirements:
 
-- Unity 6.5 beta `6000.5.0b7`
+- Unity 6.5 beta `6000.5.0b8`
 - Git LFS
 - Photon Fusion 2 app ID
-- Supabase project (or local Postgres for offline dev)
+- Nakama local backend for backend work
+- Supabase project for identity bridge work
 
 ```bash
 git clone https://github.com/DOS/Second-Spawn.git
@@ -54,6 +56,9 @@ git lfs pull
 ```
 
 Open the `Unity/` subfolder in Unity Hub, let it compile, then configure Photon app ID and Supabase URL in `Unity/Assets/_SecondSpawn/Settings/SecondSpawnConfig.asset`.
+
+See `ROADMAP.md` for implementation status and `CHANGELOG.md` for the current
+pre-alpha change history.
 
 ## Contributing
 

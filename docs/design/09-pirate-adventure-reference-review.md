@@ -33,7 +33,7 @@ Use it as a reference, not as code to copy.
 
 | Area | Pirate Adventure | SECOND SPAWN Current State | Notes |
 | ---- | ---- | ---- | ---- |
-| Unity version | Unity `2021.3.45f2` | Unity `6000.5.0b7` | Sample must be treated as a pattern source, not imported wholesale. |
+| Unity version | Unity `2021.3.45f2` | Unity `6000.5.0b8` | Sample must be treated as a pattern source, not imported wholesale. |
 | Fusion version | `2.0.12 Stable 1861` | `2.1.1 Release-Candidate 2037` | API drift is possible. Validate in Unity after each integration step. |
 | KCC | Simple KCC addon `2.0.15` DLL | Installed at `Unity/Assets/Photon/FusionAddons/SimpleKCC/` | Strong candidate for next controller prototype branch. |
 | Topology | Shared Mode | Server Mode production, Host Mode dev | Do not copy Shared Mode authority assumptions. |
@@ -80,7 +80,7 @@ Player and enemy behavior are separated into small states:
 - `EnemyChaseState`
 - `EnemyAttackState`
 
-This is useful for SECOND SPAWN because cultivation, reincarnation, AI-agent control, and combat can plug into state transitions without one large controller script.
+This is useful for SECOND SPAWN because reincarnation, AI-agent control, TIME / SECOND, and combat can plug into state transitions without one large controller script.
 
 ### 4. Runner Physics Scene Queries
 
@@ -125,9 +125,9 @@ Do not import the whole Pirate Adventure project. It targets an older Unity vers
 
 Pirate Adventure uses money and level as sample progression. SECOND SPAWN uses:
 
-- `BodyTime`
-- `SECOND token`
-- cultivation tier
+- TIME measured in SECOND
+- SECOND as the economy unit/currency
+- level and stats
 - reincarnation state
 - durable inventory and quest state in Supabase
 

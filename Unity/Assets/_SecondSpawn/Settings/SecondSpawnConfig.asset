@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: SecondSpawnConfig
   m_EditorClassIdentifier: 
   Environment: 0
-  GatewayBaseUrl: https://second-spawn-gateway-535583621422.asia-southeast1.run.app
   SupabaseUrl: 
   SupabaseAnonKey: 
   PhotonAppId: 

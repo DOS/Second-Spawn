@@ -115,7 +115,7 @@ Rationale:
 
 If JOY wants to stay on Unity 6.5 beta despite this: pick Option A and mình applies all ~17 patches across one focused commit, accepting the maintenance debt.
 
-If JOY is willing to wait but doesn't want to downgrade: pick Option C and we proceed with non-Fusion work (Go gateway, design docs, Supabase setup) until Photon ships.
+If JOY is willing to wait but doesn't want to downgrade: pick Option C and we proceed with non-Fusion work (Nakama runtime, design docs, Supabase setup) until Photon ships.
 
 ## Consequences (per option)
 
@@ -131,4 +131,5 @@ If JOY is willing to wait but doesn't want to downgrade: pick Option C and we pr
 - [ADR 0006: Fusion 2 scratch over template](0006-fusion-2-scratch-over-template.md)
 - [GDD 05: Networking Architecture](../design/05-networking-architecture.md)
 - Photon Fusion 2.0.12-Stable-1861 (current installed version)
-- Unity 6.5 beta `6000.5.0b7` (current installed Editor)
+- Unity 6.5 beta `6000.5.0b7` (installed Editor at failure time; project
+  baseline later moved to `6000.5.0b8`)

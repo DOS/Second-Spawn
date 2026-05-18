@@ -10,27 +10,33 @@ This file is the primary context for any AI coding agent working on this reposit
 - **Genre:** Hybrid MMO + Top-down ARPG (NOT full open-world MMORPG)
 - **References:** Diablo IV, Path of Exile 2, Lost Ark
 - **Setting:** Near-future ~2050, post-apocalyptic, MetaDOS universe
-- **Tone:** Dark sci-fi, cyberpunk, cultivation-progression, AI NPC society
+- **Tone:** Dark sci-fi, cyberpunk, body/soul survival, AI NPC society
 
 ## Four Signature Features (DO NOT LOSE TRACK)
 
 1. **AI Agent 24/7** - When the player is offline, an LLM-driven AI agent fully controls their character (farms, quests, socializes with NPCs and other players' agents). When the player returns, they take over control. This is a near-unique feature in MMO/ARPG space.
-2. **Reincarnation with progression reset** - Death is permanent for the body. Consciousness transfers to a new body via SECOND token or special item. Progression resets (roguelike-MMO hybrid). Cultivation tier may carry over partial.
+2. **Reincarnation with progression reset** - Death is permanent for the body. Consciousness transfers to a new body via SECOND token or special item. Current-body progression resets in a roguelike-MMO hybrid loop. Durable soul/profile carryover rules are deferred until the reincarnation design is sharper.
 3. **Time-as-Currency** - Time is both the current body's survival resource and a spendable economy resource, adapted from MetaDOS and the `In Time` inspiration. Running out of body time triggers death/reincarnation; spending time creates hard tactical tradeoffs.
-4. **Consciousness transfer to NPC/synthetic bodies** - Sci-fi explanation (mind upload, synthetic bodies, Nibirium-enhanced cloning). NOT spiritual reincarnation.
+4. **Consciousness transfer to NPC/synthetic bodies** - Sci-fi explanation (mind upload, synthetic bodies, cloning, and body imprinting). NOT spiritual reincarnation.
 
-## Cultivation System (sci-fi, not Chinese-style)
+## Actor and Body Model (CORE)
 
-6 tiers:
+- A player is a durable consciousness / soul profile, not a blank avatar shell.
+- On spawn, the player inhabits a current NPC-like synthetic body. That body may already have its own profile, constraints, stats, traits, memory hooks, soul imprint, BodyTime, lifecycle state, and agent runtime state.
+- The game must support many NPC-like actors and many player-inhabited bodies using one broad actor-profile model. Ownership and authority decide whether an actor is a world NPC, a player current body, an offline player agent, or an OpenClaw-connected actor.
+- Each important actor body should eventually resolve to a bundle: `BodyProfile`, `BodyPresentation`, `CharacterStats`, `CharacterTraits`, `SoulProfile`, `RelationshipLedger`, `MemoryRecord`, `AgentPolicy` or NPC policy, `AgentRuntime`, and `AgentActivity`.
+- Reincarnation destroys or retires the current body. The durable player consciousness transfers into a new body, with only explicitly designed layers carrying over.
 
-1. Awakening - Activate Nibirium absorption
-2. Enhancement - Body strengthening
-3. Core Formation - Energy core formation
-4. Evolution - DNA / special ability evolution
-5. Transcendence - Beyond human limits
-6. Ascension - Near-divine
+## Advanced Body Progression (DEFERRED)
 
-International-friendly framing. Explained via science (Nibirium, biotech, consciousness transfer).
+The previous cultivation / Nibirium XP concept is explicitly deferred and must
+not be implemented in the current vertical slice. It felt too close to a
+traditional XP bar. The slice uses level and character stats as the progression
+baseline.
+
+Future advanced body or soul progression needs a fresh design pass before any
+implementation. Do not add cultivation tiers, Nibirium XP, tier-up rituals, or
+Cultivation Master mechanics without a new approved design update.
 
 ## Gameplay Architecture
 
@@ -47,7 +53,7 @@ International-friendly framing. Explained via science (Nibirium, biotech, consci
 
 ### Engine
 
-- Unity 6.5 beta (currently `6000.5.0b7`) + URP. JOY explicitly chose beta over Unity 6.0 LTS for newest features; accept risk of breaking changes between beta builds and that some 3rd-party assets (Opsive UCC, Behavior Designer, Convai) may not be tested against this version yet. Re-evaluate if beta blocks progress.
+- Unity 6.5 beta (currently `6000.5.0b8`) + URP. JOY explicitly chose beta over Unity 6.0 LTS for newest features; accept risk of breaking changes between beta builds and that some 3rd-party assets (Opsive UCC, Behavior Designer, Convai) may not be tested against this version yet. Re-evaluate if beta blocks progress.
 - Force Text serialization (default Unity 6 - DO NOT change)
 
 ### Networking
@@ -69,12 +75,12 @@ International-friendly framing. Explained via science (Nibirium, biotech, consci
 
 - **Game backend:** Nakama OSS (ADR 0010). This is the default backend foundation for game APIs, social primitives, storage objects, activity logs, and future groups / leaderboards / matchmaking.
 - **Nakama deployment mode:** self-hosted OSS for prototype and early development. Heroic Cloud is a future managed upgrade path only, not the current default.
-- **Backend boundary:** Nakama is the game backend. `api.dos.ai` / Go LLM Gateway is the shared DOS.AI AI/LLM gateway only. Photon Fusion 2 dedicated server remains authoritative for in-zone movement, combat, physics, and tick simulation.
+- **Backend boundary:** Nakama is the game backend. `api.dos.ai` is the shared DOS.AI model service only. Photon Fusion 2 dedicated server remains authoritative for in-zone movement, combat, physics, and tick simulation.
 - **Custom game backend rule:** Do not create a separate game API gateway unless a Nakama runtime module cannot reasonably handle the feature. Default to Nakama server runtime modules (TypeScript / Go / Lua) for game backend extensions: auth hooks, RPCs, inventory, profile, stats, social, matchmaking, leaderboards, activity logs, and moderation. Initial Nakama modules use exact TypeScript 6.0.3 and emit Nakama-compatible JavaScript.
 - **Supabase:** compatible sidecar for DOS.Me-style identity bridge, wallet/profile integration, storage, analytics, or external product data when useful. Supabase is no longer the primary game backend baseline.
 - **Hiro / Satori:** Commercial / license-dependent candidates only. Do not assume they are open-source drop-in dependencies.
 - **Postgres** (durable Nakama database; local container for development or approved Supabase Postgres project if isolation and connection behavior are verified)
-- **Go LLM Gateway / `api.dos.ai`** (shared AI service; provider keys, model routing, prompt safety, voice token minting, AI-specific endpoints only)
+- **`api.dos.ai` model service** (shared AI service; provider keys, model routing, prompt safety, voice token minting, AI-specific endpoints only)
 - **Redis** (session, rate limit, transient cache)
 
 ### LLM
@@ -86,9 +92,9 @@ International-friendly framing. Explained via science (Nibirium, biotech, consci
 
 **Phase 2 (post-MVP):**
 
-- Migrate LLM calls to `api.dos.ai` / Go LLM Gateway, models:
+- Migrate LLM calls to `api.dos.ai`, models:
   - Haiku 4.5 for NPC chat (fast, cheap)
-  - Sonnet 4.6 for boss / quest / cultivation master dialog
+  - Sonnet 4.6 for boss / quest-critical dialog
 - RAG memory: Supabase pgvector or Qdrant
 - Voice: OpenAI Realtime API via ephemeral token (NOT API key in client) OR ElevenLabs
 - Client AI: Unity Sentis for small perception (optional, phase 3)
@@ -100,7 +106,7 @@ International-friendly framing. Explained via science (Nibirium, biotech, consci
 - OpenClaw agents must never mutate authoritative game state directly. They emit dialogue or structured intent only.
 - Nakama owns game identity, permissions, rate limits, activity logs, and moderation state for connected agents.
 - Fusion server validates any in-world action intent before movement, interaction, combat, inventory, currency, quest, or BodyTime state changes.
-- `api.dos.ai` / Go LLM Gateway handles provider calls, prompt safety, memory retrieval, and context shaping for OpenClaw-connected NPC behavior.
+- `api.dos.ai` handles provider calls, prompt safety, memory retrieval, and context shaping for OpenClaw-connected NPC behavior.
 - This is an ecosystem bridge, not a replacement for NPC dialogue, offline player agents, or the game backend.
 
 ### LLM Safety (CRITICAL)
@@ -110,15 +116,15 @@ International-friendly framing. Explained via science (Nibirium, biotech, consci
 - Per-NPC memory budget cap
 - Rate limit per player (LLM token + request count)
 - Prompt injection defense (reuse DOSafe patterns)
-- All LLM calls go through `api.dos.ai` / Go LLM Gateway, never direct from Unity client
+- All LLM calls go through Nakama or the dedicated server to `api.dos.ai`, never direct from Unity client
 
 ### AI Agent for Offline Players (CORE FEATURE)
 
 - LLM-driven autonomous agent controls player character when offline
 - Agent operates within Fusion server tick (server-authoritative)
-- Agent decision loop: pull state from Fusion -> reason via LLM gateway -> emit action intent -> server validates -> apply
+- Agent decision loop: pull state from Fusion or Nakama -> reason via `api.dos.ai` -> emit action intent -> server validates -> apply
 - Anti-abuse: agent inherits player's rate limit + capability cap
-- Agent persona: derived from player history + character cultivation tier
+- Agent persona: derived from player history, current body stats, and player profile
 - Agent death = body death = reincarnation triggered (same as player death)
 
 ### NFT / Blockchain
@@ -155,7 +161,7 @@ International-friendly framing. Explained via science (Nibirium, biotech, consci
 
 - **Game server:** Linux headless Unity build on Hetzner VPS, Dockerized
 - **Nakama backend:** self-hosted OSS first; Heroic Cloud only if operations become worth paying for
-- **AI/LLM gateway:** `api.dos.ai` shared Go gateway
+- **AI model service:** `api.dos.ai`
 - **LLM API:** Convai phase 1, then Anthropic + OpenAI phase 2
 - **Monitoring:** Sentry (error) + Grafana (metrics)
 
@@ -225,7 +231,7 @@ International-friendly framing. Explained via science (Nibirium, biotech, consci
 - Guild / social (phase 2)
 - Reincarnation mechanic
 - AI agent for offline players
-- Cultivation tier progression
+- Advanced body progression beyond level/stats is deferred until redesigned
 
 ### Recommended Reading List
 
@@ -236,7 +242,7 @@ International-friendly framing. Explained via science (Nibirium, biotech, consci
 - Convai Unity SDK docs
 - Unity Multiplayer Play Mode tutorial
 - Coplay unity-mcp + Claude Code setup guide
-- DOSRouter Go gateway pattern (JOY's existing repo)
+- `api.dos.ai` model-service contract patterns from JOY's existing DOS.AI stack
 - DOS.Me Supabase auth pattern (JOY's existing repo, reference for identity bridge only)
 
 ## Project Conventions
@@ -267,8 +273,14 @@ International-friendly framing. Explained via science (Nibirium, biotech, consci
 - Feature work: create a separate branch/worktree from `dev`, then PR back into `dev`
 - Public repo open source from day 1
 - License: AGPL-3.0 (code) + CC-BY-NC 4.0 (assets)
-- All PRs reviewed via Claude Code review skill before merge
-- JOY is non-coder - AI agent must verify with reviewer before claiming "done"
+- Before opening a PR, run the local repo `code-review` skill or an equivalent
+  local reviewer pass and record the verdict in the PR.
+- After opening the PR, check Gemini Code Assist and Codex GitHub review results
+  if they run. If they pass, proceed. If they do not run because of quota,
+  connector limits, or transient service issues, the PR may still merge after
+  green CI plus a clean local `code-review` fallback.
+- JOY is non-coder - AI agent must verify with reviewer output and CI before
+  claiming "done".
 
 ### Open Source Targeting
 
@@ -297,7 +309,6 @@ Scope:
 - Reincarnation MVP (die -> SECOND token -> respawn with reset)
 - Time-as-currency MVP (body time meter, earn/spend loop, zero time triggers reincarnation placeholder)
 - AI agent control (simple: agent farms one designated area when player offline)
-- 2 cultivation tiers playable (Awakening + Enhancement)
 - NFT Hunter skin equip + escrow
 - Multiplayer 4-20 players per zone
 - Basic chat (Nakama channels first, Supabase sidecar only if useful)
@@ -308,7 +319,7 @@ OUT of scope for vertical slice:
 - Marketplace
 - Pet breeding
 - Multiple zones
-- Tier 3-6 cultivation
+- Advanced body progression
 - Voice NPC
 - Full quest system
 
@@ -316,11 +327,11 @@ OUT of scope for vertical slice:
 
 1. **NEVER copy MetaDOS gameplay code.** Extract patterns only. Reference path: `D:\Projects\MetaDOS` (read-only).
 2. **NEVER let LLM mutate authoritative game state.** Server validates all intent.
-3. **NEVER put API keys (Anthropic, OpenAI, Convai, ElevenLabs) in Unity client.** All LLM calls go through `api.dos.ai` / Go LLM Gateway.
+3. **NEVER put API keys (Anthropic, OpenAI, Convai, ElevenLabs) in Unity client.** All LLM calls go through Nakama or the dedicated server to `api.dos.ai`.
 4. **NEVER use Host Mode for production.** Server Mode dedicated only.
 5. **NEVER add or replace backend / auth / social stack without an ADR and JOY approval.** Nakama OSS is the accepted game backend baseline per ADR 0010. Heroic Cloud, Hiro, Satori, OpenAuth, PlayFab, AccelByte, or a Supabase-first rollback require a new ADR.
 6. **NEVER change Unity Asset Serialization away from Force Text.** Breaks LFS + diff.
-7. **NEVER claim "done" without reviewer pass** (JOY is non-coder, cannot review code himself).
+7. **NEVER claim "done" without reviewer pass** (JOY is non-coder, cannot review code himself). Use local `code-review` as the required fallback. Cloud reviewers such as Gemini Code Assist and Codex GitHub review are best-effort; if they fail to run due to quota or connector limits, check their comments, document the failure in the PR, and merge only after local reviewer fallback plus green CI.
 8. **ALWAYS edit BOTH `.claude/CLAUDE.md` and `AGENTS.md` together when updating project context.** They are sister files - Claude Code auto-loads CLAUDE.md, Codex CLI / Cursor / Copilot auto-load AGENTS.md. Edit one without the other = drift; the un-updated file lies to whichever agent reads it. Both files MUST be identical except for the sister-file comment header at line 1.
 
 ## Open Decision Points (need JOY input later)
@@ -328,6 +339,7 @@ OUT of scope for vertical slice:
 - Final game name (SECOND SPAWN is codename, may rename after vertical slice playable)
 - SECOND token economy design (cost per reincarnation, source, sink)
 - BodyTime tuning (where time drains, how it is earned, how it can be spent, and whether it can convert to/from SECOND token)
+- Advanced body or soul progression replacing the deferred concept
 - Hunter NFT integration approach: Option 1 (preset hero) vs Hybrid 1+3 (modular pieces)
 - Phase 2 LLM model split (when to use Haiku vs Sonnet)
 - Voice NPC vendor (OpenAI Realtime vs ElevenLabs vs self-host)

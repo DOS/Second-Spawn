@@ -10,8 +10,8 @@ Game has LLM-driven NPCs and an LLM-driven AI agent that controls the player's c
 
 ## Decision
 
-1. **All LLM calls go through a Go gateway, never directly from Unity client.**
-2. **API keys (Anthropic, OpenAI, Convai, ElevenLabs) live only in gateway env.** Never in client, never reachable from client.
+1. **All LLM calls go through Nakama or the dedicated server to `api.dos.ai`, never directly from Unity client.**
+2. **API keys (Anthropic, OpenAI, Convai, ElevenLabs) live only in server env.** Never in client, never reachable from client.
 3. **LLM output is parsed into structured intent (JSON schema enforced).** Free-form text is only for display.
 4. **Server validates every intent before applying state changes.** LLM cannot grant items, gold, XP, or mutate progression directly.
 5. **Rate limit per player + per NPC.** Token budget cap, request count cap.
@@ -28,7 +28,7 @@ Game has LLM-driven NPCs and an LLM-driven AI agent that controls the player's c
 
 - All NPC dialogue paths must define structured intent schemas (quest accept, item give, dialogue choice, etc.)
 - Server must implement validators for each intent type
-- Gateway must handle LLM provider failover (Anthropic down -> OpenAI fallback)
+- `api.dos.ai` must handle LLM provider failover
 - AI agent (offline player) inherits same intent validation - it cannot do what a real player cannot
 - Voice NPC must use ephemeral tokens (OpenAI Realtime API short-lived tokens), never client-side API key
 - Sentis on-device AI (phase 3) is OK for perception (object detection, classification) but NEVER for state-mutating decisions

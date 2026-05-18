@@ -14,6 +14,8 @@ namespace SecondSpawn.Networking
     ///   <item><c>-secondspawn-client</c> command-line flag
     ///         -> <see cref="GameMode.Client"/> for local multi-client smoke tests.</item>
     ///   <item><c>Application.isBatchMode</c> false with no override
+    ///         -> <see cref="GameMode.Single"/> for stable Editor smoke tests.</item>
+    ///   <item><c>-secondspawn-host</c> command-line flag
     ///         -> <see cref="GameMode.Host"/> on Photon Cloud free 20 CCU, DEV ONLY.</item>
     /// </list>
     ///
@@ -65,6 +67,21 @@ namespace SecondSpawn.Networking
             };
 
             var result = await _runner.StartGame(startArgs);
+            if (!result.Ok && ShouldFallbackToSinglePlayer(mode))
+            {
+                Debug.LogWarning($"[NetworkRunnerSetup] Host StartGame failed in editor ({result.ShutdownReason} - {result.ErrorMessage}). Retrying local smoke in {GameMode.Single} mode.");
+                await _runner.Shutdown();
+                Destroy(_runner);
+
+                _runner = gameObject.AddComponent<NetworkRunner>();
+                mode = GameMode.Single;
+                _runner.ProvideInput = true;
+                RegisterRunnerCallbacks();
+
+                startArgs.GameMode = mode;
+                result = await _runner.StartGame(startArgs);
+            }
+
             if (!result.Ok)
             {
                 Debug.LogError($"[NetworkRunnerSetup] StartGame failed: {result.ShutdownReason} - {result.ErrorMessage}");
@@ -108,7 +125,18 @@ namespace SecondSpawn.Networking
                 return GameMode.Server;
             }
 
-            return GameMode.Host;
+            return GameMode.Single;
+        }
+
+        private static bool ShouldFallbackToSinglePlayer(GameMode failedMode)
+        {
+            if (Application.isBatchMode || failedMode != GameMode.Host)
+            {
+                return false;
+            }
+
+            var args = Environment.GetCommandLineArgs();
+            return !HasArg(args, "-secondspawn-host");
         }
 
         private static bool HasArg(string[] args, string expected)

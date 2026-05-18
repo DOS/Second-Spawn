@@ -9,9 +9,6 @@ namespace SecondSpawn.AI
     [DisallowMultipleComponent]
     public sealed class SecondSpawnGatewayClient : MonoBehaviour
     {
-        [SerializeField, Tooltip("Public gateway base URL. No provider API keys are stored in Unity.")]
-        private string _gatewayBaseUrl = "https://second-spawn-gateway-535583621422.asia-southeast1.run.app";
-
         [SerializeField, Tooltip("Prototype player id until Supabase auth is wired.")]
         private string _playerId = "dev-player";
 
@@ -33,6 +30,12 @@ namespace SecondSpawn.AI
 
         [SerializeField, Tooltip("Use Nakama device auth when Supabase is not configured yet. Local prototype only.")]
         private bool _allowNakamaDeviceFallback = true;
+
+        [SerializeField, Tooltip("Create or refresh the Nakama character profile immediately after authentication.")]
+        private bool _bootstrapProfileAfterAuth = true;
+
+        [SerializeField, Min(1), Tooltip("Seconds before Nakama or Supabase HTTP requests fail fast in Play Mode.")]
+        private int _requestTimeoutSeconds = 10;
 
         private bool _authAttempted;
         private bool _authInProgress;
@@ -126,12 +129,8 @@ namespace SecondSpawn.AI
 
             _authInProgress = false;
             Debug.Log($"[SecondSpawnGatewayClient] Authenticated Nakama user {PlayerId}.");
+            yield return BootstrapNakamaProfileAfterAuth("custom_auth");
             onSuccess?.Invoke();
-        }
-
-        public IEnumerator GetContext(Action<AgentContextDto> onSuccess, Action<string> onError = null)
-        {
-            yield return GetContextForPlayer(PlayerId, onSuccess, onError);
         }
 
         public IEnumerator GetNakamaContext(Action<AgentContextDto> onSuccess, Action<string> onError = null)
@@ -144,85 +143,152 @@ namespace SecondSpawn.AI
             yield return SendNakamaRpc("secondspawn_memory_add", memory, onSuccess, onError);
         }
 
+        public IEnumerator GetNakamaActorProfile(string actorId, Action<ActorProfileDto> onSuccess, Action<string> onError = null)
+        {
+            yield return GetNakamaActorProfile(new ActorProfileRequestDto { actor_id = actorId }, onSuccess, onError);
+        }
+
+        public IEnumerator GetNakamaActorProfile(ActorProfileRequestDto request, Action<ActorProfileDto> onSuccess, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_actor_profile_get", request, onSuccess, onError);
+        }
+
+        public IEnumerator AddNakamaActorMemory(ActorMemoryAddRequestDto memory, Action<ActorProfileDto> onSuccess = null, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_actor_memory_add", memory, onSuccess, onError);
+        }
+
+        public IEnumerator AddNakamaAgentActivity(AgentActivityRecordDto activity, Action<AgentContextDto> onSuccess = null, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_agent_activity_add", activity, onSuccess, onError);
+        }
+
+        public IEnumerator ApplyNakamaBodyTimeEvent(BodyTimeEventRequestDto request, Action<AgentContextDto> onSuccess = null, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_bodytime_event", request, onSuccess, onError);
+        }
+
+        public IEnumerator ReincarnateNakamaBody(ReincarnationRequestDto request, Action<AgentContextDto> onSuccess = null, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_reincarnate", request, onSuccess, onError);
+        }
+
+        public IEnumerator ClaimNakamaReward(RewardClaimRequestDto request, Action<AgentContextDto> onSuccess = null, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_reward_claim", request, onSuccess, onError);
+        }
+
         public IEnumerator UpdateNakamaSoul(UpdateSoulRequestDto request, Action<AgentContextDto> onSuccess = null, Action<string> onError = null)
         {
             yield return SendNakamaRpc("secondspawn_soul_update", request, onSuccess, onError);
         }
 
-        public IEnumerator DecideWithNakamaFallback(AgentDecisionRequestDto request, Action<AgentDecisionDto> onSuccess, Action<string> onError = null)
+        public IEnumerator BindOpenClawAgent(OpenClawBindRequestDto request, Action<OpenClawBindingDto> onSuccess, Action<string> onError = null)
         {
-            yield return SendNakamaRpc("secondspawn_agent_decide", request, onSuccess, onError);
+            yield return SendNakamaRpc("secondspawn_openclaw_bind", request, onSuccess, onError);
         }
 
-        public IEnumerator GetContextForPlayer(string playerId, Action<AgentContextDto> onSuccess, Action<string> onError = null)
+        public IEnumerator GetOpenClawContext(OpenClawContextRequestDto request, Action<OpenClawContextResponseDto> onSuccess, Action<string> onError = null)
         {
-            yield return Send<AgentContextDto>(
-                UnityWebRequest.Get(BuildUrl($"/v1/characters/{UnityWebRequest.EscapeURL(NormalizePlayerId(playerId))}/context")),
-                onSuccess,
-                onError);
+            yield return SendNakamaRpc("secondspawn_openclaw_context_get", request, onSuccess, onError);
         }
 
-        public IEnumerator AddMemory(MemoryRecordDto memory, Action<AgentContextDto> onSuccess = null, Action<string> onError = null)
+        public IEnumerator SubmitOpenClawIntent(OpenClawIntentSubmitRequestDto request, Action<OpenClawIntentSubmitResponseDto> onSuccess, Action<string> onError = null)
         {
-            yield return AddMemoryForPlayer(PlayerId, memory, onSuccess, onError);
+            yield return SendNakamaRpc("secondspawn_openclaw_intent_submit", request, onSuccess, onError);
         }
 
-        public IEnumerator AddMemoryForPlayer(string playerId, MemoryRecordDto memory, Action<AgentContextDto> onSuccess = null, Action<string> onError = null)
+        public IEnumerator SendOpenClawHeartbeat(OpenClawHeartbeatRequestDto request, Action<OpenClawHeartbeatResponseDto> onSuccess, Action<string> onError = null)
         {
-            yield return SendJson(
-                "POST",
-                $"/v1/characters/{UnityWebRequest.EscapeURL(NormalizePlayerId(playerId))}/memory",
-                memory,
-                onSuccess,
-                onError);
+            yield return SendNakamaRpc("secondspawn_openclaw_heartbeat", request, onSuccess, onError);
         }
 
-        public IEnumerator UpdateSoul(UpdateSoulRequestDto request, Action<AgentContextDto> onSuccess = null, Action<string> onError = null)
+        public IEnumerator SendHubChatMessage(ChatSendRequestDto request, Action<ChatSendResponseDto> onSuccess, Action<string> onError = null)
         {
-            yield return UpdateSoulForPlayer(PlayerId, request, onSuccess, onError);
+            yield return SendNakamaRpc("secondspawn_chat_send", request, onSuccess, onError);
         }
 
-        public IEnumerator UpdateSoulForPlayer(string playerId, UpdateSoulRequestDto request, Action<AgentContextDto> onSuccess = null, Action<string> onError = null)
+        public IEnumerator ListHubChatMessages(ChatListRequestDto request, Action<ChatListResponseDto> onSuccess, Action<string> onError = null)
         {
-            yield return SendJson(
-                "PUT",
-                $"/v1/characters/{UnityWebRequest.EscapeURL(NormalizePlayerId(playerId))}/soul",
-                request,
-                onSuccess,
-                onError);
+            yield return SendNakamaRpc("secondspawn_chat_list", request, onSuccess, onError);
+        }
+
+        public IEnumerator SeedPermanentNpcs(Action<NpcWorldListResponseDto> onSuccess, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_npc_seed", new EmptyPayload(), onSuccess, onError);
+        }
+
+        public IEnumerator ListPermanentNpcs(Action<NpcWorldListResponseDto> onSuccess, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_npc_list", new EmptyPayload(), onSuccess, onError);
+        }
+
+        public IEnumerator InteractPermanentNpcs(NpcInteractionRequestDto request, Action<NpcInteractionResponseDto> onSuccess, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_npc_interact", request, onSuccess, onError);
+        }
+
+        public IEnumerator GetPermanentNpcContext(NpcContextRequestDto request, Action<NpcContextResponseDto> onSuccess, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_npc_context_get", request, onSuccess, onError);
+        }
+
+        public IEnumerator SubmitPermanentNpcIntent(NpcIntentSubmitRequestDto request, Action<NpcIntentSubmitResponseDto> onSuccess, Action<string> onError = null)
+        {
+            yield return SendNakamaRpc("secondspawn_npc_intent_submit", request, onSuccess, onError);
         }
 
         public IEnumerator Decide(AgentDecisionRequestDto request, Action<AgentDecisionDto> onSuccess, Action<string> onError = null)
         {
-            yield return SendJson("POST", "/v1/agent/decide", request, onSuccess, onError);
+            yield return SendNakamaRpc("secondspawn_agent_decide", request, onSuccess, onError);
         }
 
         public IEnumerator Chat(NpcChatRequestDto request, Action<NpcChatResponseDto> onSuccess, Action<string> onError = null)
         {
+            request ??= new NpcChatRequestDto();
             if (string.IsNullOrWhiteSpace(request.player_id))
             {
                 request.player_id = PlayerId;
             }
 
-            yield return SendJson("POST", "/v1/npc/chat", request, onSuccess, onError);
+            ChatSendResponseDto response = null;
+            string error = null;
+            yield return SendHubChatMessage(new ChatSendRequestDto
+            {
+                channel_id = "prototype-hub",
+                sender_display_name = request.player_id,
+                message = string.IsNullOrWhiteSpace(request.npc_id)
+                    ? request.message
+                    : $"To {request.npc_id}: {request.message}",
+                source = "prototype_npc_chat"
+            }, value => response = value, value => error = value);
+
+            if (response == null)
+            {
+                onError?.Invoke(error);
+                yield break;
+            }
+
+            onSuccess?.Invoke(new NpcChatResponseDto
+            {
+                player_id = request.player_id,
+                npc_id = string.IsNullOrWhiteSpace(request.npc_id) ? "prototype-hub" : request.npc_id,
+                text = response.message == null ? request.message : response.message.text,
+                voice_available = false,
+                provider = "nakama_hub_chat"
+            });
         }
 
         public IEnumerator GetVoiceSession(Action<VoiceSessionDto> onSuccess, Action<string> onError = null)
         {
-            yield return SendJson("POST", "/v1/voice/session", new VoiceSessionRequest(), onSuccess, onError);
-        }
-
-        private IEnumerator SendJson<TResponse>(string method, string path, object payload, Action<TResponse> onSuccess, Action<string> onError)
-        {
-            var json = JsonUtility.ToJson(payload);
-            var request = new UnityWebRequest(BuildUrl(path), method)
+            yield return null;
+            onSuccess?.Invoke(new VoiceSessionDto
             {
-                uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json)),
-                downloadHandler = new DownloadHandlerBuffer()
-            };
-            request.SetRequestHeader("Content-Type", "application/json; charset=utf-8");
-            request.SetRequestHeader("Accept", "application/json");
-            yield return Send(request, onSuccess, onError);
+                voice_available = false,
+                provider = "not_configured",
+                requires_ephemeral_token = true,
+                reason = "Voice sessions require a future Nakama RPC that mints an api.dos.ai ephemeral token."
+            });
         }
 
         private IEnumerator SendNakamaRpc<TResponse>(string rpcId, object payload, Action<TResponse> onSuccess, Action<string> onError)
@@ -239,6 +305,20 @@ namespace SecondSpawn.AI
             }
 
             var json = JsonUtility.ToJson(payload);
+            yield return Send(BuildNakamaRpcRequest(rpcId, json), onSuccess, error =>
+            {
+                if (IsNakamaAuthInvalid(error))
+                {
+                    ClearNakamaSession();
+                    Debug.LogWarning($"[SecondSpawnGatewayClient] Nakama session rejected for RPC {rpcId}. Cleared stale session; the next required Nakama RPC will authenticate again.");
+                }
+
+                onError?.Invoke(error);
+            });
+        }
+
+        private UnityWebRequest BuildNakamaRpcRequest(string rpcId, string json)
+        {
             var request = new UnityWebRequest(BuildNakamaUrl($"/v2/rpc/{UnityWebRequest.EscapeURL(rpcId)}?unwrap"), "POST")
             {
                 uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(json)),
@@ -247,7 +327,7 @@ namespace SecondSpawn.AI
             request.SetRequestHeader("Authorization", "Bearer " + _nakamaAuthToken);
             request.SetRequestHeader("Content-Type", "application/json; charset=utf-8");
             request.SetRequestHeader("Accept", "application/json");
-            yield return Send(request, onSuccess, onError);
+            return request;
         }
 
         private IEnumerator SignInSupabaseAnonymously(string supabaseUrl, string supabaseKey, Action<SupabaseAnonymousSessionDto> onSuccess, Action<string> onError)
@@ -312,7 +392,26 @@ namespace SecondSpawn.AI
 
             _authInProgress = false;
             Debug.Log($"[SecondSpawnGatewayClient] Authenticated Nakama device fallback user {PlayerId}.");
+            yield return BootstrapNakamaProfileAfterAuth("device_auth");
             onSuccess?.Invoke();
+        }
+
+        private IEnumerator BootstrapNakamaProfileAfterAuth(string authSource)
+        {
+            if (!_bootstrapProfileAfterAuth || !HasNakamaSession)
+            {
+                yield break;
+            }
+
+            yield return AddNakamaAgentActivity(new AgentActivityRecordDto
+            {
+                kind = "profile_bootstrap",
+                summary = $"Unity client authenticated through {authSource} and confirmed the Nakama character profile.",
+                source = "unity"
+            }, null, error =>
+            {
+                Debug.LogWarning($"[SecondSpawnGatewayClient] Nakama profile activity write failed: {error}");
+            });
         }
 
         private IEnumerator AuthenticateNakamaDevice(string deviceId, string username, Action<NakamaSessionDto> onSuccess, Action<string> onError)
@@ -332,6 +431,7 @@ namespace SecondSpawn.AI
 
         private IEnumerator Send<TResponse>(UnityWebRequest request, Action<TResponse> onSuccess, Action<string> onError)
         {
+            request.timeout = Mathf.Max(1, _requestTimeoutSeconds);
             yield return request.SendWebRequest();
 
             if (request.result != UnityWebRequest.Result.Success)
@@ -343,7 +443,7 @@ namespace SecondSpawn.AI
             var body = request.downloadHandler.text;
             if (string.IsNullOrWhiteSpace(body))
             {
-                onError?.Invoke("Gateway returned an empty response.");
+                onError?.Invoke("Server returned an empty response.");
                 yield break;
             }
 
@@ -353,16 +453,8 @@ namespace SecondSpawn.AI
             }
             catch (Exception ex)
             {
-                onError?.Invoke($"Gateway JSON parse failed: {ex.Message}");
+                onError?.Invoke($"Server JSON parse failed: {ex.Message}");
             }
-        }
-
-        private string BuildUrl(string path)
-        {
-            var baseUrl = string.IsNullOrWhiteSpace(_gatewayBaseUrl)
-                ? "https://second-spawn-gateway-535583621422.asia-southeast1.run.app"
-                : _gatewayBaseUrl.TrimEnd('/');
-            return baseUrl + path;
         }
 
         private string BuildNakamaUrl(string path)
@@ -373,11 +465,6 @@ namespace SecondSpawn.AI
                 baseUrl = "http://127.0.0.1:7350";
             }
             return baseUrl.TrimEnd('/') + path;
-        }
-
-        private static string NormalizePlayerId(string playerId)
-        {
-            return string.IsNullOrWhiteSpace(playerId) ? "dev-player" : playerId.Trim();
         }
 
         private static string ResolveValue(string serializedValue, params string[] envNames)
@@ -402,6 +489,23 @@ namespace SecondSpawn.AI
         private static string TrimTrailingSlash(string value)
         {
             return string.IsNullOrWhiteSpace(value) ? "" : value.Trim().TrimEnd('/');
+        }
+
+        private void ClearNakamaSession()
+        {
+            _nakamaAuthToken = "";
+            _nakamaUserId = "";
+        }
+
+        private static bool IsNakamaAuthInvalid(string error)
+        {
+            if (string.IsNullOrWhiteSpace(error))
+            {
+                return false;
+            }
+
+            return error.Contains("401:", StringComparison.OrdinalIgnoreCase) ||
+                   error.Contains("Auth token invalid", StringComparison.OrdinalIgnoreCase);
         }
 
         private static string ExtractJwtStringClaim(string jwt, string claimName)
@@ -456,11 +560,6 @@ namespace SecondSpawn.AI
                 }
                 return hash.ToString("x8");
             }
-        }
-
-        [Serializable]
-        private sealed class VoiceSessionRequest
-        {
         }
 
         [Serializable]

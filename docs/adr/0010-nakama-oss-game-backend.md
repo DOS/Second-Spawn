@@ -27,10 +27,10 @@ Use:
   server-side game backend modules.
 - **Photon Fusion 2 dedicated server** for authoritative in-zone movement,
   combat, physics, and tick simulation. Nakama does not replace Fusion.
-- **`api.dos.ai` / Go LLM Gateway** for AI and LLM work only: model calls,
+- **`api.dos.ai` model service** for AI and LLM work only: model calls,
   prompt safety, provider routing, token budgets, voice token minting, and LLM
   decision filtering. Do not put game profile, inventory, matchmaking, guild,
-  wallet mutation, or gameplay APIs in the LLM gateway.
+  wallet mutation, or gameplay APIs in the model service.
 - **Supabase** as a compatible sidecar where it still earns its place:
   DOS.Me-style identity bridge, wallet/profile integration, storage, analytics,
   or external product data. Do not assume Supabase Realtime is combat sync.
@@ -57,9 +57,8 @@ Use:
 
 - ADR 0002 is superseded for the default game backend decision. Supabase remains
   available as a sidecar, not the primary game backend baseline.
-- Backend code must distinguish **game backend** from **LLM gateway**. Nakama is
-  the game backend. `api.dos.ai` / Go LLM Gateway is the shared DOS.AI AI/LLM
-  gateway.
+- Backend code must distinguish **game backend** from **model service**. Nakama
+  is the game backend. `api.dos.ai` is the shared DOS.AI AI/LLM model service.
 - Supabase Auth remains the external identity source for the first prototype.
   Nakama receives accounts only through its `beforeAuthenticateCustom` runtime
   hook, which verifies the Supabase access token directly with Supabase Auth. It
@@ -77,8 +76,9 @@ Use:
 
 - Keep game backend custom logic in Nakama runtime modules by default. A
   separate custom game backend requires a new ADR.
-- Treat `backend/gateway/` as a prototype LLM contract only while `api.dos.ai`
-  integration is not wired. It is not the game backend.
+- Treat `backend/nakama/` as the repo-owned game backend runtime. It may call
+  `api.dos.ai`, but it must not become a generic model gateway or bypass
+  server-side gameplay validation.
 - Keep Nakama runtime modules under `backend/nakama/`.
 - Use Nakama `beforeAuthenticateCustom` to validate Supabase access tokens
   directly against Supabase Auth, then rewrite the incoming custom auth request

@@ -880,7 +880,10 @@ namespace Fusion {
     public override FusionGlobalScriptableObjectLoadResult Load(Type type) {
 
       var attribute = type.GetCustomAttribute<FusionGlobalScriptableObjectAttribute>();
-      Assert.Check(attribute != null);
+      if (attribute == null) {
+        LogTrace?.Log($"Unable to load resource for type {type.FullName}: missing {nameof(FusionGlobalScriptableObjectAttribute)}.");
+        return default;
+      }
 
       var resourcePath = GetResourcePath(type, attribute);
       if (resourcePath == null) {
@@ -901,9 +904,13 @@ namespace Fusion {
     /// </summary>
     public override System.Threading.Tasks.Task<FusionGlobalScriptableObjectLoadResult> LoadAsync(Type type) {
       var attribute = type.GetCustomAttribute<FusionGlobalScriptableObjectAttribute>();
-      Assert.Check(attribute != null);
 
       var tcs = new TaskCompletionSource<FusionGlobalScriptableObjectLoadResult>();
+      if (attribute == null) {
+        LogTrace?.Log($"Unable to load resource for type {type.FullName}: missing {nameof(FusionGlobalScriptableObjectAttribute)}.");
+        tcs.SetResult(default);
+        return tcs.Task;
+      }
 
       var resourcePath = GetResourcePath(type, attribute);
       if (resourcePath == null) {

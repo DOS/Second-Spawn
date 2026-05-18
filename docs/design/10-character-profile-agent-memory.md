@@ -3,9 +3,9 @@
 *Status: Prototype implemented*
 *Created: 2026-05-15*
 *Author: Codex*
-*Last Verified: 2026-05-16 against `AGENTS.md`, ADR 0003, ADR 0004, `08-time-as-currency.md`, Cloud Run staging gateway, and Unity C# assembly build*
+*Last Verified: 2026-05-18 against `AGENTS.md`, ADR 0003, ADR 0004, `08-time-as-currency.md`, Nakama model-decision runtime, Nakama runtime smoke, Unity Play Mode profile sync, and [13-human-believable-npc-agent-model.md](13-human-believable-npc-agent-model.md)*
 
-> **Quick reference** - Layer: `Persistence / AI Agent` - Priority: `MVP foundation` - Key deps: `Auth`, `Fusion server authority`, `LLM gateway`, `Time-as-Currency`, `Reincarnation`
+> **Quick reference** - Layer: `Persistence / AI Agent` - Priority: `MVP foundation` - Key deps: `Auth`, `Fusion server authority`, `model service`, `TIME / SECOND economy`, `Reincarnation`
 
 ---
 
@@ -14,13 +14,21 @@
 This document defines the first durable character data model for SECOND SPAWN:
 
 - account-level player profile
-- current synthetic body profile
+- current Frame / body profile
 - gameplay stats
 - soul/personality profile for the LLM agent
 - compact memory records for agent context
 - player-owned offline-agent policy
+- NPC-like body profiles that can later receive a player consciousness
 
-The goal is to make the AI agent feel like the player's character, without giving the LLM authority over game state.
+The goal is to make every active character body feel like a real world actor, without giving the LLM authority over game state.
+
+Important spawn rule: a player does not spawn as an empty account shell. The
+player enters a current Frame, which may be implemented as an NPC-like
+bio-synthetic human body with its own stats, characteristics, soul profile,
+memory, loaded TIME measured in SECOND, and activity history. Player identity
+survives across Frames. Body-specific state can be replaced on reincarnation or
+neural-imprint transfer.
 
 ---
 
@@ -44,10 +52,53 @@ This preserves:
 | `PlayerProfile` | Yes | Auth / backend | Account identity, display name, wallet link, moderation handles |
 | `SoulProfile` | Yes | Player + backend validation | Personality, long-term goals, behavior style for offline AI |
 | `AgentPolicy` | Yes | Player | What the offline agent is allowed to do while player is away |
-| `BodyProfile` | No | Game server | Current synthetic body, visual archetype, BodyTime, lifecycle |
+| `BodyProfile` | No | Game server | Current Frame or body, visual archetype, loaded TIME, lifecycle |
 | `CharacterStats` | Mostly no | Game server | Combat and movement-affecting numbers for current body |
-| `Cultivation` | Partially | Game server | Consciousness progression that can carry over |
+| `RelationshipLedger` | Only by approved carryover rule, with decay | Backend | Per-target social state such as trust, affection, fear, respect, debt, and hostility |
 | `MemoryRecord` | Yes, with decay | Backend | Small curated memory facts for LLM context |
+| `AgentRuntime` | Yes, across bodies until reset policy exists | Backend | Counters for profile bootstrap, activity, decisions, fallback decisions, and offline time |
+| `AgentActivity` | Yes, bounded recent history | Backend | Compact audit trail for offline-agent sessions and Unity/Nakama bootstrap events |
+
+NPCs and player-controlled Frames use the same body profile shape. The
+difference is authority and ownership: a player-controlled Frame receives human
+input or offline-agent intent for that player, while an NPC Frame receives NPC
+brain intent. Both still pass through server validation before gameplay state
+changes.
+
+---
+
+## Frame Layer Boundary
+
+Keep the `Frame*` vocabulary because it maps well to agent concepts, but do
+not mirror a full OpenClaw workspace inside the game backend. OpenClaw agents
+own their own `.md` files and reasoning setup. SECOND SPAWN only needs enough
+structured Frame context for an external agent to understand the NPC it is
+controlling and enough policy/tool metadata for the game to validate requests.
+
+MVP backend layers:
+
+| Frame Layer | Backend Role | Why It Exists In Game |
+| ---- | ---- | ---- |
+| `FrameIdentity` | Structured read model | Public name, callsign, role, profession, faction title, and reputation summary for UI, social context, and prompts |
+| `FrameSoul` | Structured read model | Durable motivation, temperament, style, goals, and moral boundaries used as bounded agent context |
+| `FrameBody` | Authoritative body state | Current vessel, stats, TIME, lifecycle, visuals, equipment, source NPC, and body-bound story |
+| `FrameMemory` | Bounded memory records | Short curated game memories and relationship facts for prompt context |
+| `FramePolicy` | Player or server-owned guardrail | Allowed risk, spending, combat, session, and activity limits |
+| `FrameTools` | Request schema only | Which in-game intents may be requested, never directly executed |
+| `FrameHeartbeat` | Runtime observability | Connection state, last seen, last action summary, fallback state, and counters |
+
+Deferred or external-owned layers:
+
+| Frame Layer | MVP Treatment |
+| ---- | ---- |
+| `FrameUser` | Account, wallet, consent, and ownership remain in normal player/account records, not the per-Frame runtime context |
+| `FrameSkill` | Use current stats, equipment, and profession summary first; add a structured skill list only when combat/profession systems need it |
+| `FrameAgents` | Do not mirror OpenClaw `AGENTS.md`; use `controller_type`, `controller_agent_id`, connection state, and policy instead |
+
+`FrameTools` is not an MCP tool surface. It is an in-game intent catalog.
+External agents may read it and submit intent requests such as `move`, `say`,
+`interact`, or `loot_request`. Nakama, Fusion, and authoritative server systems
+still validate every gameplay outcome.
 
 ---
 
@@ -81,7 +132,9 @@ Unity must not send a plain `supabase_user_id` as a trusted account selector.
 
 ## Body Profile
 
-`BodyProfile` represents the current synthetic vessel.
+`BodyProfile` represents the current Frame or body. A Frame is a bio-synthetic
+human body grown to hold TIME, host an agent brain, and accept a neural imprint.
+Hunter Frames are the MetaDOS combat subset; not every Frame is a Hunter.
 
 Required fields:
 
@@ -89,35 +142,199 @@ Required fields:
 | ---- | ---- |
 | `body_id` | Unique current body ID |
 | `archetype_id` | Gameplay archetype or class key |
-| `visual_prefab_key` | Local Unity visual prefab key, used for random spawn visuals later |
-| `stats` | Current body combat stats |
-| `body_time` | Current BodyTime state |
-| `cultivation` | Current tier and progress |
+| `visual_prefab_key` | Server-selected Unity visual prefab key |
+| `visual_variant` | Prototype Unity visual catalog index for deterministic local loading |
+| `equipment` | Body-bound starting weapon and local equipment visual ID |
+| `story` | Short body-origin hook used by NPC/player onboarding and agent context |
+| `animation_capabilities` | Visual capability flags such as whether the current model has jump animation |
+| `body_time` | Prototype current TIME state measured in SECOND |
+| `stats` | Current level and combat stats |
 | `lifecycle` | `alive`, `dying`, `reincarnating`, or `dead` |
 | `created_at` | Body creation timestamp |
 
 `BodyProfile` is replaced on reincarnation. The server decides which values carry forward.
 
+Target body-profile fields such as apparent age, chronological body age, and
+body marker are not required in the current runtime schema yet. Target
+presentation fields such as presentation style and appeal tags are also not
+required yet. The prototype currently carries age through `FrameIdentity` fields
+such as `age_years` and `age_band`, and visual details through `appearance`,
+`visual_prefab_key`, and `visual_variant`.
+
+---
+
+## Identity and Body Presentation
+
+Identity and body presentation are separate because SECOND SPAWN characters can
+move across synthetic bodies.
+
+`FrameIdentity` covers the public self:
+
+| Field | Meaning |
+| ---- | ---- |
+| `display_name` | Public name shown to players and NPCs |
+| `callsign` | Short combat or faction callsign |
+| `profession` | Public role or job |
+| `faction_title` | Public faction-facing title |
+| `reputation_summary` | Compact public reputation summary |
+| `gender_identity` | The actor's self-identified gender |
+| `pronouns` | Pronouns used by dialogue and UI |
+| `identity_age` | Age of the durable identity or consciousness, when known |
+| `soul_continuity_age` | How long the consciousness has existed across bodies, when known |
+| `memory_span` | Approximate remembered lifetime range |
+
+`BodyPresentation` covers how the current body is perceived:
+
+| Field | Meaning |
+| ---- | ---- |
+| `appeal_band` | Passive attraction or first-impression band: `low`, `normal`, `notable`, `high`, or `exceptional` |
+| `appeal_tags` | Social attraction tags such as `elegant`, `warm`, `synthetic-perfect`, `cute`, or `mysterious` |
+| `visual_tags` | Visual read tags such as `scarred`, `military-grade`, `clean-silhouette`, or `uncanny` |
+| `intimidation_tags` | Threat read tags such as `armed`, `massive`, `boss-like`, or `damaged` |
+| `presentation_style` | Broad presentation style such as masculine, feminine, androgynous, military, elegant, or utilitarian |
+| `voice_profile` | Dialogue and voice cue descriptor, not a voice API credential |
+
+`Appeal` is a social presentation attribute, not a core or secondary stat. It
+can bias first impressions and LLM social flavor inside backend-approved bounds,
+but it must not unlock rewards, bypass consent, or replace `presence`.
+
+---
+
+## Profession and Relationship Placement
+
+Profession and social state should not live in one catch-all profile field.
+
+- Public profession, callsign, faction-facing role, title, and reputation
+  summary belong to `FrameIdentity`.
+- Profession abilities should stay in combat/profession systems until they need
+  a structured `FrameSkill` list. Do not create a skill layer just to mirror an
+  external agent file.
+- Profession routines for OpenClaw-connected NPCs live in the external
+  OpenClaw agent. The game stores only the control binding, current policy, and
+  recent activity needed to validate and audit requests.
+- Personal relationships, debts, promises, rivalries, affection, hostility,
+  fear, and trust belong in `RelationshipLedger` records.
+- The specific events that explain relationship changes belong in `FrameMemory`
+  records and may be referenced by relationship entries.
+- Relationships that become durable motivations can be promoted into
+  `FrameSoul.long_term_goals` or `moral_boundaries`.
+
+This keeps "what the world sees", "what the body can do", "what the external
+agent controls", and "what the character remembers" separate enough for later
+UI and backend design.
+
 ---
 
 ## Character Stats
 
-Start with a small stat surface:
+`CharacterStats` are body-bound gameplay numbers. They can scale with body
+level, gear, implants, buffs, injuries, and reincarnation rules. Do not hard
+cap core stats at 100. Balance should come from derived formulas, diminishing
+returns, encounter rules, and server validation.
+
+Current prototype runtime contract:
 
 | Stat | Purpose |
 | ---- | ---- |
 | `level` | Local body level |
-| `vitality` | Health scaling |
-| `force` | Physical damage |
-| `agility` | Movement and attack cadence |
-| `focus` | Energy and ability use |
-| `resilience` | Damage mitigation |
-| `max_health` | Derived or cached health cap |
-| `max_energy` | Derived or cached energy cap |
-| `attack_power` | Derived or cached attack output |
-| `defense_power` | Derived or cached defense output |
+| `strength` | Physical power, melee force, carry, heavy weapons, and forceful body actions |
+| `agility` | Current movement and attack cadence prototype stat |
+| `endurance` | Health, energy reserve, body durability, recovery, and BodyTime efficiency hooks |
+| `perception` | Sensor quality, threat detection, stealth detection, weak-point read, and social or environmental cue input |
+| `focus` | Current energy and ability-use prototype stat |
+| `presence` | Active social pressure, confidence, command weight, negotiation posture, and intimidation attempts |
+| `vitality` | Legacy compatibility alias for endurance-oriented health scaling |
+| `force` | Legacy compatibility alias for strength-oriented physical power |
+| `resilience` | Legacy compatibility alias for endurance-oriented mitigation |
+| `max_health` | Current derived or cached health cap |
+| `max_energy` | Current derived or cached energy cap |
+| `attack_power` | Current derived or cached attack output |
+| `defense_power` | Current derived or cached defense output |
 
-Design note: derived values may be cached for performance, but the server must own recalculation rules.
+These keys are implemented today by the gateway, Nakama runtime, and Unity
+prototype HUD. The six core stats are the canonical backend contract. The older
+serialized keys remain in runtime payloads as aliases until the Unity networked
+prototype stats are renamed in a coordinated compatibility pass.
+
+MVP core stat taxonomy:
+
+| Stat | Purpose |
+| ---- | ---- |
+| `level` | Local body level |
+| `strength` | Physical power, melee force, carry, heavy weapons, and forceful body actions |
+| `agility` | Movement, handling, precision, attack cadence, and dodge scaling |
+| `endurance` | Health, energy reserve, body durability, recovery, and BodyTime efficiency hooks |
+| `perception` | Sensor quality, threat detection, stealth detection, weak-point read, and social or environmental cue input |
+| `focus` | Concentration, panic resistance, noise resistance, status pressure, and agent instruction stability |
+| `presence` | Active social influence such as persuasion, negotiation, leadership, command weight, and intimidation attempts |
+
+BodyTime is not a primary stat. It is a lifecycle and economy resource that may
+later read endurance, injuries, hazards, and stress when computing drains or
+recovery.
+
+Do not add `wisdom` as a core stat. Wisdom-like behavior is split across
+`perception`, `focus`, `SoulProfile`, `CharacterTraits`, `FrameMemory`, and
+`RelationshipLedger`.
+
+Do not expose `accuracy` as a player-facing secondary stat for MVP. If a future
+combat system needs hit checks, keep `hit_reliability` backend-only.
+
+Derived combat stats:
+
+| Stat | Purpose |
+| ---- | ---- |
+| `max_hp` | Health cap |
+| `max_energy` | Energy or skill-resource cap |
+| `attack_power` | Weapon and body attack output |
+| `skill_power` | Ability, tech, or non-weapon output |
+| `armor_rating` | Generic direct-damage mitigation rating |
+| `metal_resistance_rating` | Metal damage mitigation rating |
+| `wood_resistance_rating` | Wood damage mitigation rating |
+| `water_resistance_rating` | Water damage mitigation rating |
+| `fire_resistance_rating` | Fire damage mitigation rating |
+| `earth_resistance_rating` | Earth damage mitigation rating |
+| `dodge_rating` | Rating converted into `dodge_chance` through a diminishing curve |
+| `dodge_chance` | Effective direct-hit avoidance chance shown in UI |
+| `crit_chance` | Critical hit chance |
+| `crit_damage` | Critical damage multiplier or bonus |
+| `attack_speed` | Basic attack cadence |
+| `move_speed` | Movement speed cap under server validation |
+| `cooldown_reduction` | Cooldown recovery, capped and preferably multiplicative |
+| `resource_cost_reduction` | Skill cost reduction, capped and preferably multiplicative |
+
+Derived body and agent stats:
+
+| Stat | Purpose |
+| ---- | ---- |
+| `body_time_drain_rate` | Current body TIME drain speed |
+| `body_time_efficiency` | How efficiently the body spends or preserves TIME |
+| `body_stability` | Resistance to degradation, injury pressure, overload, or corruption |
+| `recovery_rate` | Health, energy, or injury recovery modifier |
+| `sensor_range` | Server-authored observation radius for the body |
+| `threat_detection` | Ability to detect danger or ambush signals |
+| `stealth_detection` | Ability to detect hidden or stealth actors |
+| `social_read` | Server-bounded social cue read quality |
+| `instruction_stability` | In-fiction ability to stay on goal under pressure |
+| `memory_recall_quality` | Retrieval quality for approved memory context |
+| `stress_resistance` | Resistance to panic, fear, and social pressure |
+
+Design notes:
+
+- Store base stats and modifiers. Derived values may be cached for performance,
+  but the server must own recalculation rules.
+- Armor and elemental resistances should use rating-to-effective-percent
+  formulas with diminishing returns. UI should show both the rating and the
+  effective percent.
+- Dodge applies only to direct hits such as melee strikes, projectiles, and
+  single-hit skill impacts. Dodge does not apply to damage-over-time ticks,
+  ground hazards, aura damage, environmental damage, or guaranteed boss
+  mechanics.
+- `focus` must never be connected to prompt-injection defense. Security and
+  moderation are harness constants, not stats.
+- `intelligence` must never make the model smarter or grant new authority. It
+  can only affect server-approved technical actions and rolls inside policy.
+- `luck` must never mint loot, TIME, or SECOND directly. It can only bias
+  backend-approved rolls inside strict caps.
 
 ---
 
@@ -143,6 +360,87 @@ Fields:
 
 The LLM may use these fields to choose between valid intents, not to invent new abilities.
 
+## Human-Believable Character Traits
+
+`CharacterTraits` is the numeric personality substrate for NPCs, offline player
+agents, and player-inhabitable Frames. It should stay separate from
+`CharacterStats`: traits guide behavior and prompt context, while stats govern
+combat and movement math.
+
+The MVP implementation currently has a small trait surface. The design target is
+the broader trait vector in
+[13-human-believable-npc-agent-model.md](13-human-believable-npc-agent-model.md):
+
+- `empathy`
+- `honesty`
+- `cunning`
+- `loyalty`
+- `ambition`
+- `self_preservation`
+- `courage`
+- `discipline`
+- `aggression`
+- `mercy`
+- `curiosity`
+- `sociability`
+- `paranoia`
+- `greed`
+- `pragmatism`
+- `vengefulness`
+
+Do not add a single `good_evil` field. Moral behavior should emerge from the
+trait vector, `FrameSoul`, `FrameMemory`, relationship state, current pressure,
+and server-validated choices.
+
+## Relationship Ledger
+
+Relationships are part of the character model, not only dialogue flavor. The
+current prototype already uses affinity and hostility. The design target is a
+bounded per-target ledger:
+
+| Field | Meaning |
+| ---- | ---- |
+| `affinity` | General liking or pull toward another actor |
+| `hostility` | Active resentment, dislike, avoidance, or desire to harm |
+| `trust` | Belief that the target is reliable or honest |
+| `fear` | Perceived danger or intimidation from the target |
+| `respect` | Recognition of competence, rank, sacrifice, or moral force |
+| `debt` | Social or material obligation between actors |
+| `familiarity` | Amount of shared contact and history |
+| `affection` | Warmth, care, attachment, or romantic pull where permitted by content rules |
+| `rivalry` | Competitive tension that can coexist with respect or affection |
+| `last_tone` | Last interaction tone such as `friendly`, `tense`, `hostile`, `intimate`, `transactional`, or `protective` |
+| `tags` | Relationship facts such as `mentor`, `rival`, `saved-by-target`, `debtor`, `suspect`, `old-crew`, or `betrayed` |
+| `memory_refs` | Memory record IDs that justify the current relationship state |
+
+Do not collapse relationships into one `like_score`. A character can respect
+someone they hate, fear someone they trust, love someone who betrayed them, or
+owe a debt to a rival.
+
+The LLM may propose a relationship or memory update, but Nakama owns whether the
+update is accepted and persisted.
+
+### NPC and Body Profile Rule
+
+Every NPC-like actor that can think, speak, fight, or receive a player
+consciousness needs its own profile bundle:
+
+- `BodyProfile`
+- `CharacterStats`
+- `CharacterTraits`
+- `SoulProfile`
+- `RelationshipLedger`
+- `MemoryRecord`
+- `AgentPolicy` or NPC policy equivalent
+- `AgentRuntime`
+- `AgentActivity`
+
+The vertical slice can store prototype NPC profiles using the same agent context
+shape as player bodies. Later production work may split durable account data,
+body templates, NPC definitions, and live body instances into separate storage
+records, but the runtime contract should stay consistent: the agent always sees
+the specific body it is currently controlling.
+
 ---
 
 ## Agent Policy
@@ -156,11 +454,11 @@ Vertical slice minimum:
 | `enabled` | Offline agent on/off |
 | `mode` | `idle`, `farm_safe_area`, `socialize`, or `quest_assist` |
 | `max_session_seconds` | Maximum autonomous session length |
-| `allow_body_time_spend` | Whether the agent may spend BodyTime |
+| `allow_body_time_spend` | Whether the agent may spend TIME |
 | `allow_risky_combat` | Whether the agent may attack high-risk targets |
 | `preferred_activities` | Player-prioritized actions |
 | `forbidden_activities` | Explicitly disallowed actions |
-| `stop_when_body_time_below` | BodyTime safety threshold |
+| `stop_when_body_time_below` | Loaded TIME safety threshold |
 
 The agent must stop or downgrade behavior when policy and world risk conflict.
 
@@ -175,28 +473,46 @@ This is not the same as the player's offline agent:
 | Actor | Primary Owner | In-World Role | Authority |
 | ---- | ---- | ---- | ---- |
 | Offline player agent | Player character owner | Controls the player's current body while offline | Emits action intent; Fusion server validates |
-| OpenClaw-connected NPC | OpenClaw agent owner | Companion, hub NPC, merchant-like persona, quest-adjacent social actor, or world citizen | Emits dialogue or action intent; Fusion server validates |
+| OpenClaw-connected NPC | OpenClaw agent owner | Companion, hub NPC, merchant-like persona, quest-adjacent social actor, or world citizen | Pulls game context and emits dialogue or action intent; Fusion server validates |
 
-Minimum data contract:
+The game does not import, parse, or execute the OpenClaw agent's `.md` files.
+Those files remain the external agent's private brain. The game exposes a
+structured context API and receives structured intent requests.
+
+Minimum control binding:
 
 | Field | Meaning |
 | ---- | ---- |
 | `connected_agent_id` | Stable ID for the OpenClaw agent |
 | `owner_player_id` | Player who connected the agent |
-| `display_name` | Public in-game agent name |
+| `frame_actor_id` | NPC-like Frame actor controlled through the bridge |
+| `controller_type` | `game_ai`, `player`, `offline_agent`, or `openclaw` |
+| `connection_status` | Connected, disconnected, degraded, suspended, or blocked |
 | `agent_kind` | Companion, hub_npc, merchant_persona, quest_actor, social_actor |
 | `consent_scope` | What the owner allows the agent to do in-game |
 | `moderation_state` | Active, limited, suspended, or blocked |
-| `memory_scope` | Which memories can be read or written |
 | `rate_limit_profile` | Token and action limits for this connected agent |
+
+Context exposed to OpenClaw:
+
+| Layer | Access |
+| ---- | ---- |
+| `FrameIdentity` | Read current public identity |
+| `FrameSoul` | Read bounded motivation and behavior style |
+| `FrameBody` | Read current body state, stats, TIME, lifecycle, equipment, and zone snapshot |
+| `FrameMemory` | Read bounded summaries; append proposals only if allowed |
+| `FramePolicy` | Read constraints and risk limits |
+| `FrameTools` | Read request schema only |
+| `FrameHeartbeat` | Write own heartbeat and last-decision summary only |
 
 Safety rules:
 
 - OpenClaw agents are untrusted external actors from the game server's point of view.
-- They never mutate inventory, currency, quest, BodyTime, cultivation, combat, or world state directly.
-- They may produce dialogue, social memory, and structured intent.
-- Nakama owns identity binding, consent, moderation, rate limit, and activity logging.
-- `api.dos.ai` / Go LLM Gateway owns prompt safety and model routing.
+- They never mutate inventory, currency, quest, TIME, SECOND, level/stats, combat, or world state directly.
+- They may produce dialogue, social memory proposals, heartbeat updates, and structured intent.
+- Nakama owns identity binding, consent, moderation, rate limit, control binding, and activity logging.
+- Nakama owns the game-facing agent decision RPC and validates intent shape.
+- `api.dos.ai` owns prompt safety and model routing.
 - Fusion server remains the final validator for any in-world action.
 
 Design intent: OpenClaw agents should make SECOND SPAWN feel like an extension of the DOS.AI agent ecosystem, where users can bring their own agents into the world as social citizens rather than leaving them outside the game.
@@ -223,11 +539,49 @@ Vertical slice rule: the LLM receives only the top N memories by importance and 
 
 ---
 
+## Agent Runtime and Activity
+
+`AgentRuntime` is the compact operational counter block for the offline-agent
+prototype. It is not authoritative gameplay state and must not be used to grant
+items, XP, TIME, SECOND, or level/stat progress without a separate
+server-side rule.
+
+Tracked counters:
+
+| Field | Meaning |
+| ---- | ---- |
+| `profile_bootstrapped_at` | First time the Nakama profile/body context was created |
+| `last_profile_bootstrap_at` | Last time the profile bootstrap path refreshed the context |
+| `last_activity_at` | Timestamp of the latest agent activity event |
+| `activity_count` | Number of activity events accepted by Nakama |
+| `decision_count` | Number of server-side prototype decisions returned |
+| `fallback_decision_count` | Number of deterministic fallback decisions or reported fallback decisions |
+| `move_intent_count` | Count of move intents returned or reported |
+| `say_intent_count` | Count of say intents returned or reported |
+| `stop_intent_count` | Count of stop intents returned or reported |
+| `interact_intent_count` | Count of interact intents returned or reported |
+| `offline_seconds` | Reported offline-agent session seconds |
+
+`AgentActivity` is a bounded recent history list. Nakama stores the latest 32
+activity records on the profile context. Current accepted kinds are:
+
+- `profile_bootstrap`
+- `offline_session`
+- `agent_decision`
+- `memory_sync`
+- `manual_note`
+
+Unity writes a `profile_bootstrap` activity after Nakama auth confirms that the
+player profile exists. Nakama also records `agent_decision` activity when the
+runtime decision RPC returns a deterministic prototype intent.
+
+---
+
 ## Agent Context Prompt
 
 Backend code now defines a prompt-safe context builder in:
 
-`backend/gateway/internal/character/profile.go`
+`backend/nakama/modules/index.ts`
 
 The builder converts a bounded `AgentContext` into stable key-value text. This is intentionally boring and deterministic so model behavior is easier to debug.
 
@@ -237,8 +591,8 @@ The context includes:
 - current body identity
 - visual/archetype key
 - lifecycle
-- cultivation tier
-- BodyTime budget
+- level and stats
+- TIME budget measured in SECOND
 - agent policy
 - soul fields
 - top memory summaries
@@ -257,7 +611,7 @@ It does not include:
 
 Backend code now defines the first bounded offline-agent decision contract in:
 
-`backend/gateway/internal/agent/decision.go`
+`backend/nakama/modules/index.ts`
 
 Allowed action types for the first implementation:
 
@@ -269,7 +623,7 @@ Allowed action types for the first implementation:
 | `interact` | Request interaction with a nearby allowed object |
 | `say` | Produce dialogue/social text with no direct state mutation |
 
-The gateway validator checks:
+The Nakama runtime validator checks:
 
 - action is in the allowed set for this request
 - confidence is bounded from 0 to 1
@@ -277,6 +631,8 @@ The gateway validator checks:
 - attack actions reference a nearby target from the safe snapshot
 - interact actions reference a nearby object from the safe snapshot
 - say actions include text
+- say actions may include a target only when that target is a nearby actor from
+  the safe world snapshot
 
 This does not replace authoritative game-server validation. It is only the first filter between model output and the gameplay server.
 
@@ -287,30 +643,51 @@ This does not replace authoritative game-server validation. It is only the first
 Implemented surfaces:
 
 - `backend/nakama/modules/index.ts` is the current game-backend source for
-  player profile, current body, soul, agent policy, BodyTime, cultivation, and
-  compact memories. It exposes `secondspawn_profile_get`,
-  `secondspawn_memory_add`, `secondspawn_soul_update`, and
-  `secondspawn_agent_decide` runtime RPCs.
+  player profile, current body, soul, agent policy, TIME, level/stats, and
+  compact memories. It also stores `agent_runtime` counters and a bounded
+  `agent_activity` log. It exposes `secondspawn_profile_get`,
+  `secondspawn_memory_add`, `secondspawn_soul_update`,
+  `secondspawn_agent_activity_add`, and `secondspawn_agent_decide` runtime RPCs.
+- Nakama owns a prototype body archetype pool. New player profiles and
+  reincarnated bodies now receive a deterministic NPC-like body archetype with
+  distinct story hook, traits, stat bias, visual variant, weapon visual, soul
+  defaults, and animation capability flags.
+- Nakama also owns a prototype permanent NPC Frame pool. New player profiles and
+  reincarnated bodies are assigned from this pool, then the chosen source Frame
+  is persisted as a `player_body` actor profile under `secondspawn_actor`.
 - Nakama runtime module tests cover Supabase custom-auth rewriting, profile
-  bootstrap, memory dedupe, soul update clamping, and deterministic fallback
-  agent decisions.
+  bootstrap, memory dedupe, soul update clamping, deterministic fallback agent
+  decisions, runtime counters, and activity logging.
 - Local Unity Play Mode can use Nakama device auth as a development fallback
   when Supabase anonymous auth is not configured yet. Production account binding
   must use Supabase custom auth or a later approved identity ADR.
-- `backend/gateway/internal/character` stores prototype `AgentContext` with
-  profile, body, stats, characteristics, soul, policy, BodyTime, cultivation,
-  and compact memories for LLM-gateway fallback and standalone cloud smoke
-  tests.
-- Prototype memory writes deduplicate by memory kind and summary. Repeated
-  Unity Play Mode sessions update the existing memory timestamp instead of
-  appending the same seed memory again.
-- `backend/gateway/internal/agent` returns deterministic prototype decisions
-  from bounded context and safe world snapshots.
-- Cloud Run staging gateway:
-  `https://second-spawn-gateway-535583621422.asia-southeast1.run.app`
+- `backend/nakama/modules/index.ts` defines the prompt-safe `AgentContext`
+  contract used by the model decision path. Runtime profile, soul, stats,
+  memory, `BodyTime` / TIME, and activity state belong in Nakama.
+- `backend/nakama/modules/index.ts` validates model-backed JSON decisions from
+  bounded context and safe world snapshots. If no `DOS_AI_API_KEY` is
+  configured, provider calls fail, or the model returns invalid intent, the RPC
+  falls back to deterministic prototype decisions.
+- Model-backed NPC decisions now receive nearby actor context. Proactive social
+  behavior is chosen by the model from `AgentPolicy`, `SoulProfile`,
+  `MemoryRecord`, relationship state, and the safe world snapshot, while the
+  Nakama validates targets and persistence.
+- Unity prototype NPC brains persist model-selected `say` intents through
+  Nakama so social speech becomes activity, memory, and relationship state
+  instead of only a local speech bubble.
 - Unity `SecondSpawnGatewayClient` authenticates with Nakama, reads/writes
-  Nakama profile memory when a Nakama session exists, and calls the cloud
-  gateway for NPC text chat, voice-session contract, and prototype LLM decision.
+  Nakama profile memory when a Nakama session exists, and calls Nakama RPCs for
+  NPC text chat, placeholder voice-session status, and prototype model-backed
+  decisions.
+- Unity `CharacterMemorySync` loads the Nakama profile and applies the current
+  body stats, prototype `BodyTime` / TIME, lifecycle, visual variant, weapon visual, and animation
+  capability flags onto the authoritative local `NetworkPlayer`.
+- The current player prototype starts at level 1 with stats selected from the
+  server-owned body archetype pool instead of one fixed stat line.
+- The prototype HUD shows level, HP, energy, attack, defense, agility,
+  prototype `BodyTime` / TIME, lifecycle, SECOND balance, and reincarnation count.
+- The current prototype account reserve starts with 604800 SECOND seconds and
+  reincarnation costs 432000 SECOND seconds.
 - Unity `PrototypeLLMAgentDriver` can toggle prototype agent control with `P`.
 - Unity `PrototypeNPCChatClient` can trigger prototype NPC chat with `O` and
   voice-session status with `V`.
@@ -325,7 +702,8 @@ Current limitations:
 - Most gateway routes are prototype-public. The Nakama runtime auth hook
   verifies Supabase access tokens for game login, but route-level JWT
   enforcement is still required before any non-local LLM or voice playtest.
-- Agent decisions are deterministic fallback logic, not real LLM reasoning yet.
+- Agent decisions have a DOS.AI-backed JSON intent path, but local development
+  and provider failures still use deterministic fallback logic.
 - Voice is a local cue only. Real voice waits for OpenAI Realtime or ElevenLabs
   server-side token minting.
 
@@ -337,10 +715,16 @@ Random model selection should use `visual_prefab_key`, not direct filesystem pat
 
 Flow:
 
-1. Server selects a valid visual key from an approved archetype pool.
-2. The spawned body stores that key in `BodyProfile`.
-3. Unity resolves the key to a local visual prefab.
-4. If the key is missing locally, Unity falls back to the default prototype visual and logs a warning.
+1. Server selects a valid body archetype from an approved archetype pool.
+2. The spawned body stores `visual_prefab_key`, `visual_variant`, equipment,
+   story, traits, soul defaults, and animation capability flags in
+   `BodyProfile`.
+3. Unity resolves the variant/key to a local visual prefab and reloads the
+   local visual if profile sync arrives after the initial Fusion spawn.
+4. Unity applies the server-selected weapon visual and disables jump animation
+   triggers for models whose body profile says `supports_jump: false`.
+5. If the key is missing locally, Unity falls back to the default prototype
+   visual and logs a warning.
 
 This keeps spawn visuals deterministic across clients and avoids letting clients choose invalid models.
 
@@ -352,9 +736,9 @@ Initial offline-agent loop:
 
 1. Fusion server snapshots safe world state.
 2. Backend loads `PlayerProfile`, current `BodyProfile`, `SoulProfile`, `AgentPolicy`, and top memories.
-3. Gateway builds LLM context.
+3. Nakama builds LLM context.
 4. LLM returns structured intent only.
-5. Gateway validates the decision shape and allowed action set.
+5. Nakama validates the decision shape and allowed action set.
 6. Server validates intent against current authoritative state.
 7. Server applies allowed movement/combat/social action through the same path as player input.
 8. Backend appends an activity log entry for player review.
@@ -380,7 +764,10 @@ The first playable version should support only a small intent set: move within s
 
 - [x] Backend data contract exists for profile, body, stats, soul, policy, and memory.
 - [x] LLM context builder is deterministic and bounded.
-- [ ] Random visual selection has a server-owned key contract.
+- [x] Random visual selection has a server-owned key contract.
+- [x] Permanent NPCs can expose nearby actor context to model-backed decisions.
+- [x] Model-selected NPC speech can be recorded as Nakama memory and
+  relationship state after validation.
 - [ ] OpenClaw-connected NPCs have identity binding, consent scope, moderation state, and rate limits before any prototype.
 - [x] Unity never sends provider keys or direct state mutations.
 - [x] Offline-agent intent flow uses the same network input shape as player input for prototype movement.
@@ -396,4 +783,4 @@ The first playable version should support only a small intent set: move within s
 | Systems map | `03-systems-index.md` | Profile persistence and AI agent systems | Build dependency |
 | LLM safety | `../adr/0003-llm-safety-architecture.md` | Intent validation | Security dependency |
 | Offline agent | `../adr/0004-ai-agent-offline-control.md` | Server-side agent control | Architecture dependency |
-| Time economy | `08-time-as-currency.md` | BodyTime policy and risk | Economy dependency |
+| TIME / SECOND economy | `08-time-as-currency.md` | TIME policy and risk | Economy dependency |

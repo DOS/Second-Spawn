@@ -131,6 +131,11 @@ GameObject:
   - component: {fileID: 34500817}
   - component: {fileID: 34500816}
   - component: {fileID: 34500815}
+  - component: {fileID: 34500819}
+  - component: {fileID: 34500820}
+  - component: {fileID: 34500821}
+  - component: {fileID: 34500822}
+  - component: {fileID: 34500823}
   m_Layer: 0
   m_Name: _AgentGateway
   m_TagString: Untagged
@@ -167,7 +172,11 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.CharacterMemorySync
   _syncOnStart: 1
+  _preferNakama: 1
   _seedPrototypeMemory: 1
+  _applyProfileStatsToLocalPlayer: 1
+  _applyProfileVisualToLocalPlayer: 1
+  _applyProfileEquipmentToLocalPlayer: 1
   _prototypeMemory: JOY wants overnight prototype progress without client-side LLM
     secrets.
 --- !u!114 &34500817
@@ -182,8 +191,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e7ac6c7e9346bb541b4657dbc1e8581d, type: 3}
   m_Name:
   m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.SecondSpawnGatewayClient
-  _gatewayBaseUrl: https://second-spawn-gateway-535583621422.asia-southeast1.run.app
   _playerId: dev-player
+  _authenticateOnStart: 1
+  _supabaseUrl:
+  _supabaseAnonKey:
+  _nakamaBaseUrl: http://127.0.0.1:7350
+  _nakamaServerKey: defaultkey
+  _allowNakamaDeviceFallback: 1
+  _bootstrapProfileAfterAuth: 1
+  _requestTimeoutSeconds: 10
 --- !u!4 &34500818
 Transform:
   m_ObjectHideFlags: 0
@@ -199,6 +215,119 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &34500819
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 34500814}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 47e3e1f6f17c4f5a87dbd4b0c70b321d, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.PrototypeBodyLifecycleDebugPanel
+  _showPanel: 0
+  _toggleKey: 95
+  _panelPosition: {x: 16, y: 212}
+  _panelSize: {x: 320, y: 224}
+  _earnSeconds: 300
+  _spendSeconds: 600
+  _dangerDrainSeconds: 300
+  _rewardObjectiveId: prototype-training-drone
+--- !u!114 &34500820
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 34500814}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a55307e31634ffeab83b6ffb30c84cc, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.PrototypeOpenClawDebugPanel
+  _showPanel: 0
+  _toggleKey: 97
+  _panelPosition: {x: 16, y: 424}
+  _panelSize: {x: 360, y: 248}
+  _frameActorId: npc-openclaw-guide
+  _connectedAgentId: oc-local-debug-agent
+  _displayName: OpenClaw Debug Guide
+  _sayText: OpenClaw debug intent reached Nakama.
+--- !u!114 &34500821
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 34500814}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 05e7ee54f444466b91be22b693c78928, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.PrototypeHubChatDebugPanel
+  _showPanel: 0
+  _toggleKey: 96
+  _panelPosition: {x: 552, y: 16}
+  _panelSize: {x: 420, y: 248}
+  _channelId: prototype-hub
+  _displayName: JOY
+  _draftMessage: Hub chat is online.
+  _messageLimit: 8
+--- !u!114 &34500822
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 34500814}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b5f84b1d2d3499fb377e18e36cbfb39, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.PrototypeNpcWorldDebugPanel
+  _showPanel: 0
+  _toggleKey: 98
+  _panelPosition: {x: 552, y: 280}
+  _panelSize: {x: 480, y: 420}
+  _actorAId: npc-synthetic-sentinel-0101
+  _actorBId: npc-wasteland-courier-0244
+  _topic: patrol
+  _intentText: Route check complete. Keep the eastern gate quiet.
+  _distanceMeters: 2
+--- !u!114 &34500823
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 34500814}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5c95ee097334a9d9b244b68a87af141, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.PermanentNpcPrototypeSpawner
+  _spawnOnStart: 1
+  _authWaitSeconds: 8
+  _maxNpcMarkers: 10
+  _spawnOrigin: {x: -8, y: 0, z: 7}
+  _columns: 5
+  _spacing: 4
+  _markerHeight: 1.8
+  _markerRadius: 0.45
+  _labelHeight: 2.65
+  _labelFontSize: 18
+  _labelMaxLineLength: 20
+  _labelMaxWidth: 260
+  _labelVisibleDistance: 24
+  _refreshKey: 99
+  _logStatus: 1
+  _zoneId: prototype-hub
+  _attachAgentBrains: 1
+  _agentDecisionIntervalSeconds: 30
+  _agentStartStaggerSeconds: 2.5
+  _agentPatrolRadius: 5
 --- !u!1 &47583031
 GameObject:
   m_ObjectHideFlags: 0
@@ -552,6 +681,7 @@ GameObject:
   m_Component:
   - component: {fileID: 529322320}
   - component: {fileID: 529322319}
+  - component: {fileID: 529322321}
   m_Layer: 0
   m_Name: _AgentNPC_Prototype
   m_TagString: Untagged
@@ -571,17 +701,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6a71e9236c9a38146be01a82d1767a10, type: 3}
   m_Name:
   m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.PrototypeAgentBrain
-  _startOnPlay: 1
+  _startOnPlay: 0
   _agentId: prototype-npc-guide
   _displayName: Prototype Guide
   _zoneId: prototype-hub
   _visualVariant: 10
   _decisionIntervalSeconds: 1.6
+  _initialDecisionDelaySeconds: 0
   _moveSpeed: 2.4
   _patrolRadius: 5
   _talkIntervalSeconds: 7.5
   _seedSoulOnStart: 1
   _alignFeetToGround: 1
+  _logPhaseTransitions: 1
+  _decisionFailureErrorThreshold: 3
 --- !u!4 &529322320
 Transform:
   m_ObjectHideFlags: 0
@@ -597,6 +730,30 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &529322321
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 529322318}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2bb44b8edfbf4b41a928f752d071c948, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: SecondSpawn.AI::SecondSpawn.AI.ActorProfileBinder
+  _loadOnStart: 1
+  _actorId: prototype-npc-guide
+  _actorType: npc
+  _displayName: Prototype Guide
+  _archetypeId: prototype-npc
+  _visualPrefabKey: prototype-npc
+  _applyDisplayNameToGameObject: 1
+  _seedMemoryOnStart: 1
+  _seedMemoryKind: system
+  _seedMemorySummary: Prototype Guide is a hub NPC body with its own actor profile,
+    memory, stats, traits, soul, and policy.
+  _seedMemoryImportance: 6
 --- !u!1 &584568219
 GameObject:
   m_ObjectHideFlags: 0
@@ -710,6 +867,58 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 584568219}
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &769241723
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 769241725}
+  - component: {fileID: 769241724}
+  m_Layer: 0
+  m_Name: Prototype HUD
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &769241724
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 769241723}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1892691154e102448a7cf4e4e29fefb, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: SecondSpawn.UI::SecondSpawn.UI.HUDController
+  _showPrototypeStats: 1
+  _showFrameIdentity: 1
+  _showAgentActivity: 1
+  _panelPosition: {x: 16, y: 16}
+  _panelSize: {x: 360, y: 320}
+  _maxStoryCharacters: 110
+  _maxActivityRows: 4
+  _maxActivitySummaryCharacters: 92
+--- !u!4 &769241725
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 769241723}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &809676463
 GameObject:
   m_ObjectHideFlags: 0
@@ -974,3 +1183,4 @@ SceneRoots:
   - {fileID: 1239426299}
   - {fileID: 34500818}
   - {fileID: 529322320}
+  - {fileID: 769241725}

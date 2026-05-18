@@ -4,13 +4,22 @@
 *Created: 2026-05-16*
 *Author: Codex*
 
-> **Quick reference** - Layer: `AI Agent / NPC` - Priority: `Prototype foundation` - Key deps: Fusion server authority, Nakama game backend, api.dos.ai / Go LLM Gateway, Behavior Designer, character memory
+> **Quick reference** - Layer: `AI Agent / NPC` - Priority: `Prototype foundation` - Key deps: Fusion server authority, Nakama game backend, api.dos.ai model service, Behavior Designer, character memory
 
 ---
 
 ## Purpose
 
-SECOND SPAWN needs NPCs and offline player agents that feel alive, but still obey game-server authority. This document defines the brain architecture before the prototype grows into a pile of one-off scripts.
+SECOND SPAWN needs NPCs and offline player agents that aim for
+human-believable behavior while still obeying game-server authority. This
+document defines the brain architecture before the prototype grows into a pile
+of one-off scripts.
+
+The design goal is to test how close the MVP can get to human-believable NPCs
+through LLM planning, memory, relationships, needs, and mood. The game should
+not pre-limit the agent to simple scripted behavior before playtests reveal the
+real limits. The boundary is authority: the LLM may choose intent, but it never
+owns authoritative state mutation.
 
 The core design is:
 
@@ -18,7 +27,7 @@ The core design is:
 Sense -> Context -> Decide -> Validate -> Act -> Reflect
 ```
 
-The LLM is only one node in the graph. It never owns movement, combat, inventory, BodyTime, currency, quest state, or any other authoritative mutation.
+The LLM is only one node in the graph. It never owns movement, combat, inventory, TIME, SECOND, quest state, or any other authoritative mutation.
 
 ---
 
@@ -34,6 +43,19 @@ The LLM is only one node in the graph. It never owns movement, combat, inventory
 | Provider wrapper | OpenAI Agents SDK-style guardrails/tracing | Useful later for tool guardrails, output validation, and traceability around model calls |
 
 Do not embed a general-purpose desktop agent runtime directly in Unity. Game NPCs need bounded capabilities, predictable ticks, and server validation.
+
+### Research Anchors
+
+The character and social model is defined in
+[13-human-believable-npc-agent-model.md](13-human-believable-npc-agent-model.md).
+Important design anchors:
+
+- Hierarchical memory for persistent LLM game NPC personality.
+- Generative-agent observation, reflection, retrieval, and planning.
+- Symbolically grounded LLM dialogue from social simulation state.
+- Classic playable social relationship design from Prom Week / Comme il Faut.
+- Game-tested trait vocabularies from Dwarf Fortress, Crusader Kings III, and
+  RimWorld.
 
 ---
 
@@ -85,7 +107,7 @@ Builds a safe world snapshot:
 - nearby interactables
 - nearby threats
 - visible player/NPC actors
-- current BodyTime
+- current TIME measured in SECOND
 - current high-level state
 
 Never sends raw Unity scene objects or client-owned claims as trusted facts.
@@ -119,7 +141,7 @@ Checks intent shape and policy:
 - action is allowed in this state
 - target exists in the safe snapshot
 - move target is inside allowed radius
-- body time, cooldown, and risk policy allow the action
+- loaded TIME, cooldown, and risk policy allow the action
 - no direct economy/inventory/quest mutation is requested
 
 ### Act
@@ -153,8 +175,9 @@ The first prototype is local-only:
 - `PrototypeAgentBrain` drives one local NPC actor in the hub.
 - It uses Nakama RPCs for game profile, soul, policy, and compact memory when a
   Nakama session exists.
-- It uses the Cloud Run gateway for prototype LLM/chat/voice contracts and falls
-  back to Nakama deterministic decisions if the LLM gateway is unavailable.
+- It uses Nakama RPCs for prototype model decisions, hub chat, and placeholder
+  voice-session status. Nakama falls back to deterministic decisions if
+  `api.dos.ai` is unavailable or unconfigured.
 - It moves inside a small patrol radius.
 - It can speak with a text bubble and prototype voice cue.
 - It does not mutate game state.
@@ -162,7 +185,7 @@ The first prototype is local-only:
 Later production shape:
 
 - Behavior Designer handles action execution trees.
-- `api.dos.ai` / Go LLM Gateway hosts AI graph nodes and provider calls.
+- `api.dos.ai` hosts AI graph nodes and provider calls.
 - Nakama stores profile, policy, memory, consent, moderation, and audit logs.
 - Fusion server validates and applies in-world actions.
 
@@ -173,8 +196,33 @@ Later production shape:
 User-owned OpenClaw agents can become in-world NPC-like actors through a bridge:
 
 ```text
-OpenClaw agent -> Game bridge API -> Nakama identity/policy -> Brain graph -> Fusion validated action
+OpenClaw agent -> Pull Frame context -> Submit intent -> Nakama policy/moderation -> Fusion validated action
 ```
+
+The game does not import or execute the OpenClaw agent's workspace files. The
+external agent keeps its own `AGENTS.md`, `SOUL.md`, `MEMORY.md`, tools, and
+private reasoning files. SECOND SPAWN exposes a structured read model for the
+controlled Frame and accepts structured intent requests.
+
+Required game-side contract:
+
+| Contract Piece | Purpose |
+| ---- | ---- |
+| `FrameIdentity` | Public role, callsign, profession, faction title, and reputation context |
+| `FrameSoul` | Bounded behavior style and durable motivation for prompt context |
+| `FrameBody` | Current body, stats, TIME, lifecycle, equipment, and world snapshot |
+| `FrameMemory` | Bounded summaries and relationship facts |
+| `FramePolicy` | Player or server-owned constraints |
+| `FrameTools` | Allowed request schema, not executable tools |
+| `FrameHeartbeat` | Connection state and last-decision observability |
+| Control binding | `frame_actor_id`, `controller_type`, `connected_agent_id`, owner, consent, moderation, and rate limit |
+
+Deferred or unnecessary for MVP:
+
+- Mirroring OpenClaw `AGENTS.md` into a `FrameAgents` backend layer.
+- Mirroring OpenClaw `SKILL.md` into a `FrameSkill` backend layer before the
+  combat/profession systems need structured skill records.
+- Importing raw OpenClaw `.md` files into Nakama storage.
 
 Allowed first roles:
 
@@ -186,9 +234,53 @@ Disallowed until later:
 
 - inventory mutation
 - economy mutation
-- BodyTime spending
+- TIME spending
 - combat authority
 - quest completion authority
+
+---
+
+## NPC Interaction Rules
+
+NPC behavior is LLM-selected, but interaction permission is not left to the LLM.
+The server exposes rule context to the prompt and enforces hard limits before an
+intent is recorded or applied.
+
+Hard backend or Fusion limits:
+
+- NPCs may only interact when the authoritative world state says they are
+  nearby. The current prototype uses a 12 meter debug limit until Fusion
+  proximity is wired.
+- NPCs may not repeatedly seek low-affinity actors once familiarity is high.
+- NPCs may not voluntarily socialize with actors above the hostility block
+  threshold.
+- NPC intents are allowlisted. The current persistent NPC prototype accepts only
+  bounded `say` intents.
+
+Soft prompt guidance:
+
+- Prefer NPCs with higher affinity and shared memories.
+- Use hostility, familiarity, role, soul, and recent activity to choose tone.
+- When affinity is low, keep exchanges short unless a quest, danger, or duty
+  reason exists.
+- Use traits, needs, mood, stress, and BodyTime pressure to decide whether a
+  social action should feel warm, guarded, manipulative, fearful, urgent, or
+  avoidant.
+
+Current prototype boundary:
+
+1. `secondspawn_npc_context_get` returns server-owned NPC context, nearby actor
+   context, relationship records, allowed intents, and interaction rules.
+2. Unity prototype NPC brains add nearby Frame actors to the Nakama decision
+   world snapshot when `say` is allowed.
+3. Nakama calls `api.dos.ai` or a future worker chooses the NPC intent from
+   `AgentPolicy`, `FrameSoul`, `FrameMemory`, relationships, and nearby actor
+   context.
+4. Nakama validation rejects `say.target_id` values that are not nearby actors.
+5. `secondspawn_npc_intent_submit` validates the intent shape and interaction
+   rules, then records activity and relationship memory.
+6. Deterministic NPC interaction ticks remain fallback smoke tests only, not the
+   primary NPC brain.
 
 ---
 
@@ -198,7 +290,7 @@ Every brain implementation must keep these boundaries:
 
 1. LLM output is intent, not state.
 2. Unity client can visualize and request, not authorize.
-3. Gateway can validate shape and policy, not own authoritative world state.
+3. Nakama can validate shape and policy, not own authoritative world state.
 4. Fusion server owns movement/combat/world application.
 5. Nakama owns durable game profile, memory, policy, moderation, and audit.
 
@@ -207,11 +299,19 @@ Every brain implementation must keep these boundaries:
 ## Current Prototype Acceptance
 
 - [x] Character profile, soul, policy, and memory exist in Nakama runtime RPCs.
-- [x] Gateway keeps prototype LLM/chat/voice contracts separate from game backend.
-- [x] Unity can call gateway from Play Mode.
+- [x] Nakama keeps prototype model/chat/voice-status contracts on the game
+  backend boundary.
+- [x] Unity can call Nakama from Play Mode.
 - [x] Unity can authenticate to Nakama with local device fallback.
 - [x] Local player agent prototype can move through bounded input intent.
 - [x] Local NPC brain exists in scene and runs the brain loop.
-- [ ] Brain loop logs phase transitions in a debug-friendly way.
+- [x] Brain loop logs phase transitions in a debug-friendly way.
 - [x] NPC can patrol and speak without Unity console errors.
-- [ ] Backend decision endpoint is upgraded from deterministic fallback to model-backed JSON intent.
+- [x] Nakama decision RPC is upgraded from deterministic fallback to
+  model-backed JSON intent.
+- [x] Permanent NPC brains include nearby actor context in model-backed
+  decisions.
+- [x] Model-selected `say` intents can target nearby actors and persist through
+  Nakama as activity, memory, and relationship state.
+- [x] Deterministic fallback remains degraded behavior, not the intended NPC
+  brain path.

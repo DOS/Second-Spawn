@@ -72,7 +72,7 @@ Do not touch:
 
 ## Current manual JOY actions
 
-1. Add Unity Linux Dedicated Server Build Support for Unity `6000.5.0b7` via
+1. Add Unity Linux Dedicated Server Build Support for Unity `6000.5.0b8` via
    Unity Hub before dedicated server build work.
 2. Import asset store packages in separate passes: Opsive UCC, then Behavior
    Designer, then Convai.
@@ -90,24 +90,22 @@ Do not touch:
   via the object provider, so root-level runtime `NetworkObject` instances are
   accepted for Phase B.
 
-## Current gateway and AI prototype state
+## Current Nakama and AI prototype state
 
-- Cloud Run staging gateway URL:
-  `https://second-spawn-gateway-535583621422.asia-southeast1.run.app`
-- Unity `SecondSpawnConfig.asset`, `SecondSpawnConfig.cs`, and scene
-  `_AgentGateway` point to the Cloud Run URL so JOY does not need to run a local
-  gateway executable for prototype playtesting.
-- Local fallback remains `backend/gateway` Docker image
-  `second-spawn-gateway:local`.
+- Unity calls Nakama RPCs for game profile, NPC state, chat, OpenClaw bridge,
+  and agent decisions.
+- Nakama owns the `secondspawn_agent_decide` runtime path. When
+  `DOS_AI_API_KEY` is configured, Nakama calls `api.dos.ai`, validates the JSON
+  intent, and returns `source=model`; otherwise it returns a deterministic
+  `source=fallback` decision.
+- The old Cloud Run adapter is deprecated and no longer part of the active game
+  path.
 - Prototype controls:
   - `P`: toggle prototype LLM-agent movement loop on the spawned player
   - `O`: send prototype NPC text chat
-  - `V`: check voice-session contract
+  - `V`: check the placeholder voice-session status
 - Voice is a local prototype cue plus text bubble in Unity. Real TTS still
-  requires server-side ephemeral token minting.
-- On 2026-05-16, Cloud Run revision `second-spawn-gateway-00003-779` served
-  100 percent of traffic. Smoke tests passed for `/readyz`,
-  `/v1/characters/dev-player/context`, and duplicate memory POST dedupe.
+  requires a Nakama RPC that mints a server-side ephemeral `api.dos.ai` token.
 - On 2026-05-16, CoplayDev MCP Play Mode verification spawned a generated
   Hammer Warrior visual with a clean console. Prototype agent input moved the
   spawned player from `x=1.50` to `x=14.03`, then cleared control.

@@ -60,6 +60,11 @@ namespace SecondSpawn.Networking
                 return false;
             }
 
+            if (!IsSupportedByBody(intent))
+            {
+                return false;
+            }
+
             SetAnimationSpeed(1f);
             return TryPlayThroughAnimatorContract(intent);
         }
@@ -114,6 +119,25 @@ namespace SecondSpawn.Networking
                 VisualAnimationIntent.Death => TryFireTrigger(20),
                 VisualAnimationIntent.Revive => TryFireTrigger(21),
                 _ => false,
+            };
+        }
+
+        private bool IsSupportedByBody(VisualAnimationIntent intent)
+        {
+            if (_networkPlayer == null)
+            {
+                return true;
+            }
+
+            return intent switch
+            {
+                VisualAnimationIntent.Jump => _networkPlayer.SupportsJumpAnimation,
+                VisualAnimationIntent.Attack => _networkPlayer.SupportsMeleeAnimation || _networkPlayer.SupportsRangedAnimation,
+                VisualAnimationIntent.Cast => _networkPlayer.SupportsRangedAnimation,
+                VisualAnimationIntent.DodgeLeft or
+                    VisualAnimationIntent.DodgeRight or
+                    VisualAnimationIntent.DodgeBackward => _networkPlayer.SupportsRollAnimation,
+                _ => true
             };
         }
 

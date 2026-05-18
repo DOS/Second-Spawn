@@ -10,6 +10,9 @@ namespace SecondSpawn.EditorTools
 {
     public static class SecondSpawnVisualPrefabUtility
     {
+        private const string SharedAnimatorControllerPath =
+            "Assets/ExplosiveLLC/RPG Character Mecanim Animation Pack/Animation Controller/RPG-Character-Animation-Controller.controller";
+
         [MenuItem("Second Spawn/Art/Rebuild Generated Visual Prefabs")]
         public static void RebuildGeneratedVisualPrefabs()
         {
@@ -47,6 +50,7 @@ namespace SecondSpawn.EditorTools
                     StripGameplayScripts(instance);
                     StripNonVisualRuntimeComponents(instance);
                     PrepareVisualRoot(instance);
+                    AssignSharedAnimatorController(instance);
                     ConvertMaterialsToUrp(instance, materialCache);
                     EquipmentVisualCatalog.ApplyEquipmentVisual(instance, EquipmentVisualCatalog.GetDefaultForVisualVariant(i));
 
@@ -154,6 +158,22 @@ namespace SecondSpawn.EditorTools
             root.transform.localScale = Vector3.one;
         }
 
+        private static void AssignSharedAnimatorController(GameObject root)
+        {
+            var sharedController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(SharedAnimatorControllerPath);
+            if (sharedController == null)
+            {
+                Debug.LogWarning($"[SecondSpawnVisualPrefabUtility] Shared animator controller not found at '{SharedAnimatorControllerPath}'.");
+                return;
+            }
+
+            foreach (var animator in root.GetComponentsInChildren<Animator>(includeInactive: true))
+            {
+                animator.runtimeAnimatorController = sharedController;
+                EditorUtility.SetDirty(animator);
+            }
+        }
+
         private static void ConvertMaterialsToUrp(GameObject root, Dictionary<Material, Material> materialCache)
         {
             var urpShader = Shader.Find("Universal Render Pipeline/Simple Lit") ??
@@ -205,7 +225,7 @@ namespace SecondSpawn.EditorTools
                 return cachedMaterial;
             }
 
-            var materialName = $"{SanitizeFileName(sourceMaterial.name)}_URP";
+            var materialName = $"{SanitizeFileName(CleanGeneratedAssetName(sourceMaterial.name))}_URP";
             var materialPath = AssetDatabase.GenerateUniqueAssetPath($"{VisualPrefabCatalog.CleanMaterialFolder}/{materialName}.mat");
             var convertedMaterial = new Material(urpShader)
             {
@@ -325,6 +345,15 @@ namespace SecondSpawn.EditorTools
             }
 
             return new string(chars);
+        }
+
+        private static string CleanGeneratedAssetName(string value)
+        {
+            var normalized = value.Trim();
+            const string freeSuffix = " FREE";
+            return normalized.EndsWith(freeSuffix, System.StringComparison.OrdinalIgnoreCase)
+                ? normalized[..^freeSuffix.Length]
+                : normalized;
         }
     }
 }

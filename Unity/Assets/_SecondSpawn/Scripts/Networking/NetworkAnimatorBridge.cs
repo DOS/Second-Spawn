@@ -298,6 +298,16 @@ namespace SecondSpawn.Networking
 
         private void ApplyJumping(int jumping)
         {
+            if (_networkPlayer != null && !_networkPlayer.SupportsJumpAnimation)
+            {
+                if (_hasJumpingParameter)
+                {
+                    SetJumpingValueOnly(0);
+                }
+
+                return;
+            }
+
             if (!_hasJumpingParameter || !HasAnyTriggerNumberParameter() || !_hasTriggerParameter)
             {
                 return;

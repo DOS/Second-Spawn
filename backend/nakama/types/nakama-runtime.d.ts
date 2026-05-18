@@ -19,6 +19,7 @@ declare namespace nkruntime {
     ): HttpResponse;
     storageRead(requests: StorageReadRequest[]): StorageObject[];
     storageWrite(requests: StorageWriteRequest[]): void;
+    uuidv4(): string;
   }
 
   interface HttpResponse {

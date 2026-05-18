@@ -25,6 +25,7 @@ jobs:
           globs: |
             README.md
             ROADMAP.md
+            CHANGELOG.md
             CONTRIBUTING.md
             SECURITY.md
             AGENTS.md

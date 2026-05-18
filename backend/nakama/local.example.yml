@@ -9,6 +9,10 @@ runtime:
   env:
     - "SUPABASE_URL=https://YOUR_PROJECT.supabase.co"
     - "SUPABASE_PUBLISHABLE_KEY=sb_publishable_YOUR_PUBLIC_KEY"
+    - "SECOND_SPAWN_ENABLE_DEBUG_BODYTIME=false"
+    - "DOS_AI_BASE_URL=https://api.dos.ai/v1"
+    - "AGENT_DECISION_MODEL=dos-ai"
+    # Set DOS_AI_API_KEY only in private local config or deployment secrets.
 
 socket:
   server_key: defaultkey

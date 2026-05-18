@@ -30,6 +30,11 @@ namespace SecondSpawn.Networking
                 10 => Hammer,
                 11 => TwoHandSpear,
                 12 => OneHandSword,
+                13 => TwoHandAxe, // Berserker fighter
+                14 => OneHandSword, // Female fighter
+                15 => Hammer, // Heavy fighter
+                16 => OneHandSword, // Male fighter
+                17 => Unarmed, // Crafter
                 _ => None
             };
         }
@@ -48,6 +53,24 @@ namespace SecondSpawn.Networking
                 OneHandSword => 7,
                 Hammer => 3,
                 _ => -1
+            };
+        }
+
+        public static int GetVisualIdForKey(string weaponVisualKey)
+        {
+            var key = NormalizeName(weaponVisualKey);
+            return key switch
+            {
+                "unarmed" => Unarmed,
+                "sword" or "one_hand_sword" => OneHandSword,
+                "two_hand_sword" => TwoHandSword,
+                "spear" or "two_hand_spear" => TwoHandSpear,
+                "axe" or "two_hand_axe" => TwoHandAxe,
+                "bow" or "two_hand_bow" => TwoHandBow,
+                "crossbow" or "two_hand_crossbow" => TwoHandCrossbow,
+                "staff" => Staff,
+                "hammer" => Hammer,
+                _ => None
             };
         }
 
@@ -118,7 +141,9 @@ namespace SecondSpawn.Networking
                     name.Contains("knight-weapon"),
                 TwoHandSword => name == "2hand-sword" || name.Contains("twohanded-weapon"),
                 TwoHandSpear => name == "2hand-spear" || name == "spear" || name.Contains("spearman-weapon"),
-                TwoHandAxe => name == "2hand-axe",
+                TwoHandAxe => name == "2hand-axe" ||
+                    name.Contains("berserker-weapon") ||
+                    name.Contains("heavy-weapon"),
                 TwoHandBow => name == "2hand-bow" || name.Contains("archer-weapon"),
                 TwoHandCrossbow => name == "2hand-crossbow" || name.Contains("crossbow-weapon"),
                 Staff => name == "staff" || name.Contains("mage-weapon"),

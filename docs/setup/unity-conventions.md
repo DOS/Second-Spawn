@@ -72,13 +72,13 @@ Migration note (2026-05-14): all custom assets that previously lived flat at `As
 | C# script file | `PascalCase` matching the class name | `NetworkRunnerSetup.cs` | Unity requires file = class for `MonoBehaviour` |
 | Class | `PascalCase` | `NetworkRunnerSetup` | C# .NET Framework Design Guidelines |
 | Field (private + serialized) | `_camelCase` | `_moveSpeed`, `_runner` | Distinguishes from local variable; community standard |
-| Field (public) | `PascalCase` | `CultivationTier`, `Hp` | C# property convention |
+| Field (public) | `PascalCase` | `Level`, `Hp` | C# property convention |
 | Method | `PascalCase` | `FixedUpdateNetwork()` | C# convention |
 | Interface | `IPascalCase` | `INetworkRunnerCallbacks` | C# convention |
 | Asmdef | `Company.Feature` | `SecondSpawn.Networking` | Unity package guidance: no `_` prefix, broad domain term |
 | Namespace | matches asmdef | `SecondSpawn.Networking` | RootNamespace field on asmdef auto-applies |
-| Scene | `PascalCase`, descriptive scope | `ZoneTest_Hub.unity` (TBD), `Boss_Awakening.unity` | Underscore separates scope from variant |
-| Prefab | `PascalCase`, descriptive | `Player_Hunter.prefab`, `NPC_CultivationMaster.prefab` | Underscore separates type from variant |
+| Scene | `PascalCase`, descriptive scope | `ZoneTest_Hub.unity` (TBD), `Boss_Lab.unity` | Underscore separates scope from variant |
+| Prefab | `PascalCase`, descriptive | `Player_Hunter.prefab`, `NPC_FieldGuide.prefab` | Underscore separates type from variant |
 | ScriptableObject `.asset` | `PascalCase`, matching the class | `SecondSpawnConfig.asset` | Inspector readability |
 | Material / Texture | `PascalCase`, suffix variant | `HunterArmor_Diffuse`, `HunterArmor_Normal` | Type at end per Unity guidance |
 | Audio clip | `PascalCase`, descriptive | `Combat_HitImpact_01.wav` | Sequential variants use 2-digit numbers |
@@ -115,7 +115,7 @@ When a module needs Tests:
 Use ScriptableObject for:
 
 - Per-environment config (`SecondSpawnConfig.asset` - already designed)
-- Static gameplay data (cultivation tier definitions, NPC dialogue tables, item definitions)
+- Static gameplay data (level/stat tables, NPC dialogue tables, item definitions)
 - Per-zone settings (when slice phase 2 zones materialize)
 
 Pattern:
@@ -156,7 +156,7 @@ Phase B networking note (2026-05-14): `_NetworkBootstrap` is intentionally a sce
 Cross-reference `.claude/CLAUDE.md` and `AGENTS.md` Hard Rules:
 
 - **Hard Rule #2**: NEVER let LLM mutate authoritative game state. Server validates all intent. Code-level: every NPC dialogue path MUST pass through server-side intent validation before any `[Networked]` field is written.
-- **Hard Rule #3**: NEVER put API keys in Unity client. Code-level: `SecondSpawnConfig` only stores public-safe values (Nakama endpoint, LLM gateway URL, Photon App ID, DOS Chain RPC). Secrets stay in server environments.
+- **Hard Rule #3**: NEVER put API keys in Unity client. Code-level: `SecondSpawnConfig` only stores public-safe values (Nakama endpoint, Supabase URL, Photon App ID, DOS Chain RPC). Secrets stay in server environments.
 - **Hard Rule #4**: NEVER use Host Mode for production. Code-level: `NetworkRunnerSetup.cs` selects mode by `Application.isBatchMode`. CI build flag `-batchmode -nographics -server` enforces.
 - **Hard Rule #6**: NEVER change Asset Serialization away from Force Text. Pin in `ProjectSettings/EditorSettings.asset` (`m_SerializationMode: 2`).
 - **Hard Rule #7**: NEVER claim "done" without reviewer pass. Per PR template `.github/pull_request_template.md`.
@@ -191,7 +191,7 @@ Items below are KNOWN deviations to address as work lands; not blockers for curr
 |---|---|---|
 | Adopt wrapper folder convention? | **YES, `_SecondSpawn/`** (chose project-name over generic `_Game` or `_Project`) | Migrated 2026-05-14. JOY rationale: "chỉ có Photon mới là cost thấp đó. Đợi 100 cái plugin, asset folder rồi làm thì sao?" - migrate now while only 1 SDK exists |
 | Adopt `_Scripts/` underscore prefix INSIDE `_SecondSpawn/`? | **NO** | Redundant; `_SecondSpawn/` already pinned to top. PascalCase sub-folders (`Scripts/`, `Scenes/`, `Settings/`). |
-| Per-zone scene naming | **`Zone_<Name>.unity`** | Group-by-type then name (e.g., `Zone_DesertHub.unity`, `Zone_DungeonAwakening.unity`) |
+| Per-zone scene naming | **`Zone_<Name>.unity`** | Group-by-type then name (e.g., `Zone_DesertHub.unity`, `Zone_DungeonLab.unity`) |
 | Boss scene naming | **`Boss_<Name>.unity`** as separate file, additive load | Slice phase 4 wires this when first dungeon ships |
 | Photon FusionDemos + FusionMenu cleanup | **Keep as-is** | JOY: "thêm 1 thư mục thôi, để như hiện tại có sao đâu". Revisit if ship build size becomes concern |
 | Fusion runtime object parent bucket | **Do not force-parent spawned NetworkObjects under `_DynamicObjects` for Phase B** | Root-level spawned NetworkObjects match Fusion runner-scene ownership. Revisit when a networked parent strategy is needed. |

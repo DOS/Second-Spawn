@@ -6,7 +6,7 @@ namespace SecondSpawn.Settings
     /// Project-level runtime configuration for the Unity client.
     ///
     /// What lives here:
-    /// - Public endpoints (gateway base URL, Supabase URL)
+    /// - Public endpoints (Nakama server URL, Supabase URL)
     /// - Public client keys ONLY (Supabase anon key - designed public-safe)
     /// - Photon Fusion 2 App ID (semi-public - meant for client to know)
     /// - Per-environment toggles (dev / staging / prod)
@@ -17,9 +17,9 @@ namespace SecondSpawn.Settings
     /// - thirdweb secret key
     /// - DOS Chain signing keys
     ///
-    /// Secrets stay in backend/gateway/.env, never compiled into the
-    /// Unity client. The client authenticates to the gateway with a
-    /// Supabase JWT (per-player); the gateway then proxies to providers.
+    /// Secrets stay in server environments, never compiled into the Unity
+    /// client. The client authenticates to Nakama; Nakama calls api.dos.ai
+    /// when model-backed decisions are needed.
     ///
     /// One asset instance at Assets/Settings/SecondSpawnConfig.asset is
     /// loaded at startup via Resources or addressables.
@@ -33,10 +33,6 @@ namespace SecondSpawn.Settings
         [Header("Environment")]
         [Tooltip("Affects logging, telemetry, and which endpoints are used.")]
         public BuildEnvironment Environment = BuildEnvironment.Development;
-
-        [Header("Gateway")]
-        [Tooltip("Base URL of the Go LLM gateway. All LLM + NFT calls go through here.")]
-        public string GatewayBaseUrl = "https://second-spawn-gateway-535583621422.asia-southeast1.run.app";
 
         [Header("Supabase (public-safe values only)")]
         [Tooltip("Supabase project URL, e.g. https://your-project.supabase.co")]

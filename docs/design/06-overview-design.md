@@ -5,7 +5,7 @@
 *Author: Codex*
 *Last Verified: 2026-05-14 against `AGENTS.md`, `00-game-concept.md`, `01-pillars.md`, `02-vertical-slice-spec.md`, and `05-networking-architecture.md`*
 
-> **Quick reference** - Layer: `Core` - Priority: `Vertical Slice` - Key deps: `Photon Fusion 2`, `Nakama OSS`, `api.dos.ai / Go LLM Gateway`, `DOS Chain`, `Convai phase 1`
+> **Quick reference** - Layer: `Core` - Priority: `Vertical Slice` - Key deps: `Photon Fusion 2`, `Nakama OSS`, `api.dos.ai model service`, `DOS Chain`, `Convai phase 1`
 
 ---
 
@@ -17,7 +17,7 @@ This document is the short "what are we building" design anchor for the first pl
 
 ## One-Sentence Game
 
-SECOND SPAWN is a near-future, post-apocalyptic, top-down ARPG MMO where a player's character keeps living through an AI agent while the player is offline, time acts as both life and currency, and death transfers consciousness into a new synthetic body instead of simply respawning.
+SECOND SPAWN is a near-future, post-disaster, top-down ARPG MMO where a player's character keeps living through an AI agent while the player is offline, TIME acts as the life medium, SECOND acts as the unit/currency, and death transfers a neural imprint into a new bio-synthetic Frame instead of simply respawning.
 
 ---
 
@@ -45,9 +45,9 @@ The 3-6 month vertical slice must let a solo player experience the identity-defi
 | Hook | Slice Expression |
 | ---- | ---- |
 | AI agent 24/7 | The offline agent farms one designated area and produces an activity log visible when the player returns. |
-| Reincarnation | Death consumes a test SECOND token and transfers consciousness to a new body with partial cultivation carryover. |
-| Time-as-currency | The current body has a time budget that can be earned, spent, and depleted to trigger death pressure. |
-| Consciousness transfer | The death and respawn flow is framed as synthetic-body transfer, not spiritual resurrection. |
+| Reincarnation | Death consumes test SECOND and transfers a neural imprint to a new Frame with selected profile carryover. |
+| TIME / SECOND economy | The current Frame has a TIME budget measured in SECOND that can be earned, spent, and depleted to trigger death pressure. |
+| Neural imprint transfer | The death and spawn flow is framed as Frame transfer, not spiritual resurrection. |
 
 The slice does not need large content volume. It needs a tight loop that proves the game's identity.
 
@@ -89,7 +89,7 @@ The first prototype should create a small, project-owned movement contract. Simp
 | Config | `SecondSpawnConfig.asset` exists with public-safe fields | No secrets in Unity. |
 | Persistence | Not in first playable | Nakama OSS comes after movement baseline. |
 | AI/LLM | Not in first playable | Design must keep path open. |
-| Time-as-currency | Not in first playable | First implementation belongs with reincarnation/progression, not movement. |
+| TIME / SECOND economy | Not in first playable | First implementation belongs with reincarnation/progression, not movement. |
 | NFT | Not in first playable | No chain dependency for movement prototype. |
 
 ---
@@ -106,7 +106,7 @@ The first prototype should create a small, project-owned movement contract. Simp
 - Offline AI agent behavior
 - Dungeon instance
 - Reincarnation mechanics
-- Time-as-currency economy
+- TIME / SECOND economy
 
 These are still vertical slice systems. They are only excluded from the first playable prototype.
 
@@ -155,7 +155,7 @@ These are still vertical slice systems. They are only excluded from the first pl
 | This Document References | Target Doc | Specific Element Referenced | Nature |
 | ---- | ---- | ---- | ---- |
 | Core identity | `00-game-concept.md` | Elevator pitch and core fantasy | Design dependency |
-| Pillar priority | `01-pillars.md` | Server-authoritative gameplay, AI agent 24/7, reincarnation, time-as-currency | Rule dependency |
+| Pillar priority | `01-pillars.md` | Server-authoritative gameplay, AI agent 24/7, reincarnation, TIME / SECOND economy | Rule dependency |
 | Slice scope | `02-vertical-slice-spec.md` | Build phases and acceptance criteria | Scope dependency |
 | Systems order | `03-systems-index.md` | NetworkRunner, Player Controller, Camera, Input | Build dependency |
 | Network contract | `05-networking-architecture.md` | NetworkRunnerSetup, NetworkPlayer, NetworkInputProvider | Technical dependency |

@@ -24,7 +24,7 @@ High-level architecture overview. For detailed component design see `docs/design
            |                  | LLM intent request
            v                  v
    +---------------+   +----------------------------+
-   | Nakama OSS    |   | api.dos.ai / Go LLM Gateway|
+   | Nakama OSS    |   | api.dos.ai model service |
    | - Game APIs   |   | - Convai (phase 1)         |
    | - Social      |   | - Anthropic + OpenAI (P2)  |
    | - Storage     |   | - RAG memory retrieval     |
@@ -56,7 +56,7 @@ High-level architecture overview. For detailed component design see `docs/design
 - Source of truth for `BodyTime` earn, spend, drain, transfer, and expiration
 - Validates every action intent (from player input or AI agent)
 - Persists durable state through Nakama/Postgres (snapshots + events)
-- Triggers `api.dos.ai` / Go LLM Gateway for NPC dialogue when triggered
+- Triggers `api.dos.ai` for NPC dialogue when triggered
 - Manages zone lifecycle (load / unload / spawn)
 - Tick rate: 30Hz (60Hz for boss encounters if needed)
 
@@ -66,14 +66,14 @@ High-level architecture overview. For detailed component design see `docs/design
 - Subscribes to Fusion server state for offline characters
 - Decision loop: read state -> reason via LLM -> emit action intent
 - Subject to same server validation as a real player
-- Inherits player's character cultivation tier + persona + history
+- Inherits player's current body stats, persona, and history
 
 ### OpenClaw-Connected NPC
 
 - User-owned OpenClaw agent connected into SECOND SPAWN as an NPC-like world actor
 - May appear as a companion, hub NPC, merchant-like persona, quest-adjacent character, or social world citizen
 - Bound to Nakama identity, consent scope, moderation state, rate limits, and activity logs
-- Uses `api.dos.ai` / Go LLM Gateway for prompt safety, provider routing, and memory context
+- Uses `api.dos.ai` for prompt safety, provider routing, and memory context
 - Emits dialogue or structured intent only
 - Never mutates gameplay state directly; Fusion server validates every in-world action
 
@@ -97,7 +97,7 @@ High-level architecture overview. For detailed component design see `docs/design
 - Not the primary game backend baseline after ADR 0010
 - Never used for combat / movement sync
 
-### `api.dos.ai` / Go LLM Gateway
+### `api.dos.ai` Model Service
 
 - All LLM calls go through here
 - Multi-provider routing (Convai phase 1, Anthropic + OpenAI phase 2)
@@ -127,7 +127,7 @@ High-level architecture overview. For detailed component design see `docs/design
 
 1. **Server is the only authority.** Client + AI agent emit intents; server applies or rejects.
 2. **LLM never mutates state directly.** LLM emits structured intent -> server validates -> applies.
-3. **LLM API keys live only in `api.dos.ai` / Go LLM Gateway env.** Never in Unity client, never in Supabase Edge Function reaching the client.
+3. **LLM API keys live only in `api.dos.ai` model service env.** Never in Unity client, never in Supabase Edge Function reaching the client.
 4. **NFT lock is on-chain.** When equipped, escrow contract holds. Server reads on-chain state, does not assume off-chain.
 5. **AI agent inherits player limits.** No agent can do what a real player cannot.
 6. **Time mutations are server-authoritative.** `BodyTime` is gameplay state; client, LLM, and AI agents can only request validated time intents.
@@ -137,5 +137,5 @@ High-level architecture overview. For detailed component design see `docs/design
 - AI agent scheduling: 1 process per agent vs pooled worker?
 - Fusion server sharding: 1 process per zone vs multiple zones per process?
 - LLM cost cap per player per day (need to design)
-- Hot reload for cultivation balance changes (config in Postgres vs git)
+- Hot reload for progression balance changes (config in Postgres vs git)
 - Replay system for cheat investigation (record Fusion ticks)
