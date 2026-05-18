@@ -178,6 +178,8 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   green, yellow, and red performance bands.
 - Permanent NPC brain labels now include source reasons such as
   `provider_error`, making DOS.AI gateway degradation visible in Play Mode.
+- Gateway agent decisions now default to the `dos-ai` model on `api.dos.ai`;
+  Claude aliases are not the default path for the prototype NPC brain.
 - Prototype debug panel hotkeys now use Unity Input System keyboard polling
   instead of the disabled legacy input API, stopping Play Mode console spam.
 - Prototype Nakama world storage now scopes permanent NPC profiles and hub chat

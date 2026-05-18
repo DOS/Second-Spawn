@@ -19,11 +19,13 @@ type Provider interface {
 }
 
 // Model identifies which model variant to call.
-// Phase 1: Convai handles NPC dialogue; Anthropic + OpenAI come online phase 2.
+// Phase 1: Convai handles NPC dialogue; DOS.AI chat completions back model
+// decisions for the prototype agent loop.
 type Model string
 
 const (
-	ModelHaikuFast    Model = "claude-haiku-4.5"  // NPC chat (fast, cheap) - phase 2
+	ModelDOSAI        Model = "dos-ai"            // prototype NPC decisions through api.dos.ai
+	ModelHaikuFast    Model = "claude-haiku-4.5"  // reserved external-provider alias, not the default path
 	ModelSonnetSmart  Model = "claude-sonnet-4.6" // boss / quest-critical dialog - phase 2
 	ModelOpenAIVoice  Model = "gpt-realtime"      // voice NPC via ephemeral token - phase 2
 	ModelConvaiPhase1 Model = "convai-default"    // phase 1 NPC dialogue
