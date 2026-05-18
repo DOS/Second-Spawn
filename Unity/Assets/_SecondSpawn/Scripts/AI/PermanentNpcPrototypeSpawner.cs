@@ -33,6 +33,7 @@ namespace SecondSpawn.AI
         [SerializeField, Min(0.25f)] private float _agentDecisionIntervalSeconds = 12f;
         [SerializeField, Min(0f)] private float _agentStartStaggerSeconds = 0.75f;
         [SerializeField, Min(0.5f)] private float _agentPatrolRadius = 5f;
+        [SerializeField] private bool _agentPhaseLogs = false;
 
         private const string RootName = "_PermanentNpcMarkers";
 
@@ -166,6 +167,7 @@ namespace SecondSpawn.AI
                     _agentPatrolRadius,
                     _agentDecisionIntervalSeconds,
                     index * _agentStartStaggerSeconds);
+                brain.SetPhaseLogging(_agentPhaseLogs);
                 return;
             }
 
@@ -376,6 +378,10 @@ namespace SecondSpawn.AI
     public sealed class PrototypeScreenSpaceLabel : MonoBehaviour
     {
         private const float ScreenPadding = 8f;
+        private const float StatusRefreshSeconds = 0.25f;
+
+        private static int s_cachedCameraFrame = -1;
+        private static Camera s_cachedMainCamera;
 
         private string _text = "";
         private float _visibleDistance = 24f;
@@ -385,6 +391,10 @@ namespace SecondSpawn.AI
         private GUIContent _content;
         private GUIStyle _labelStyle;
         private GUIStyle _shadowStyle;
+        private string _cachedDisplayText = "";
+        private Color _cachedLabelColor = new Color(0.92f, 0.94f, 0.96f);
+        private float _cachedHeight;
+        private float _nextStatusRefreshAt;
 
         public void Configure(string text, float visibleDistance, int fontSize, float maxWidth)
         {
@@ -392,7 +402,12 @@ namespace SecondSpawn.AI
             _visibleDistance = Mathf.Max(1f, visibleDistance);
             _fontSize = Mathf.Clamp(fontSize, 12, 24);
             _maxWidth = Mathf.Max(96f, maxWidth);
-            _content = new GUIContent(BuildDisplayText());
+            _cachedDisplayText = _text;
+            _cachedLabelColor = new Color(0.92f, 0.94f, 0.96f);
+            _cachedHeight = _fontSize * 2.25f;
+            _nextStatusRefreshAt = 0f;
+            _content ??= new GUIContent();
+            _content.text = _cachedDisplayText;
         }
 
         private void OnGUI()
@@ -402,7 +417,7 @@ namespace SecondSpawn.AI
                 return;
             }
 
-            var cam = Camera.main;
+            var cam = GetMainCameraCached();
             if (cam == null || string.IsNullOrWhiteSpace(_text))
             {
                 return;
@@ -427,17 +442,28 @@ namespace SecondSpawn.AI
             }
 
             EnsureStyles();
-            RefreshBrainReference();
-            var content = _content ??= new GUIContent(BuildDisplayText());
-            content.text = BuildDisplayText();
-            _labelStyle.normal.textColor = ResolveLabelColor();
-            var height = _labelStyle.CalcHeight(content, _maxWidth);
+            RefreshDisplayCache(force: false);
+            var content = _content ??= new GUIContent(_cachedDisplayText);
+            _labelStyle.normal.textColor = _cachedLabelColor;
+            var height = _cachedHeight;
             var x = Mathf.Clamp(screenPoint.x - _maxWidth * 0.5f, ScreenPadding, Screen.width - _maxWidth - ScreenPadding);
             var y = Mathf.Clamp(Screen.height - screenPoint.y - height * 0.5f, ScreenPadding, Screen.height - height - ScreenPadding);
             var rect = new Rect(x, y, _maxWidth, height);
 
             GUI.Label(new Rect(rect.x + 1f, rect.y + 1f, rect.width, rect.height), content, _shadowStyle);
             GUI.Label(rect, content, _labelStyle);
+        }
+
+        private static Camera GetMainCameraCached()
+        {
+            if (s_cachedCameraFrame == Time.frameCount)
+            {
+                return s_cachedMainCamera;
+            }
+
+            s_cachedCameraFrame = Time.frameCount;
+            s_cachedMainCamera = Camera.main;
+            return s_cachedMainCamera;
         }
 
         private void RefreshBrainReference()
@@ -463,6 +489,30 @@ namespace SecondSpawn.AI
         private Color ResolveLabelColor()
         {
             return _brain == null ? new Color(0.92f, 0.94f, 0.96f) : _brain.BrainStatusColor;
+        }
+
+        private void RefreshDisplayCache(bool force)
+        {
+            if (!force && Time.unscaledTime < _nextStatusRefreshAt)
+            {
+                return;
+            }
+
+            _nextStatusRefreshAt = Time.unscaledTime + StatusRefreshSeconds;
+            RefreshBrainReference();
+            var nextText = BuildDisplayText();
+            var nextColor = ResolveLabelColor();
+            if (!force && nextText == _cachedDisplayText && nextColor == _cachedLabelColor)
+            {
+                return;
+            }
+
+            EnsureStyles();
+            _cachedDisplayText = nextText;
+            _cachedLabelColor = nextColor;
+            _content ??= new GUIContent();
+            _content.text = _cachedDisplayText;
+            _cachedHeight = _labelStyle.CalcHeight(_content, _maxWidth);
         }
 
         private void EnsureStyles()

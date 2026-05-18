@@ -54,6 +54,8 @@ namespace SecondSpawn.AI
         [SerializeField] private int _gatewayFailureErrorThreshold = 3;
         [SerializeField, Tooltip("When the model gateway reports a daily token budget exhaustion, use Nakama fallback only for this long before probing the gateway again.")]
         private float _gatewayBudgetBackoffSeconds = 60f;
+        [SerializeField, Tooltip("Backoff after a model-selected NPC say intent fails Nakama persistence validation.")]
+        private float _intentPersistenceFailureBackoffSeconds = 45f;
 
         private SecondSpawnGatewayClient _gateway;
         private AgentContextDto _context;
@@ -72,6 +74,7 @@ namespace SecondSpawn.AI
         private int _loopSequence;
         private int _consecutiveGatewayFailures;
         private float _gatewayBudgetBackoffUntil;
+        private float _intentPersistenceBackoffUntil;
         private ActorProfileDto _configuredActorProfile;
         private readonly List<string> _phaseTrace = new List<string>();
 
@@ -144,6 +147,11 @@ namespace SecondSpawn.AI
             _hasMoveTarget = false;
             ApplyLocomotion(0f);
             LogPhase(BrainPhase.Idle, "brain stopped");
+        }
+
+        public void SetPhaseLogging(bool enabled)
+        {
+            _logPhaseTransitions = enabled;
         }
 
         public void ConfigureActorProfile(
@@ -584,6 +592,11 @@ namespace SecondSpawn.AI
                 yield break;
             }
 
+            if (Time.realtimeSinceStartup < _intentPersistenceBackoffUntil)
+            {
+                yield break;
+            }
+
             var targetId = string.IsNullOrWhiteSpace(decision.target_id) ? null : decision.target_id.Trim();
             var distanceMeters = ResolveNearbyObjectDistance(request.world_snapshot?.nearby_objects, targetId);
             NpcIntentSubmitResponseDto response = null;
@@ -602,7 +615,12 @@ namespace SecondSpawn.AI
 
             if (response == null)
             {
-                Debug.LogWarning($"[PrototypeAgentBrain] NPC intent persistence failed for agent={_agentId}: {error}");
+                _intentPersistenceBackoffUntil = Time.realtimeSinceStartup + Mathf.Max(_decisionIntervalSeconds, _intentPersistenceFailureBackoffSeconds);
+                Debug.LogWarning($"[PrototypeAgentBrain] NPC intent persistence paused for agent={_agentId}, retry_in={Mathf.Max(0f, _intentPersistenceBackoffUntil - Time.realtimeSinceStartup):0}s: {ShortenForLog(error, 220)}");
+            }
+            else
+            {
+                _intentPersistenceBackoffUntil = 0f;
             }
         }
 
@@ -622,6 +640,17 @@ namespace SecondSpawn.AI
             }
 
             return 0f;
+        }
+
+        private static string ShortenForLog(string value, int maxLength)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return "unknown";
+            }
+
+            var normalized = value.Trim().Replace("\r", " ").Replace("\n", " ");
+            return normalized.Length <= maxLength ? normalized : normalized.Substring(0, Mathf.Max(0, maxLength - 3)) + "...";
         }
 
         private void ApplyContextToPrototypeBody()

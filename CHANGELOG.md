@@ -160,6 +160,12 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 - Permanent NPC nameplates now show the active brain source in Play Mode:
   `AI DOS.AI` for model-backed decisions, orange `AI FALLBACK` for degraded
   Nakama fallback, and red `AI ERROR` when no valid decision is available.
+- Permanent NPC nameplates now cache camera, text, color, and layout updates,
+  and the 10-NPC swarm disables phase-trace console logs by default to reduce
+  Play Mode frame hitches.
+- Failed NPC intent persistence now backs off before retrying and shortens
+  warning text, reducing repeated console and network spam when Nakama rejects
+  a model-selected social intent.
 - Prototype debug panel hotkeys now use Unity Input System keyboard polling
   instead of the disabled legacy input API, stopping Play Mode console spam.
 - Prototype Nakama world storage now scopes permanent NPC profiles and hub chat
