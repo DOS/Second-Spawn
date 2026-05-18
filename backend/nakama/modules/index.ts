@@ -3143,6 +3143,7 @@ function tryDosAiAgentDecision(
     }
 
     var decision = parseModelDecisionContent(content);
+    sanitizeModelDecisionIntent(decision, world);
     var validationError = validateAgentDecisionIntent(decision, allowed, world);
     if (validationError) {
       logger.info("DOS.AI decision rejected: " + validationError);
@@ -3334,6 +3335,22 @@ function parseModelDecisionContent(content: string): any {
     }
   }
   return parseJson(normalized, "model decision");
+}
+
+function sanitizeModelDecisionIntent(decision: any, world: any): void {
+  if (!decision || typeof decision !== "object") {
+    return;
+  }
+
+  var action = trimString(decision.action).toLowerCase();
+  if (action !== "say") {
+    return;
+  }
+
+  var targetId = trimString(decision.target_id);
+  if (targetId && !isNearbyActor(world, targetId)) {
+    decision.target_id = "";
+  }
 }
 
 function validateAgentDecisionIntent(decision: any, allowed: string[], world: any): string {

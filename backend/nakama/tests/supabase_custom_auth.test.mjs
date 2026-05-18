@@ -913,6 +913,38 @@ const invalidModelCircuitDecision = JSON.parse(invalidModelHarness.registeredRpc
 assert.equal(invalidModelCircuitDecision.source_reason, "dos_ai_circuit_open");
 assert.equal(invalidModelCalls, 1);
 
+const offTargetSayHarness = createRuntimeHarness(module);
+offTargetSayHarness.nk.httpRequest = () => ({
+  code: 200,
+  body: JSON.stringify({
+    choices: [{
+      message: { content: JSON.stringify({ action: "say", target_id: "not-nearby", say: "Status is steady.", reason: "social check", confidence: 0.6 }) }
+    }]
+  })
+});
+const offTargetSayDecision = JSON.parse(offTargetSayHarness.registeredRpcs.get("secondspawn_agent_decide")(
+  {
+    userId: "off-target-say-user",
+    env: {
+      DOS_AI_API_KEY: "dos-ai-test-key",
+      DOS_AI_BASE_URL: "https://api.dos.ai/v1",
+      AGENT_DECISION_MODEL: "dos-ai"
+    }
+  },
+  offTargetSayHarness.logger,
+  offTargetSayHarness.nk,
+  JSON.stringify({
+    world_snapshot: {
+      position: { x: 2, z: 3 },
+      body_time_seconds: 3600,
+      nearby_objects: [{ id: "npc-wasteland-courier-0244", kind: "nearby_actor", distance: 3 }]
+    },
+    allowed: ["say", "stop"]
+  })
+));
+assert.equal(offTargetSayDecision.source, "model");
+assert.equal(offTargetSayDecision.target_id, "");
+
 const modelFallbackCases = [
   {
     name: "prose",
