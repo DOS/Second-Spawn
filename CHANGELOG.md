@@ -166,6 +166,11 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 - Failed NPC intent persistence now backs off before retrying and shortens
   warning text, reducing repeated console and network spam when Nakama rejects
   a model-selected social intent.
+- Prototype NPC visuals now replace legacy animation controllers unless they
+  expose the expected locomotion parameters, reducing imported asset controller
+  warnings during Play Mode spawn.
+- Generated NPC visual prefabs now serialize the shared prototype animator
+  controller, and the visual rebuild tool preserves that rule for future imports.
 - Prototype debug panel hotkeys now use Unity Input System keyboard polling
   instead of the disabled legacy input API, stopping Play Mode console spam.
 - Prototype Nakama world storage now scopes permanent NPC profiles and hub chat
