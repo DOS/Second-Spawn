@@ -377,7 +377,7 @@ Every important NPC-like actor should eventually resolve to a bundle with clear 
 | `FrameIdentity` | Public-facing name, callsign, role, faction title, and reputation summary |
 | `BodyProfile` | Current vessel, archetype, visual key, lifecycle, loaded TIME, and body-bound state |
 | `CharacterStats` | Combat, movement, health, energy, attack, defense, and level values |
-| `CharacterTraits` | Personality and behavior tendencies for agent decisions |
+| `CharacterTraits` | Numeric personality tendencies for human-believable agent decisions, including empathy, honesty, cunning, loyalty, ambition, self-preservation, courage, discipline, aggression, mercy, curiosity, sociability, paranoia, greed, pragmatism, and vengefulness |
 | `BodyStory` | Short origin, role, conflict, and rumor hooks for the specific body |
 | `SoulProfile` | Durable identity, name, drive, temperament, goals, and moral boundaries |
 | `MemoryRecord` | Bounded memories used by LLM and deterministic agent context |
@@ -397,6 +397,12 @@ not required backend layers for the MVP. For OpenClaw-connected NPCs, the
 external OpenClaw instance owns its own agent files and routines. The game only
 stores the control binding, policy, allowed intent schema, bounded context, and
 runtime audit state.
+
+The current NPC design target is a human-believable agent model, not a narrow
+scripted quest-giver model. Each important NPC should have a stable trait vector,
+`FrameSoul`, `FrameMemory`, relationship ledger, BodyTime state, current needs,
+mood or stress context, and validated action surface. See
+[13-human-believable-npc-agent-model.md](13-human-believable-npc-agent-model.md).
 
 Prototype body-model decisions:
 

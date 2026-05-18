@@ -3,7 +3,7 @@
 *Status: Prototype implemented*
 *Created: 2026-05-15*
 *Author: Codex*
-*Last Verified: 2026-05-17 against `AGENTS.md`, ADR 0003, ADR 0004, `08-time-as-currency.md`, Cloud Run staging gateway, Nakama runtime smoke, and Unity Play Mode profile sync*
+*Last Verified: 2026-05-18 against `AGENTS.md`, ADR 0003, ADR 0004, `08-time-as-currency.md`, Cloud Run staging gateway, Nakama runtime smoke, Unity Play Mode profile sync, and [13-human-believable-npc-agent-model.md](13-human-believable-npc-agent-model.md)*
 
 > **Quick reference** - Layer: `Persistence / AI Agent` - Priority: `MVP foundation` - Key deps: `Auth`, `Fusion server authority`, `LLM gateway`, `TIME / SECOND economy`, `Reincarnation`
 
@@ -220,6 +220,60 @@ Fields:
 | `reincarnation_lore` | What the character remembers about prior bodies |
 
 The LLM may use these fields to choose between valid intents, not to invent new abilities.
+
+## Human-Believable Character Traits
+
+`CharacterTraits` is the numeric personality substrate for NPCs, offline player
+agents, and player-inhabitable Frames. It should stay separate from
+`CharacterStats`: traits guide behavior and prompt context, while stats govern
+combat and movement math.
+
+The MVP implementation currently has a small trait surface. The design target is
+the broader trait vector in
+[13-human-believable-npc-agent-model.md](13-human-believable-npc-agent-model.md):
+
+- `empathy`
+- `honesty`
+- `cunning`
+- `loyalty`
+- `ambition`
+- `self_preservation`
+- `courage`
+- `discipline`
+- `aggression`
+- `mercy`
+- `curiosity`
+- `sociability`
+- `paranoia`
+- `greed`
+- `pragmatism`
+- `vengefulness`
+
+Do not add a single `good_evil` field. Moral behavior should emerge from the
+trait vector, `FrameSoul`, `FrameMemory`, relationship state, current pressure,
+and server-validated choices.
+
+## Relationship Ledger
+
+Relationships are part of the character model, not only dialogue flavor. The
+current prototype already uses affinity and hostility. The design target is a
+bounded per-target ledger:
+
+| Field | Meaning |
+| ---- | ---- |
+| `affinity` | General liking or pull toward another actor |
+| `hostility` | Active resentment, dislike, avoidance, or desire to harm |
+| `trust` | Belief that the target is reliable or honest |
+| `fear` | Perceived danger or intimidation from the target |
+| `respect` | Recognition of competence, rank, sacrifice, or moral force |
+| `debt` | Social or material obligation between actors |
+| `familiarity` | Amount of shared contact and history |
+
+Additional relationship depth such as attachment, rivalry, last interaction
+tone, and tags can be added once the MVP social loop needs them.
+
+The LLM may propose a relationship or memory update, but Nakama owns whether the
+update is accepted and persisted.
 
 ### NPC and Body Profile Rule
 
