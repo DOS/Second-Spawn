@@ -75,6 +75,9 @@ namespace SecondSpawn.AI
         private ActorProfileDto _configuredActorProfile;
         private readonly List<string> _phaseTrace = new List<string>();
 
+        public string BrainStatusLabel { get; private set; } = "AI booting";
+        public Color BrainStatusColor { get; private set; } = new Color(0.82f, 0.86f, 0.9f);
+
         private void Awake()
         {
             _homePosition = transform.position;
@@ -196,6 +199,7 @@ namespace SecondSpawn.AI
             {
                 _loopSequence++;
                 LogPhase(BrainPhase.Sense, BuildSenseLogDetail());
+                SetBrainStatus("AI thinking", new Color(0.72f, 0.82f, 0.95f));
                 var request = BuildDecisionRequest();
                 LogPhase(BrainPhase.Decide, BuildDecisionRequestLogDetail(request));
 
@@ -221,6 +225,7 @@ namespace SecondSpawn.AI
                 }
 
                 TrackGatewayResult(gatewayError, decision != null, fallbackError);
+                UpdateBrainStatus(decision, gatewayError, fallbackError);
 
                 LogPhase(BrainPhase.Validate, BuildDecisionLogDetail(decision, gatewayError, fallbackError));
 
@@ -244,6 +249,7 @@ namespace SecondSpawn.AI
                 _context = BuildContextFromActorProfile(_configuredActorProfile);
                 LogPhase(BrainPhase.Bootstrap, $"actor profile loaded for {_agentId}");
                 ApplyContextToPrototypeBody();
+                SetBrainStatus("AI ready", new Color(0.82f, 0.86f, 0.9f));
                 yield break;
             }
 
@@ -268,6 +274,8 @@ namespace SecondSpawn.AI
                 ? "context unavailable after bootstrap"
                 : "context loaded");
             ApplyContextToPrototypeBody();
+            SetBrainStatus(_context == null ? "AI no context" : "AI ready",
+                _context == null ? new Color(1f, 0.24f, 0.22f) : new Color(0.82f, 0.86f, 0.9f));
         }
 
         private UpdateSoulRequestDto BuildSoulSeed()
@@ -479,6 +487,37 @@ namespace SecondSpawn.AI
             {
                 Debug.LogError($"[PrototypeAgentBrain] Gateway decision failure threshold reached for agent={_agentId}, threshold={_gatewayFailureErrorThreshold}{fallbackDetail}: {gatewayError}");
             }
+        }
+
+        private void UpdateBrainStatus(AgentDecisionDto decision, string gatewayError, string fallbackError)
+        {
+            if (decision == null)
+            {
+                var hasError = !string.IsNullOrWhiteSpace(gatewayError) || !string.IsNullOrWhiteSpace(fallbackError);
+                SetBrainStatus(hasError ? "AI ERROR" : "AI idle", hasError ? new Color(1f, 0.24f, 0.22f) : new Color(0.82f, 0.86f, 0.9f));
+                return;
+            }
+
+            if (string.Equals(decision.source, "model", System.StringComparison.OrdinalIgnoreCase))
+            {
+                SetBrainStatus("AI DOS.AI", new Color(0.62f, 1f, 0.72f));
+                return;
+            }
+
+            if (string.Equals(decision.source, "fallback", System.StringComparison.OrdinalIgnoreCase) ||
+                !string.IsNullOrWhiteSpace(gatewayError))
+            {
+                SetBrainStatus("AI FALLBACK", new Color(1f, 0.62f, 0.16f));
+                return;
+            }
+
+            SetBrainStatus("AI unknown", new Color(1f, 0.86f, 0.28f));
+        }
+
+        private void SetBrainStatus(string label, Color color)
+        {
+            BrainStatusLabel = string.IsNullOrWhiteSpace(label) ? "AI unknown" : label.Trim();
+            BrainStatusColor = color;
         }
 
         private bool IsGatewayBudgetBackoffActive()

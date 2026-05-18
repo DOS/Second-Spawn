@@ -381,6 +381,7 @@ namespace SecondSpawn.AI
         private float _visibleDistance = 24f;
         private int _fontSize = 18;
         private float _maxWidth = 260f;
+        private PrototypeAgentBrain _brain;
         private GUIContent _content;
         private GUIStyle _labelStyle;
         private GUIStyle _shadowStyle;
@@ -391,7 +392,7 @@ namespace SecondSpawn.AI
             _visibleDistance = Mathf.Max(1f, visibleDistance);
             _fontSize = Mathf.Clamp(fontSize, 12, 24);
             _maxWidth = Mathf.Max(96f, maxWidth);
-            _content = new GUIContent(_text);
+            _content = new GUIContent(BuildDisplayText());
         }
 
         private void OnGUI()
@@ -426,7 +427,10 @@ namespace SecondSpawn.AI
             }
 
             EnsureStyles();
-            var content = _content ??= new GUIContent(_text);
+            RefreshBrainReference();
+            var content = _content ??= new GUIContent(BuildDisplayText());
+            content.text = BuildDisplayText();
+            _labelStyle.normal.textColor = ResolveLabelColor();
             var height = _labelStyle.CalcHeight(content, _maxWidth);
             var x = Mathf.Clamp(screenPoint.x - _maxWidth * 0.5f, ScreenPadding, Screen.width - _maxWidth - ScreenPadding);
             var y = Mathf.Clamp(Screen.height - screenPoint.y - height * 0.5f, ScreenPadding, Screen.height - height - ScreenPadding);
@@ -434,6 +438,31 @@ namespace SecondSpawn.AI
 
             GUI.Label(new Rect(rect.x + 1f, rect.y + 1f, rect.width, rect.height), content, _shadowStyle);
             GUI.Label(rect, content, _labelStyle);
+        }
+
+        private void RefreshBrainReference()
+        {
+            if (_brain != null)
+            {
+                return;
+            }
+
+            _brain = GetComponentInParent<PrototypeAgentBrain>();
+        }
+
+        private string BuildDisplayText()
+        {
+            if (_brain == null || string.IsNullOrWhiteSpace(_brain.BrainStatusLabel))
+            {
+                return _text;
+            }
+
+            return $"{_text}\n{_brain.BrainStatusLabel}";
+        }
+
+        private Color ResolveLabelColor()
+        {
+            return _brain == null ? new Color(0.92f, 0.94f, 0.96f) : _brain.BrainStatusColor;
         }
 
         private void EnsureStyles()
