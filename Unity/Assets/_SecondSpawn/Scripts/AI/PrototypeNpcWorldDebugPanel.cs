@@ -14,7 +14,7 @@ namespace SecondSpawn.AI
         [SerializeField] private bool _showPanel = true;
         [SerializeField] private Key _toggleKey = Key.F5;
         [SerializeField] private Vector2 _panelPosition = new Vector2(552f, 280f);
-        [SerializeField] private Vector2 _panelSize = new Vector2(420f, 292f);
+        [SerializeField] private Vector2 _panelSize = new Vector2(480f, 420f);
         [SerializeField] private string _actorAId = "npc-synthetic-sentinel-0101";
         [SerializeField] private string _actorBId = "npc-wasteland-courier-0244";
         [SerializeField] private string _topic = "patrol";
@@ -27,6 +27,8 @@ namespace SecondSpawn.AI
         private bool _busy;
         private string _status = "Ready";
         private ActorProfileDto[] _npcs;
+        private Vector2 _npcScroll;
+        private int _selectedNpcIndex;
         private NpcContextResponseDto _context;
         private NpcIntentSubmitResponseDto _lastIntent;
         private NpcInteractionEventDto _lastInteraction;
@@ -96,6 +98,7 @@ namespace SecondSpawn.AI
 
             DrawLastIntent();
             DrawLastInteraction();
+            DrawSelectedNpc();
             DrawNpcSummary();
             GUILayout.EndArea();
         }
@@ -193,6 +196,11 @@ namespace SecondSpawn.AI
             }
 
             _npcs = response.npcs;
+            if (_npcs != null && _npcs.Length > 0)
+            {
+                _selectedNpcIndex = Mathf.Clamp(_selectedNpcIndex, 0, _npcs.Length - 1);
+            }
+
             _status = $"{label} {response.count} NPCs";
         }
 
@@ -236,12 +244,37 @@ namespace SecondSpawn.AI
                 return;
             }
 
-            var count = Mathf.Min(4, _npcs.Length);
-            for (var i = 0; i < count; i++)
+            GUILayout.Label("Permanent NPCs", _mutedStyle);
+            _npcScroll = GUILayout.BeginScrollView(_npcScroll, GUILayout.Height(96f));
+            for (var i = 0; i < _npcs.Length; i++)
             {
                 var npc = _npcs[i];
-                GUILayout.Label($"{npc.actor_id} | {npc.display_name}", _mutedStyle);
+                var label = $"{i + 1:00} {SafeText(npc.display_name, "NPC")} | {NpcProfession(npc)} | Lv {NpcLevel(npc)} | V{NpcVisualVariant(npc)}";
+                if (GUILayout.Button(label))
+                {
+                    _selectedNpcIndex = i;
+                    _actorAId = SafeText(npc.actor_id, _actorAId);
+                    _status = $"Selected {SafeText(npc.display_name, "NPC")}";
+                }
             }
+
+            GUILayout.EndScrollView();
+        }
+
+        private void DrawSelectedNpc()
+        {
+            var npc = SelectedNpc();
+            if (npc == null)
+            {
+                return;
+            }
+
+            GUILayout.Label("Selected NPC", _mutedStyle);
+            GUILayout.Label($"{SafeText(npc.display_name, "NPC")} | {SafeText(npc.body?.identity?.callsign, npc.actor_id)}", _labelStyle);
+            GUILayout.Label($"{NpcProfession(npc)} | {NpcAge(npc)} | {SafeText(npc.body?.identity?.home_base, "unknown base")}", _labelStyle);
+            GUILayout.Label($"Lv {NpcLevel(npc)} | HP {NpcStats(npc)?.max_health ?? 0} | ATK {NpcStats(npc)?.attack_power ?? 0} | DEF {NpcStats(npc)?.defense_power ?? 0} | V{NpcVisualVariant(npc)}", _labelStyle);
+            GUILayout.Label($"Soul: {SafeText(npc.body?.soul?.name, "unknown")}", _labelStyle);
+            GUILayout.Label(Shorten(SafeText(npc.memory != null && npc.memory.Length > 0 ? npc.memory[0].summary : "", "No seed memory."), 120), _mutedStyle);
         }
 
         private void StartOperation(IEnumerator operation, string label)
@@ -297,6 +330,78 @@ namespace SecondSpawn.AI
         private static string SafeValue(string value, string fallback)
         {
             return string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+        }
+
+        private ActorProfileDto SelectedNpc()
+        {
+            if (_npcs == null || _npcs.Length == 0)
+            {
+                return null;
+            }
+
+            _selectedNpcIndex = Mathf.Clamp(_selectedNpcIndex, 0, _npcs.Length - 1);
+            return _npcs[_selectedNpcIndex];
+        }
+
+        private static CharacterStatsDto NpcStats(ActorProfileDto npc)
+        {
+            return npc?.body?.stats;
+        }
+
+        private static int NpcLevel(ActorProfileDto npc)
+        {
+            return Mathf.Max(1, NpcStats(npc)?.level ?? 1);
+        }
+
+        private static int NpcVisualVariant(ActorProfileDto npc)
+        {
+            return npc?.body?.visual_variant ?? -1;
+        }
+
+        private static string NpcProfession(ActorProfileDto npc)
+        {
+            return SafeText(npc?.body?.identity?.profession, npc?.body?.story?.role, "unknown role");
+        }
+
+        private static string NpcAge(ActorProfileDto npc)
+        {
+            var identity = npc?.body?.identity;
+            if (identity == null || identity.age_years <= 0)
+            {
+                return SafeText(identity?.age_band, "age unknown");
+            }
+
+            var band = SafeText(identity.age_band, "age");
+            return $"{identity.age_years}y {band}";
+        }
+
+        private static string SafeText(params string[] values)
+        {
+            for (var i = 0; i < values.Length; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(values[i]))
+                {
+                    return values[i].Trim();
+                }
+            }
+
+            return "";
+        }
+
+        private static string Shorten(string value, int maxLength)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return "";
+            }
+
+            var normalized = value.Trim();
+            if (normalized.Length <= maxLength)
+            {
+                return normalized;
+            }
+
+            return maxLength <= 3 ? normalized.Substring(0, maxLength) : normalized.Substring(0, maxLength - 3) + "...";
         }
     }
 }

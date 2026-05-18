@@ -158,6 +158,10 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   archetype-level defaults.
 - Prototype overhead NPC labels were reduced to compact two-line name and role
   plates so 10 spawned NPCs remain readable in Play Mode.
+- Prototype overhead NPC labels now billboard toward the camera and hide past
+  a configurable distance, while the persistent NPC debug panel can inspect
+  each seeded NPC's profession, age, home base, stats, visual variant, soul, and
+  first seed memory.
 - Generated character prefabs now resolve from `_SecondSpawn/Prefabs` and
   generated materials from `_SecondSpawn/Materials`, while vendor asset packs
   remain immutable under `Assets/ExplosiveLLC`.

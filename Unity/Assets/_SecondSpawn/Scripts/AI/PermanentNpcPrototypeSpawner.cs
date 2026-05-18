@@ -24,6 +24,7 @@ namespace SecondSpawn.AI
         [SerializeField, Min(0.5f)] private float _labelHeight = 2.35f;
         [SerializeField, Min(0.01f)] private float _labelCharacterSize = 0.05f;
         [SerializeField, Range(8, 32)] private int _labelMaxLineLength = 22;
+        [SerializeField, Min(1f)] private float _labelVisibleDistance = 24f;
         [SerializeField] private Key _refreshKey = Key.F6;
         [SerializeField] private bool _logStatus = true;
         [SerializeField] private string _zoneId = "prototype-hub";
@@ -191,6 +192,9 @@ namespace SecondSpawn.AI
             text.fontSize = 56;
             text.characterSize = _labelCharacterSize;
             text.color = Color.white;
+
+            var billboard = labelObject.AddComponent<PrototypeBillboardLabel>();
+            billboard.Configure(_labelVisibleDistance);
         }
 
         private void AddFallbackCapsule(Transform marker, ActorProfileDto npc, int index)
@@ -373,6 +377,44 @@ namespace SecondSpawn.AI
         public void Bind(ActorProfileDto profile)
         {
             Profile = profile;
+        }
+    }
+
+    [DisallowMultipleComponent]
+    public sealed class PrototypeBillboardLabel : MonoBehaviour
+    {
+        private float _visibleDistance = 24f;
+        private Renderer _renderer;
+
+        private void Awake()
+        {
+            _renderer = GetComponent<Renderer>();
+        }
+
+        public void Configure(float visibleDistance)
+        {
+            _visibleDistance = Mathf.Max(1f, visibleDistance);
+        }
+
+        private void LateUpdate()
+        {
+            var cam = Camera.main;
+            if (cam == null)
+            {
+                return;
+            }
+
+            var toLabel = transform.position - cam.transform.position;
+            if (toLabel.sqrMagnitude > 0.0001f)
+            {
+                transform.rotation = Quaternion.LookRotation(toLabel);
+            }
+
+            var distance = Mathf.Sqrt(toLabel.sqrMagnitude);
+            if (_renderer != null)
+            {
+                _renderer.enabled = distance <= _visibleDistance;
+            }
         }
     }
 }

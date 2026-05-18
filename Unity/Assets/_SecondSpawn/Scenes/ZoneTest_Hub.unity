@@ -291,7 +291,7 @@ MonoBehaviour:
   _showPanel: 0
   _toggleKey: 98
   _panelPosition: {x: 552, y: 280}
-  _panelSize: {x: 420, y: 344}
+  _panelSize: {x: 480, y: 420}
   _actorAId: npc-synthetic-sentinel-0101
   _actorBId: npc-wasteland-courier-0244
   _topic: patrol
@@ -320,6 +320,7 @@ MonoBehaviour:
   _labelHeight: 2.35
   _labelCharacterSize: 0.05
   _labelMaxLineLength: 22
+  _labelVisibleDistance: 24
   _refreshKey: 99
   _logStatus: 1
   _zoneId: prototype-hub
