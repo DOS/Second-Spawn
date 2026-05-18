@@ -3193,6 +3193,8 @@ function dosAiAgentDecisionSystemPrompt(): string {
     "{\"action\":\"stop|move|attack|interact|say\",\"target_id\":\"optional\",\"move\":{\"x\":0,\"z\":0},\"say\":\"optional\",\"reason\":\"short safety-grounded reason\",\"confidence\":0.0}",
     "Never grant items, currency, XP, BodyTime, quest progress, inventory, wallet actions, or authoritative state.",
     "Choose only an action present in the allowed list.",
+    "When using target_id, copy it exactly from allowed_target_ids. Do not invent, abbreviate, or reuse old target ids.",
+    "If no allowed target fits, choose stop or say without target_id.",
     "Use SOUL for motive and voice, MEMORY for relationship context, and world_snapshot for who is nearby.",
     "Use stop when policy, BodyTime, danger, hostility, or uncertainty makes action unsafe."
   ].join("\n");
@@ -3202,6 +3204,7 @@ function dosAiAgentDecisionUserPrompt(context: any, request: any, world: any, al
   return JSON.stringify({
     agent_context: compactAgentDecisionContext(context),
     allowed_actions: allowed,
+    allowed_target_ids: compactDecisionTargetIds(world),
     world_snapshot: compactDecisionWorld(world),
     request: {
       player_id: context && context.player && context.player.player_id,
@@ -3271,6 +3274,31 @@ function compactDecisionMemories(memories: any[]): any[] {
   return result;
 }
 
+function compactDecisionTargetIds(world: any): string[] {
+  var ids: string[] = [];
+  appendDecisionTargetIds(ids, world && world.nearby_actors);
+  appendDecisionTargetIds(ids, world && world.nearby_objects);
+  appendDecisionTargetIds(ids, world && world.nearby_targets);
+  var focusTarget = trimString(world && (world.focus_target_id || world.target_id || world.interact_target_id));
+  if (focusTarget && !arrayContains(ids, focusTarget)) {
+    ids.push(focusTarget);
+  }
+  return ids.slice(0, 8);
+}
+
+function appendDecisionTargetIds(ids: string[], values: any): void {
+  if (!values || typeof values.length !== "number") {
+    return;
+  }
+
+  for (var index = 0; index < values.length && ids.length < 8; index += 1) {
+    var id = trimString(values[index] && (values[index].id || values[index].actor_id));
+    if (id && !arrayContains(ids, id)) {
+      ids.push(id);
+    }
+  }
+}
+
 function compactDecisionWorld(world: any): any {
   var nearbyActors = world && world.nearby_actors && typeof world.nearby_actors.length === "number"
     ? world.nearby_actors.slice(0, 6)
@@ -3297,6 +3325,13 @@ function parseModelDecisionContent(content: string): any {
   }
   if (normalized.lastIndexOf("```") === normalized.length - 3) {
     normalized = trimString(normalized.substring(0, normalized.length - 3));
+  }
+  if (normalized.indexOf("{") > 0 || normalized.lastIndexOf("}") < normalized.length - 1) {
+    var firstBrace = normalized.indexOf("{");
+    var lastBrace = normalized.lastIndexOf("}");
+    if (firstBrace >= 0 && lastBrace > firstBrace) {
+      normalized = trimString(normalized.substring(firstBrace, lastBrace + 1));
+    }
   }
   return parseJson(normalized, "model decision");
 }
@@ -3360,7 +3395,7 @@ function isNearbyObject(world: any, targetId: string): boolean {
 function isNearbyActor(world: any, targetId: string): boolean {
   var nearbyActors = world && world.nearby_actors ? world.nearby_actors : [];
   for (var index = 0; index < nearbyActors.length; index += 1) {
-    if (trimString(nearbyActors[index] && nearbyActors[index].id) === targetId) {
+    if (trimString(nearbyActors[index] && (nearbyActors[index].id || nearbyActors[index].actor_id)) === targetId) {
       return true;
     }
   }

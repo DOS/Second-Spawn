@@ -420,6 +420,7 @@ namespace SecondSpawn.AI
                     safe_radius = _patrolRadius,
                     danger_level = 0,
                     body_time_seconds = _context?.body?.time?.remaining_seconds ?? 3600,
+                    nearby_actors = ExtractNearbyActors(nearbyObjects),
                     nearby_objects = nearbyObjects
                 },
                 allowed = shouldTalk
@@ -485,6 +486,26 @@ namespace SecondSpawn.AI
             }
 
             return objects.ToArray();
+        }
+
+        private static WorldObjectDto[] ExtractNearbyActors(WorldObjectDto[] nearbyObjects)
+        {
+            if (nearbyObjects == null || nearbyObjects.Length == 0)
+            {
+                return System.Array.Empty<WorldObjectDto>();
+            }
+
+            var actors = new List<WorldObjectDto>();
+            foreach (var nearbyObject in nearbyObjects)
+            {
+                if (nearbyObject != null &&
+                    string.Equals(nearbyObject.kind, "nearby_actor", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    actors.Add(nearbyObject);
+                }
+            }
+
+            return actors.ToArray();
         }
 
         private string BuildSenseLogDetail()

@@ -672,6 +672,7 @@ namespace SecondSpawn.AI
         public Vector2Dto position;
         public float safe_radius = 5f;
         public WorldTargetDto[] nearby_targets;
+        public WorldObjectDto[] nearby_actors;
         public WorldObjectDto[] nearby_objects;
         public int danger_level;
         public long body_time_seconds;
