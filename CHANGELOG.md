@@ -143,6 +143,15 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   shows over permanent NPCs.
 - Gateway model-backed decisions now prefer `api.dos.ai` via `DOS_AI_API_KEY`
   instead of calling Anthropic directly from the Second Spawn gateway.
+- Model-backed agent decisions now receive explicit proactive-social guidance:
+  `AgentPolicy` decides when to initiate, SOUL shapes motive and voice, MEMORY
+  shapes relationship context, and nearby actor data grounds who is present.
+- Unity prototype NPC brains now include nearby Frame actors in the decision
+  world snapshot, giving the model concrete social context when `say` is
+  allowed.
+- Unity prototype NPC brains now persist model-selected `say` intents through
+  Nakama so NPC social actions become memory and relationship records instead
+  of only local speech bubbles.
 - Prototype debug panel hotkeys now use Unity Input System keyboard polling
   instead of the disabled legacy input API, stopping Play Mode console spam.
 - Prototype Nakama world storage now scopes permanent NPC profiles and hub chat

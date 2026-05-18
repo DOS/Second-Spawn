@@ -42,6 +42,8 @@ namespace SecondSpawn.AI
         [SerializeField] private float _initialDecisionDelaySeconds;
         [SerializeField] private float _moveSpeed = 2.4f;
         [SerializeField] private float _patrolRadius = 5f;
+        [SerializeField] private float _socialSenseRadius = 8f;
+        [SerializeField] private int _maxNearbySocialActors = 3;
         [SerializeField] private float _talkIntervalSeconds = 7.5f;
         [SerializeField] private bool _seedSoulOnStart = true;
         [SerializeField] private bool _alignFeetToGround = true;
@@ -225,7 +227,7 @@ namespace SecondSpawn.AI
                 if (decision != null)
                 {
                     LogPhase(BrainPhase.Act, BuildDecisionLogDetail(decision, null));
-                    ApplyDecision(decision);
+                    yield return ApplyDecision(decision, request);
                 }
 
                 LogPhase(BrainPhase.Reflect, "no reflection write in local prototype loop");
@@ -312,6 +314,8 @@ namespace SecondSpawn.AI
             var position = transform.position;
             var shouldTalk = Time.time >= _nextTalkAt;
 
+            var nearbyObjects = BuildNearbyObjects(position);
+
             return new AgentDecisionRequestDto
             {
                 context = _context,
@@ -322,20 +326,71 @@ namespace SecondSpawn.AI
                     safe_radius = _patrolRadius,
                     danger_level = 0,
                     body_time_seconds = _context?.body?.time?.remaining_seconds ?? 3600,
-                    nearby_objects = new[]
-                    {
-                        new WorldObjectDto
-                        {
-                            id = "hub-origin",
-                            kind = "safe_landmark",
-                            distance = Vector3.Distance(position, _homePosition)
-                        }
-                    }
+                    nearby_objects = nearbyObjects
                 },
                 allowed = shouldTalk
                     ? new[] { "say", "stop" }
                     : new[] { "move", "stop" }
             };
+        }
+
+        private WorldObjectDto[] BuildNearbyObjects(Vector3 position)
+        {
+            var objects = new List<WorldObjectDto>
+            {
+                new WorldObjectDto
+                {
+                    id = "hub-origin",
+                    kind = "safe_landmark",
+                    display_name = "Hub Origin",
+                    role = "safe landmark",
+                    distance = Vector3.Distance(position, _homePosition)
+                }
+            };
+
+            var socialRadius = Mathf.Max(0.5f, _socialSenseRadius);
+            var maxActors = Mathf.Max(0, _maxNearbySocialActors);
+            if (maxActors <= 0)
+            {
+                return objects.ToArray();
+            }
+
+            var brains = FindObjectsByType<PrototypeAgentBrain>(FindObjectsInactive.Exclude);
+            var nearbyActors = new List<WorldObjectDto>();
+            foreach (var brain in brains)
+            {
+                if (brain == null || brain == this || !brain.isActiveAndEnabled)
+                {
+                    continue;
+                }
+
+                var distance = Vector3.Distance(position, brain.transform.position);
+                if (distance > socialRadius)
+                {
+                    continue;
+                }
+
+                nearbyActors.Add(new WorldObjectDto
+                {
+                    id = string.IsNullOrWhiteSpace(brain._agentId) ? brain.name : brain._agentId,
+                    kind = "nearby_actor",
+                    display_name = string.IsNullOrWhiteSpace(brain._displayName) ? brain.name : brain._displayName,
+                    role = string.IsNullOrWhiteSpace(brain._context?.body?.identity?.public_role)
+                        ? "nearby Frame actor"
+                        : brain._context.body.identity.public_role,
+                    affinity = 0,
+                    hostility = 0,
+                    distance = distance
+                });
+            }
+
+            nearbyActors.Sort((left, right) => left.distance.CompareTo(right.distance));
+            for (var index = 0; index < nearbyActors.Count && index < maxActors; index++)
+            {
+                objects.Add(nearbyActors[index]);
+            }
+
+            return objects.ToArray();
         }
 
         private string BuildSenseLogDetail()
@@ -450,7 +505,7 @@ namespace SecondSpawn.AI
                 && gatewayError.IndexOf("token_budget_exhausted", System.StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
-        private void ApplyDecision(AgentDecisionDto decision)
+        private IEnumerator ApplyDecision(AgentDecisionDto decision, AgentDecisionRequestDto request)
         {
             if (decision.action == "say")
             {
@@ -461,7 +516,8 @@ namespace SecondSpawn.AI
                 _voiceCue.PlayCue(text);
                 _intentDriver?.TryPlay(VisualAnimationIntent.Talk);
                 _nextTalkAt = Time.time + Mathf.Max(2f, _talkIntervalSeconds);
-                return;
+                yield return RecordModelNpcIntent(decision, request, text);
+                yield break;
             }
 
             if (decision.action == "move" && decision.move != null)
@@ -469,11 +525,64 @@ namespace SecondSpawn.AI
                 var requested = new Vector3(decision.move.x, transform.position.y, decision.move.z);
                 _moveTarget = ClampToPatrol(requested);
                 _hasMoveTarget = true;
-                return;
+                yield break;
             }
 
             _hasMoveTarget = false;
             ApplyLocomotion(0f);
+            yield break;
+        }
+
+        private IEnumerator RecordModelNpcIntent(AgentDecisionDto decision, AgentDecisionRequestDto request, string text)
+        {
+            if (_gateway == null || decision == null || request == null)
+            {
+                yield break;
+            }
+
+            if (!string.Equals(decision.source, "model", System.StringComparison.OrdinalIgnoreCase))
+            {
+                yield break;
+            }
+
+            var targetId = string.IsNullOrWhiteSpace(decision.target_id) ? null : decision.target_id.Trim();
+            var distanceMeters = ResolveNearbyObjectDistance(request.world_snapshot?.nearby_objects, targetId);
+            NpcIntentSubmitResponseDto response = null;
+            string error = null;
+            yield return _gateway.SubmitPermanentNpcIntent(new NpcIntentSubmitRequestDto
+            {
+                id = CharacterMemorySync.BuildClientEventId("npc-intent"),
+                actor_id = _agentId,
+                target_actor_id = targetId,
+                intent = "say",
+                source = "llm_gateway",
+                text = text,
+                reason = decision.reason,
+                distance_meters = distanceMeters
+            }, value => response = value, value => error = value);
+
+            if (response == null)
+            {
+                Debug.LogWarning($"[PrototypeAgentBrain] NPC intent persistence failed for agent={_agentId}: {error}");
+            }
+        }
+
+        private static float ResolveNearbyObjectDistance(WorldObjectDto[] objects, string targetId)
+        {
+            if (string.IsNullOrWhiteSpace(targetId) || objects == null)
+            {
+                return 0f;
+            }
+
+            foreach (var nearbyObject in objects)
+            {
+                if (nearbyObject != null && nearbyObject.id == targetId)
+                {
+                    return nearbyObject.distance;
+                }
+            }
+
+            return 0f;
         }
 
         private void ApplyContextToPrototypeBody()

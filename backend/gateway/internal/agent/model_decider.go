@@ -121,7 +121,11 @@ func modelDecisionSystemPrompt() string {
 		`{"action":"stop|move|attack|interact|say","target_id":"optional","move":{"x":0,"z":0},"say":"optional","reason":"short safety-grounded reason","confidence":0.0}`,
 		"Never grant items, currency, XP, BodyTime, quest progress, inventory, wallet actions, or authoritative state.",
 		"Choose only an action present in the allowed list.",
-		"Use stop when policy, body time, danger, or uncertainty makes action unsafe.",
+		"Proactive social behavior is an agent policy decision, not a stat reward.",
+		"Use SOUL for motive and voice, MEMORY for relationship context, and world_snapshot for who is nearby.",
+		"When say is allowed, danger is low, and a nearby_actor is present, prefer a short in-character social line over stop.",
+		"When speaking to a specific nearby_actor, include that actor's id as target_id.",
+		"Use stop when policy, body time, danger, hostility, or uncertainty makes action unsafe.",
 	}, "\n")
 }
 

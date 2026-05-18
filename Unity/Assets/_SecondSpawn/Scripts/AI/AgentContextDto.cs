@@ -593,8 +593,8 @@ namespace SecondSpawn.AI
     public sealed class NpcIntentSubmitRequestDto
     {
         public string id;
-        public string actor_id = "npc-synthetic-sentinel-0101";
-        public string target_actor_id = "npc-wasteland-courier-0244";
+        public string actor_id;
+        public string target_actor_id;
         public string intent = "say";
         public string source = "debug";
         public string text;
@@ -694,6 +694,10 @@ namespace SecondSpawn.AI
     {
         public string id;
         public string kind;
+        public string display_name;
+        public string role;
+        public int affinity;
+        public int hostility;
         public float distance;
     }
 

@@ -57,9 +57,13 @@ type WorldTarget struct {
 }
 
 type WorldObject struct {
-	ID       string  `json:"id"`
-	Kind     string  `json:"kind"`
-	Distance float32 `json:"distance"`
+	ID          string  `json:"id"`
+	Kind        string  `json:"kind"`
+	DisplayName string  `json:"display_name,omitempty"`
+	Role        string  `json:"role,omitempty"`
+	Affinity    int     `json:"affinity,omitempty"`
+	Hostility   int     `json:"hostility,omitempty"`
+	Distance    float32 `json:"distance"`
 }
 
 // Decision is the structured output from the LLM layer.
@@ -116,6 +120,9 @@ func ValidateDecision(req DecisionRequest, decision Decision) error {
 	case ActionSay:
 		if strings.TrimSpace(decision.Say) == "" {
 			return fmt.Errorf("%w: say action requires text", ErrInvalidDecision)
+		}
+		if strings.TrimSpace(decision.TargetID) != "" && !hasObjectKind(req.WorldSnapshot.NearbyObjects, decision.TargetID, "nearby_actor") {
+			return fmt.Errorf("%w: say target_id is not a nearby actor", ErrInvalidDecision)
 		}
 		return nil
 	default:
@@ -235,6 +242,15 @@ func hasTarget(targets []WorldTarget, targetID string) bool {
 func hasObject(objects []WorldObject, objectID string) bool {
 	for _, object := range objects {
 		if object.ID == objectID {
+			return true
+		}
+	}
+	return false
+}
+
+func hasObjectKind(objects []WorldObject, objectID string, kind string) bool {
+	for _, object := range objects {
+		if object.ID == objectID && object.Kind == kind {
 			return true
 		}
 	}
