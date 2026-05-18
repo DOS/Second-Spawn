@@ -45,6 +45,8 @@ namespace SecondSpawn.AI
         [SerializeField] private float _moveSpeed = 2.4f;
         [SerializeField] private float _patrolRadius = 5f;
         [SerializeField] private float _socialSenseRadius = 8f;
+        [SerializeField] private float _playerGreetingRadius = 4.5f;
+        [SerializeField] private float _playerGreetingCooldownSeconds = 12f;
         [SerializeField] private int _maxNearbySocialActors = 3;
         [SerializeField] private float _talkIntervalSeconds = 7.5f;
         [SerializeField] private bool _seedSoulOnStart = true;
@@ -68,6 +70,7 @@ namespace SecondSpawn.AI
         private float _baseMoveSpeed;
         private bool _hasMoveTarget;
         private float _nextTalkAt;
+        private float _nextPlayerGreetingAt;
         private int _pendingFootAlignFrames;
         private int _loopSequence;
         private int _consecutiveDecisionFailures;
@@ -256,7 +259,7 @@ namespace SecondSpawn.AI
                 LogPhase(BrainPhase.Reflect, "no reflection write in local prototype loop");
                 var cooldownSeconds = DecisionCooldownSeconds(decision, decisionError);
                 LogPhase(BrainPhase.Cooldown, $"waiting {cooldownSeconds:0.00}s");
-                yield return new WaitForSeconds(cooldownSeconds);
+                yield return WaitForCooldown(cooldownSeconds, CanInterruptCooldownForNearbyPlayer(decision, decisionError));
             }
         }
 
@@ -406,9 +409,10 @@ namespace SecondSpawn.AI
         private AgentDecisionRequestDto BuildDecisionRequest()
         {
             var position = transform.position;
-            var shouldTalk = Time.time >= _nextTalkAt;
-
             var nearbyObjects = BuildNearbyObjects(position);
+            var playerNearby = HasNearbyPlayer(nearbyObjects);
+            var shouldTalk = Time.time >= _nextTalkAt ||
+                (playerNearby && Time.time >= _nextPlayerGreetingAt);
 
             return new AgentDecisionRequestDto
             {
@@ -450,8 +454,52 @@ namespace SecondSpawn.AI
                 return objects.ToArray();
             }
 
-            var brains = FindObjectsByType<PrototypeAgentBrain>(FindObjectsInactive.Exclude);
             var nearbyActors = new List<WorldObjectDto>();
+            AddNearbyPlayers(nearbyActors, position, socialRadius);
+            AddNearbyNpcs(nearbyActors, position, socialRadius);
+
+            nearbyActors.Sort((left, right) => left.distance.CompareTo(right.distance));
+            for (var index = 0; index < nearbyActors.Count && index < maxActors; index++)
+            {
+                objects.Add(nearbyActors[index]);
+            }
+
+            return objects.ToArray();
+        }
+
+        private void AddNearbyPlayers(List<WorldObjectDto> nearbyActors, Vector3 position, float socialRadius)
+        {
+            var playerRadius = Mathf.Clamp(_playerGreetingRadius, 0.5f, socialRadius);
+            var players = FindObjectsByType<NetworkPlayer>(FindObjectsInactive.Exclude);
+            foreach (var player in players)
+            {
+                if (player == null || !player.isActiveAndEnabled)
+                {
+                    continue;
+                }
+
+                var distance = Vector3.Distance(position, player.transform.position);
+                if (distance > playerRadius)
+                {
+                    continue;
+                }
+
+                nearbyActors.Add(new WorldObjectDto
+                {
+                    id = BuildNearbyPlayerActorId(player),
+                    kind = "nearby_actor",
+                    display_name = "Nearby Player",
+                    role = "player-controlled Frame body",
+                    affinity = 8,
+                    hostility = 0,
+                    distance = distance
+                });
+            }
+        }
+
+        private void AddNearbyNpcs(List<WorldObjectDto> nearbyActors, Vector3 position, float socialRadius)
+        {
+            var brains = FindObjectsByType<PrototypeAgentBrain>(FindObjectsInactive.Exclude);
             foreach (var brain in brains)
             {
                 if (brain == null || brain == this || !brain.isActiveAndEnabled)
@@ -478,14 +526,64 @@ namespace SecondSpawn.AI
                     distance = distance
                 });
             }
+        }
 
-            nearbyActors.Sort((left, right) => left.distance.CompareTo(right.distance));
-            for (var index = 0; index < nearbyActors.Count && index < maxActors; index++)
+        private static string BuildNearbyPlayerActorId(NetworkPlayer player)
+        {
+            if (player == null)
             {
-                objects.Add(nearbyActors[index]);
+                return "player-body-unknown";
             }
 
-            return objects.ToArray();
+            var networkId = player.Object != null ? player.Object.Id.ToString() : "";
+            if (!string.IsNullOrWhiteSpace(networkId))
+            {
+                return "player-body-" + networkId.Trim();
+            }
+
+            return "player-body-" + ShortStableName(player.name);
+        }
+
+        private static string ShortStableName(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return "local";
+            }
+
+            var normalized = value.Trim().ToLowerInvariant();
+            var result = "";
+            for (var index = 0; index < normalized.Length && result.Length < 32; index++)
+            {
+                var character = normalized[index];
+                result += char.IsLetterOrDigit(character) ? character : '-';
+            }
+
+            return string.IsNullOrWhiteSpace(result) ? "local" : result;
+        }
+
+        private static bool HasNearbyPlayer(WorldObjectDto[] nearbyObjects)
+        {
+            if (nearbyObjects == null)
+            {
+                return false;
+            }
+
+            foreach (var nearbyObject in nearbyObjects)
+            {
+                if (nearbyObject != null && IsNearbyPlayerActorId(nearbyObject.id))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsNearbyPlayerActorId(string targetId)
+        {
+            return !string.IsNullOrWhiteSpace(targetId) &&
+                targetId.StartsWith("player-body-", System.StringComparison.OrdinalIgnoreCase);
         }
 
         private static WorldObjectDto[] ExtractNearbyActors(WorldObjectDto[] nearbyObjects)
@@ -579,6 +677,35 @@ namespace SecondSpawn.AI
             }
 
             return baseCooldown + _stableDecisionJitterSeconds;
+        }
+
+        private static bool CanInterruptCooldownForNearbyPlayer(AgentDecisionDto decision, string decisionError)
+        {
+            return string.IsNullOrWhiteSpace(decisionError) &&
+                (decision == null ||
+                    !string.Equals(decision.source, "fallback", System.StringComparison.OrdinalIgnoreCase) ||
+                    !IsModelBackoffReason(decision.source_reason));
+        }
+
+        private IEnumerator WaitForCooldown(float cooldownSeconds, bool allowPlayerInterrupt)
+        {
+            if (!allowPlayerInterrupt)
+            {
+                yield return new WaitForSeconds(cooldownSeconds);
+                yield break;
+            }
+
+            var endAt = Time.time + Mathf.Max(0f, cooldownSeconds);
+            while (Time.time < endAt)
+            {
+                if (Time.time >= _nextPlayerGreetingAt &&
+                    HasNearbyPlayer(BuildNearbyObjects(transform.position)))
+                {
+                    yield break;
+                }
+
+                yield return new WaitForSeconds(0.75f);
+            }
         }
 
         private static IEnumerator WaitForDecisionSlot()
@@ -768,6 +895,11 @@ namespace SecondSpawn.AI
                 _voiceCue.PlayCue(text);
                 _intentDriver?.TryPlay(VisualAnimationIntent.Talk);
                 _nextTalkAt = Time.time + Mathf.Max(2f, _talkIntervalSeconds);
+                if (IsNearbyPlayerActorId(decision.target_id) ||
+                    HasNearbyPlayer(request.world_snapshot?.nearby_objects))
+                {
+                    _nextPlayerGreetingAt = Time.time + Mathf.Max(2f, _playerGreetingCooldownSeconds);
+                }
                 yield return RecordModelNpcIntent(decision, request, text);
                 yield break;
             }
@@ -802,7 +934,7 @@ namespace SecondSpawn.AI
                 yield break;
             }
 
-            var targetId = string.IsNullOrWhiteSpace(decision.target_id) ? null : decision.target_id.Trim();
+            var targetId = PersistentIntentTargetId(decision.target_id, request.world_snapshot?.nearby_objects);
             var distanceMeters = ResolveNearbyObjectDistance(request.world_snapshot?.nearby_objects, targetId);
             NpcIntentSubmitResponseDto response = null;
             string error = null;
@@ -827,6 +959,39 @@ namespace SecondSpawn.AI
             {
                 _intentPersistenceBackoffUntil = 0f;
             }
+        }
+
+        private static string PersistentIntentTargetId(string targetId, WorldObjectDto[] nearbyObjects)
+        {
+            if (string.IsNullOrWhiteSpace(targetId))
+            {
+                return null;
+            }
+
+            var normalizedTargetId = targetId.Trim();
+            if (IsNearbyPlayerActorId(normalizedTargetId))
+            {
+                return null;
+            }
+
+            if (nearbyObjects == null)
+            {
+                return normalizedTargetId;
+            }
+
+            foreach (var nearbyObject in nearbyObjects)
+            {
+                if (nearbyObject == null || nearbyObject.id != normalizedTargetId)
+                {
+                    continue;
+                }
+
+                return string.Equals(nearbyObject.kind, "nearby_actor", System.StringComparison.OrdinalIgnoreCase)
+                    ? normalizedTargetId
+                    : null;
+            }
+
+            return normalizedTargetId;
         }
 
         private static float ResolveNearbyObjectDistance(WorldObjectDto[] objects, string targetId)
