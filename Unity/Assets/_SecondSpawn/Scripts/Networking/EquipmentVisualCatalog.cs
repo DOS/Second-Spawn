@@ -177,7 +177,7 @@ namespace SecondSpawn.Networking
             }
 
             return name is "pistol" or "dagger" or "knife" or "sword" or "swordl" or "swordr" or
-                "shield" or "mace" or "staff" or "spear" or "axe" or "bow" or "crossbow" or "rifle" or
+                "shield" or "mace" or "staff" or "spear" or "axe" or "bow" or "rifle" or
                 "gun" or "wand" or "club" or "arrow" or "quiver" or "buckler";
         }
 

@@ -175,6 +175,19 @@ MVP, and a visible offline-agent prototype.
   prototype debug UI.
 - [ ] Add per-player LLM rate limit and token-budget enforcement in Nakama for
   `secondspawn_agent_decide`.
+- [ ] Add server-owned Nakama storage collection boundaries, permissions, and
+  optimistic concurrency for sensitive body, inventory, economy, memory, and
+  relationship writes.
+- [ ] Add append-only Nakama ledgers for BodyTime, SECOND, inventory, rewards,
+  and agent activity so snapshots are auditable.
+- [ ] Add Nakama metrics and structured observability for AI decisions,
+  fallback reasons, storage conflicts, reward claims, and BodyTime mutations.
+- [ ] Separate client, internal worker, and admin RPC namespaces with explicit
+  auth and secret boundaries.
+- [ ] Define shard-ready account routing and database-per-shard operations
+  before running more than one Nakama OSS shard.
+- [ ] Define an external worker or Fusion-server scheduler path for periodic
+  offline-agent and NPC simulation instead of long-running Nakama request loops.
 - [ ] Add the future voice-session Nakama RPC that mints short-lived
   `api.dos.ai` voice tokens without exposing provider keys to Unity.
 - [ ] Wire Convai phase 1 NPC dialogue through the server-side intent boundary.

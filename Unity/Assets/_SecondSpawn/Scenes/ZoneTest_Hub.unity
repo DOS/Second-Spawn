@@ -326,7 +326,7 @@ MonoBehaviour:
   _zoneId: prototype-hub
   _attachAgentBrains: 1
   _agentDecisionIntervalSeconds: 30
-  _agentStartStaggerSeconds: 2.5
+  _agentStartStaggerSeconds: 5
   _agentPatrolRadius: 5
 --- !u!1 &47583031
 GameObject:

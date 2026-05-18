@@ -40,6 +40,7 @@ namespace SecondSpawn.AI
         [SerializeField] private int _visualVariant = 10;
         [SerializeField] private float _decisionIntervalSeconds = 1.6f;
         [SerializeField, Min(1f)] private float _modelFailureCooldownSeconds = 120f;
+        [SerializeField, Min(0f)] private float _decisionCooldownJitterSeconds = 45f;
         [SerializeField] private float _initialDecisionDelaySeconds;
         [SerializeField] private float _moveSpeed = 2.4f;
         [SerializeField] private float _patrolRadius = 5f;
@@ -70,9 +71,13 @@ namespace SecondSpawn.AI
         private int _pendingFootAlignFrames;
         private int _loopSequence;
         private int _consecutiveDecisionFailures;
+        private float _stableDecisionJitterSeconds;
         private float _intentPersistenceBackoffUntil;
         private ActorProfileDto _configuredActorProfile;
         private readonly List<string> _phaseTrace = new List<string>();
+        private bool _hasDecisionSlot;
+        private static int _activeDecisionRequests;
+        private const int MaxConcurrentDecisionRequests = 1;
 
         public string BrainStatusLabel { get; private set; } = "AI booting";
         public Color BrainStatusColor { get; private set; } = new Color(0.82f, 0.86f, 0.9f);
@@ -129,6 +134,7 @@ namespace SecondSpawn.AI
                 return;
             }
 
+            _stableDecisionJitterSeconds = StableRange01(_agentId) * _decisionCooldownJitterSeconds;
             LogPhase(BrainPhase.Bootstrap, "starting brain loop");
             _brainLoop = StartCoroutine(BrainLoop());
         }
@@ -141,9 +147,15 @@ namespace SecondSpawn.AI
                 _brainLoop = null;
             }
 
+            ReleaseDecisionSlot();
             _hasMoveTarget = false;
             ApplyLocomotion(0f);
             LogPhase(BrainPhase.Idle, "brain stopped");
+        }
+
+        private void OnDisable()
+        {
+            StopBrain();
         }
 
         public void SetPhaseLogging(bool enabled)
@@ -166,6 +178,7 @@ namespace SecondSpawn.AI
             _configuredActorProfile = profile;
             _agentId = string.IsNullOrWhiteSpace(profile.actor_id) ? _agentId : profile.actor_id.Trim();
             _displayName = string.IsNullOrWhiteSpace(profile.display_name) ? _displayName : profile.display_name.Trim();
+            _stableDecisionJitterSeconds = StableRange01(_agentId) * _decisionCooldownJitterSeconds;
             _zoneId = string.IsNullOrWhiteSpace(zoneId) ? _zoneId : zoneId.Trim();
             _patrolRadius = Mathf.Max(0.5f, patrolRadius);
             _decisionIntervalSeconds = Mathf.Max(0.25f, decisionIntervalSeconds);
@@ -211,7 +224,23 @@ namespace SecondSpawn.AI
                 AgentDecisionDto decision = null;
                 string decisionError = null;
 
-                yield return _gateway.Decide(request, value => decision = value, error => decisionError = error);
+                if (_activeDecisionRequests >= MaxConcurrentDecisionRequests)
+                {
+                    SetBrainStatus("AI queued", new Color(0.72f, 0.82f, 0.95f));
+                }
+
+                yield return WaitForDecisionSlot();
+                _activeDecisionRequests++;
+                _hasDecisionSlot = true;
+                SetBrainStatus("AI DOS.AI request", new Color(0.72f, 0.82f, 0.95f));
+                try
+                {
+                    yield return _gateway.Decide(request, value => decision = value, error => decisionError = error);
+                }
+                finally
+                {
+                    ReleaseDecisionSlot();
+                }
 
                 TrackDecisionResult(decisionError);
                 UpdateBrainStatus(decision, decisionError);
@@ -518,17 +547,36 @@ namespace SecondSpawn.AI
             var baseCooldown = Mathf.Max(0.25f, _decisionIntervalSeconds);
             if (!string.IsNullOrWhiteSpace(decisionError))
             {
-                return Mathf.Max(baseCooldown, 30f);
+                return Mathf.Max(baseCooldown, 30f) + _stableDecisionJitterSeconds;
             }
 
             if (decision != null &&
                 string.Equals(decision.source, "fallback", System.StringComparison.OrdinalIgnoreCase) &&
                 IsModelBackoffReason(decision.source_reason))
             {
-                return Mathf.Max(baseCooldown, _modelFailureCooldownSeconds);
+                return Mathf.Max(baseCooldown, _modelFailureCooldownSeconds) + _stableDecisionJitterSeconds;
             }
 
-            return baseCooldown;
+            return baseCooldown + _stableDecisionJitterSeconds;
+        }
+
+        private static IEnumerator WaitForDecisionSlot()
+        {
+            while (_activeDecisionRequests >= MaxConcurrentDecisionRequests)
+            {
+                yield return null;
+            }
+        }
+
+        private void ReleaseDecisionSlot()
+        {
+            if (!_hasDecisionSlot)
+            {
+                return;
+            }
+
+            _hasDecisionSlot = false;
+            _activeDecisionRequests = Mathf.Max(0, _activeDecisionRequests - 1);
         }
 
         private static bool IsModelBackoffReason(string reason)
@@ -1064,6 +1112,22 @@ namespace SecondSpawn.AI
                 }
 
                 return (int)(hash % VisualPrefabCatalog.Count);
+            }
+        }
+
+        private static float StableRange01(string seed)
+        {
+            unchecked
+            {
+                var hash = 2166136261u;
+                var value = string.IsNullOrWhiteSpace(seed) ? "prototype-agent" : seed.Trim();
+                for (var index = 0; index < value.Length; index++)
+                {
+                    hash ^= value[index];
+                    hash *= 16777619u;
+                }
+
+                return (hash % 1000u) / 999f;
             }
         }
 
