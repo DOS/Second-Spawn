@@ -42,7 +42,7 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 | 10 | Boss LLM dialogue (Convai grounded) | Gameplay | VS | Not started | (TDD pending) | NPC dialogue |
 | 11 | AI agent for offline players (server-side) | Gameplay | VS | Prototype | [10-character-profile-agent-memory.md](10-character-profile-agent-memory.md) | NetworkRunner, api.dos.ai model service, intent schema |
 | 37 | OpenClaw-connected NPC bridge (user-owned agents as NPC actors) | Gameplay / Meta | Alpha | Concept | [10-character-profile-agent-memory.md](10-character-profile-agent-memory.md) | Auth, Nakama, api.dos.ai model service, NPC dialogue, LLM safety |
-| 12 | Level/stat progression | Progression | MVP | Prototype | (covered by profile/runtime contracts) | Persistence |
+| 12 | Level/stat progression | Progression | MVP | Prototype | [14-character-stat-and-relationship-system.md](14-character-stat-and-relationship-system.md) | Persistence |
 | 13 | Reincarnation flow (death -> SECOND -> new Frame) | Progression | VS | Prototype | [12-game-design-document.md](12-game-design-document.md) | Level/stats, NFT escrow, Persistence |
 | 14 | SECOND economy | Economy | VS | Not designed | (GDD pending - JOY input) | DOS Chain integration |
 | 36 | TIME / SECOND economy | Economy | VS | Prototype | [08-time-as-currency.md](08-time-as-currency.md) | Reincarnation, Combat, Persistence |
@@ -52,7 +52,7 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 | 18 | Profile persistence (Nakama OSS + Postgres) | Persistence | MVP | Prototype | [10-character-profile-agent-memory.md](10-character-profile-agent-memory.md) | Auth |
 | 19 | Inventory persistence | Persistence | MVP | Not started | (TDD pending) | Profile, NFT inventory |
 | 20 | Quest progress persistence | Persistence | MVP | Not started | (TDD pending) | Profile, Quest system |
-| 21 | Level/stat persistence | Persistence | MVP | Prototype | (covered by profile/runtime contracts) | Profile |
+| 21 | Level/stat persistence | Persistence | MVP | Prototype | [14-character-stat-and-relationship-system.md](14-character-stat-and-relationship-system.md) | Profile |
 | 22 | Auth (Nakama + DOS Chain wallet, Supabase sidecar if useful) | Persistence | MVP | Prototype | (TDD pending - reuse DOS.Me pattern as identity bridge reference) | Nakama, thirdweb |
 | 23 | HUD (combat, level/stats, TIME) | UI | VS | Prototype | (deferred template `_deferred/hud-design.md`) | Combat, Profile |
 | 24 | Inventory UI | UI | VS | Not started | (deferred template `_deferred/ux-spec.md`) | Inventory persistence |

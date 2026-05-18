@@ -10,6 +10,9 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 - Character-model taxonomy covering core stats, derived stats, social
   attributes, body presentation, identity fields, and multi-axis relationships
   for NPC-like Frames and player-inhabitable bodies.
+- Character stat and relationship system GDD covering the six-stat MVP backend
+  contract, deferred stat candidates, secondary stat direction, presentation
+  attributes, relationship axes, and reincarnation carryover boundaries.
 - Human-believable NPC agent design doc covering trait axes, relationship
   ledger, memory tiers, needs, mood, stress, proactive communication, and
   research anchors for LLM-driven NPC behavior.

@@ -15,7 +15,9 @@ declare namespace nkruntime {
       url: string,
       method: string,
       headers: { [key: string]: string },
-      body?: string
+      body?: string,
+      timeout?: number,
+      insecure?: boolean
     ): HttpResponse;
     storageRead(requests: StorageReadRequest[]): StorageObject[];
     storageWrite(requests: StorageWriteRequest[]): void;

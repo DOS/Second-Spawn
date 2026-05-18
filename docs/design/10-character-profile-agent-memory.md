@@ -255,6 +255,10 @@ These keys are implemented today by the gateway, Nakama runtime, and Unity
 prototype HUD. The six core stats are the canonical backend contract. The older
 serialized keys remain in runtime payloads as aliases until the Unity networked
 prototype stats are renamed in a coordinated compatibility pass.
+See
+[14-character-stat-and-relationship-system.md](14-character-stat-and-relationship-system.md)
+for the system-level stat, secondary stat, presentation, and relationship
+baseline.
 
 MVP core stat taxonomy:
 
@@ -331,10 +335,11 @@ Design notes:
   mechanics.
 - `focus` must never be connected to prompt-injection defense. Security and
   moderation are harness constants, not stats.
-- `intelligence` must never make the model smarter or grant new authority. It
-  can only affect server-approved technical actions and rolls inside policy.
-- `luck` must never mint loot, TIME, or SECOND directly. It can only bias
-  backend-approved rolls inside strict caps.
+- Deferred candidate stats such as `intelligence`, `charisma`, `luck`, and
+  `dexterity` are not part of the MVP backend contract. If added later, they
+  must remain server-owned and must never grant new authority.
+- `luck`, if revived, must never mint loot, TIME, or SECOND directly. It can
+  only bias backend-approved rolls inside strict caps.
 
 ---
 
