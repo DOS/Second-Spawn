@@ -17,8 +17,8 @@ or Cultivation Master progression in the current vertical slice.
 The slice uses:
 
 - `CharacterStats.level` as the baseline progression value.
-- Body-bound stats such as vitality, force, agility, focus, resilience,
-  max health, max energy, attack power, and defense power.
+- Body-bound stats such as strength, agility, endurance, perception, focus,
+  presence, max health, max energy, attack power, and defense power.
 - TIME / SECOND and reincarnation as the signature systemic loop.
 
 Advanced body or soul progression remains a future design space, but it needs a

@@ -40,6 +40,8 @@ Optional agent-decision env:
 - `DOS_AI_BASE_URL` defaults to `https://api.dos.ai/v1`.
 - `ANTHROPIC_API_KEY` is a local prototype fallback only.
 - `AGENT_DECISION_MODEL` defaults to `dos-ai`.
+- `ENABLE_LEGACY_GATEWAY_CHARACTER_ROUTES=true` temporarily restores the old
+  in-memory `/v1/characters/...` smoke-test routes for local debugging only.
 - Without a provider key, `/v1/agent/decide` keeps using the deterministic
   fallback path.
 
@@ -84,7 +86,7 @@ backend/gateway/
     ├── agent/              # offline-agent decision contract
     ├── auth/               # Supabase JWT verification
     ├── llm/                # provider interface (Anthropic, OpenAI, Convai)
-    ├── character/          # profile, soul, stats, and agent memory contract
+    ├── character/          # prompt-safe profile contract, not durable storage
     └── intent/             # structured intent schema + validator contract
 ```
 
@@ -96,20 +98,26 @@ public API of the gateway minimal (just the HTTP routes).
 The scaffold compiles and has prototype handlers for:
 
 - `GET /readyz`
-- `GET /v1/characters/{playerID}/context`
-- `PUT /v1/characters/{playerID}/soul`
-- `POST /v1/characters/{playerID}/memory`
 - `POST /v1/agent/decide`
 - `POST /v1/npc/chat`
 - `POST /v1/voice/session`
+
+The old in-memory character routes are disabled by default:
+
+- `GET /v1/characters/{playerID}/context`
+- `PUT /v1/characters/{playerID}/soul`
+- `POST /v1/characters/{playerID}/memory`
+
+They may be re-enabled only with
+`ENABLE_LEGACY_GATEWAY_CHARACTER_ROUTES=true` for local smoke tests. Runtime
+profile, soul, stats, memory, BodyTime, and activity state belong in Nakama.
 
 `POST /v1/agent/decide` calls a DOS.AI-backed JSON intent decider when
 `DOS_AI_API_KEY` is configured. Local development without a DOS.AI key,
 provider errors, and invalid model output fall back to deterministic prototype
 decisions so the vertical slice remains playable.
 
-Persistent storage, full route-level Supabase JWT enforcement, and rate limiting
-are still open work. Nakama custom authentication is handled inside
+Persistent game storage and Nakama custom authentication are handled inside
 `backend/nakama/`, not through this gateway.
 
 See:

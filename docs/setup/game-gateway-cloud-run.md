@@ -84,11 +84,13 @@ After deploy:
 ```bash
 GATEWAY_URL="$(gcloud run services describe second-spawn-gateway --region asia-southeast1 --format 'value(status.url)')"
 curl "$GATEWAY_URL/readyz"
-curl "$GATEWAY_URL/v1/characters/dev-player/context"
 curl "$GATEWAY_URL/v1/npc/chat" \
   -H "Content-Type: application/json" \
   --data '{"player_id":"dev-player","npc_id":"prototype-guide","message":"Can you remember me?"}'
 ```
+
+Do not smoke-test profile, soul, stats, memory, BodyTime, or activity state
+through this gateway. Those are Nakama game-backend responsibilities.
 
 
 Then set Unity's `SecondSpawnConfig.asset` gateway URL to `GATEWAY_URL` for

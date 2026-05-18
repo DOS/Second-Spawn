@@ -84,6 +84,10 @@ type BodyInhabitation struct {
 
 type CharacterStats struct {
 	Level        int `json:"level"`
+	Strength     int `json:"strength"`
+	Endurance    int `json:"endurance"`
+	Perception   int `json:"perception"`
+	Presence     int `json:"presence"`
 	Vitality     int `json:"vitality"`
 	Force        int `json:"force"`
 	Agility      int `json:"agility"`
@@ -306,13 +310,24 @@ func BuildAgentContextPrompt(ctx AgentContext, maxMemories int) string {
 	writeKV(&b, "body_story", formatBodyStory(ctx.Body.Story))
 	writeKV(&b, "supports_jump_animation", fmt.Sprintf("%t", ctx.Body.AnimationCapabilities.SupportsJump))
 	writeKV(&b, "animation_capabilities", formatAnimationCapabilities(ctx.Body.AnimationCapabilities))
-	writeKV(&b, "stats", fmt.Sprintf("level=%d vitality=%d force=%d agility=%d focus=%d resilience=%d max_health=%d max_energy=%d attack_power=%d defense_power=%d",
+	strength := firstPositive(ctx.Body.Stats.Strength, ctx.Body.Stats.Force)
+	endurance := firstPositive(ctx.Body.Stats.Endurance, ctx.Body.Stats.Vitality, ctx.Body.Stats.Resilience)
+	perception := firstPositive(ctx.Body.Stats.Perception, ctx.Body.Stats.Focus)
+	presence := firstPositive(ctx.Body.Stats.Presence, ctx.Body.Characteristics.Sociability)
+	vitality := firstPositive(ctx.Body.Stats.Vitality, endurance)
+	force := firstPositive(ctx.Body.Stats.Force, strength)
+	resilience := firstPositive(ctx.Body.Stats.Resilience, endurance)
+	writeKV(&b, "stats", fmt.Sprintf("level=%d strength=%d agility=%d endurance=%d perception=%d focus=%d presence=%d vitality=%d force=%d resilience=%d max_health=%d max_energy=%d attack_power=%d defense_power=%d",
 		ctx.Body.Stats.Level,
-		ctx.Body.Stats.Vitality,
-		ctx.Body.Stats.Force,
+		strength,
 		ctx.Body.Stats.Agility,
+		endurance,
+		perception,
 		ctx.Body.Stats.Focus,
-		ctx.Body.Stats.Resilience,
+		presence,
+		vitality,
+		force,
+		resilience,
 		ctx.Body.Stats.MaxHealth,
 		ctx.Body.Stats.MaxEnergy,
 		ctx.Body.Stats.AttackPower,
@@ -527,4 +542,13 @@ func writeKV(b *strings.Builder, key string, value string) {
 	b.WriteString(": ")
 	b.WriteString(strings.TrimSpace(value))
 	b.WriteByte('\n')
+}
+
+func firstPositive(values ...int) int {
+	for _, value := range values {
+		if value > 0 {
+			return value
+		}
+	}
+	return 0
 }

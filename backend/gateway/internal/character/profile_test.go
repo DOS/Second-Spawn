@@ -46,6 +46,10 @@ func TestBuildAgentContextPromptSortsAndBoundsMemories(t *testing.T) {
 			},
 			Stats: CharacterStats{
 				Level:        2,
+				Strength:     9,
+				Endurance:    12,
+				Perception:   10,
+				Presence:     7,
 				Vitality:     12,
 				Force:        9,
 				Agility:      11,
@@ -165,7 +169,7 @@ func TestBuildAgentContextPromptSortsAndBoundsMemories(t *testing.T) {
 	if !strings.Contains(prompt, "animation_capabilities: jump=false; roll=true; melee=true; ranged=false; stance=one_hand_melee") {
 		t.Fatalf("expected expanded animation capabilities in prompt, got %s", prompt)
 	}
-	if !strings.Contains(prompt, "stats: level=2 vitality=12 force=9 agility=11 focus=8 resilience=10 max_health=140 max_energy=60 attack_power=15 defense_power=7") {
+	if !strings.Contains(prompt, "stats: level=2 strength=9 agility=11 endurance=12 perception=10 focus=8 presence=7 vitality=12 force=9 resilience=10 max_health=140 max_energy=60 attack_power=15 defense_power=7") {
 		t.Fatalf("expected body stats in prompt, got %s", prompt)
 	}
 	if !strings.Contains(prompt, "frame_identity: public_name=Crossline Surveyor 4445; callsign=npc-crossline-hunter-4445; role=Ranged survey body; faction_title=Relay Runner; profession=Perimeter scout; age_years=34; age_band=adult; home_base=Gate Seraph Hub; reputation=Known for safe route work.") {

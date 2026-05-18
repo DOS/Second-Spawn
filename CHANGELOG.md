@@ -180,6 +180,13 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   `provider_error`, making DOS.AI gateway degradation visible in Play Mode.
 - Gateway agent decisions now default to the `dos-ai` model on `api.dos.ai`;
   Claude aliases are not the default path for the prototype NPC brain.
+- Nakama and gateway character stats now use the six canonical MVP core stats:
+  `strength`, `agility`, `endurance`, `perception`, `focus`, and `presence`.
+  Legacy `force`, `vitality`, and `resilience` fields remain as compatibility
+  aliases for the current Unity prototype.
+- The Go gateway no longer exposes in-memory character profile routes by
+  default. Durable profile, soul, stats, memory, BodyTime, and activity state
+  now stay clearly on the Nakama side of the backend boundary.
 - Prototype debug panel hotkeys now use Unity Input System keyboard polling
   instead of the disabled legacy input API, stopping Play Mode console spam.
 - Prototype Nakama world storage now scopes permanent NPC profiles and hub chat

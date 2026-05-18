@@ -196,11 +196,7 @@ move across synthetic bodies.
 
 `Appeal` is a social presentation attribute, not a core or secondary stat. It
 can bias first impressions and LLM social flavor inside backend-approved bounds,
-but it must not unlock rewards, bypass consent, or replace `Charisma`.
-
-Do not add `Presence` as an independent stat. If needed later, presence should
-be a derived label from charisma, reputation, visual threat, gear, body scale,
-and current social context.
+but it must not unlock rewards, bypass consent, or replace `presence`.
 
 ---
 
@@ -241,37 +237,40 @@ Current prototype runtime contract:
 | Stat | Purpose |
 | ---- | ---- |
 | `level` | Local body level |
-| `vitality` | Current health scaling prototype stat |
-| `force` | Current physical damage prototype stat |
+| `strength` | Physical power, melee force, carry, heavy weapons, and forceful body actions |
 | `agility` | Current movement and attack cadence prototype stat |
+| `endurance` | Health, energy reserve, body durability, recovery, and BodyTime efficiency hooks |
+| `perception` | Sensor quality, threat detection, stealth detection, weak-point read, and social or environmental cue input |
 | `focus` | Current energy and ability-use prototype stat |
-| `resilience` | Current damage mitigation prototype stat |
+| `presence` | Active social pressure, confidence, command weight, negotiation posture, and intimidation attempts |
+| `vitality` | Legacy compatibility alias for endurance-oriented health scaling |
+| `force` | Legacy compatibility alias for strength-oriented physical power |
+| `resilience` | Legacy compatibility alias for endurance-oriented mitigation |
 | `max_health` | Current derived or cached health cap |
 | `max_energy` | Current derived or cached energy cap |
 | `attack_power` | Current derived or cached attack output |
 | `defense_power` | Current derived or cached defense output |
 
 These keys are implemented today by the gateway, Nakama runtime, and Unity
-prototype HUD. Do not rename them in runtime payloads until a code migration,
-tests, and compatibility pass land together.
+prototype HUD. The six core stats are the canonical backend contract. The older
+serialized keys remain in runtime payloads as aliases until the Unity networked
+prototype stats are renamed in a coordinated compatibility pass.
 
-Target core stat taxonomy:
+MVP core stat taxonomy:
 
 | Stat | Purpose |
 | ---- | ---- |
 | `level` | Local body level |
 | `strength` | Physical power, melee force, carry, heavy weapons, and forceful body actions |
-| `dexterity` | Handling, precision, finesse, attack cadence, and dodge scaling |
+| `agility` | Movement, handling, precision, attack cadence, and dodge scaling |
 | `endurance` | Health, energy reserve, body durability, recovery, and BodyTime efficiency hooks |
-| `intelligence` | Technical action, hacking, crafting, tactical analysis, and system understanding |
 | `perception` | Sensor quality, threat detection, stealth detection, weak-point read, and social or environmental cue input |
 | `focus` | Concentration, panic resistance, noise resistance, status pressure, and agent instruction stability |
-| `charisma` | Active social influence such as persuasion, negotiation, leadership, and intimidation attempts |
-| `luck` | Small backend-capped bias for allowed rare outcomes, clutch events, and variance rolls |
+| `presence` | Active social influence such as persuasion, negotiation, leadership, command weight, and intimidation attempts |
 
-This target taxonomy is a design direction, not the current serialized contract.
-Until runtime migration happens, target stats should be mapped from or stored
-alongside the current prototype stats by an explicit migration plan.
+BodyTime is not a primary stat. It is a lifecycle and economy resource that may
+later read endurance, injuries, hazards, and stress when computing drains or
+recovery.
 
 Do not add `wisdom` as a core stat. Wisdom-like behavior is split across
 `perception`, `focus`, `SoulProfile`, `CharacterTraits`, `FrameMemory`, and
@@ -661,13 +660,12 @@ Implemented surfaces:
 - Local Unity Play Mode can use Nakama device auth as a development fallback
   when Supabase anonymous auth is not configured yet. Production account binding
   must use Supabase custom auth or a later approved identity ADR.
-- `backend/gateway/internal/character` stores prototype `AgentContext` with
-  profile, body, stats, characteristics, soul, policy, prototype `BodyTime` / TIME,
-  and compact memories for LLM-gateway fallback and standalone cloud smoke
-  tests.
-- Prototype memory writes deduplicate by memory kind and summary. Repeated
-  Unity Play Mode sessions update the existing memory timestamp instead of
-  appending the same seed memory again.
+- `backend/gateway/internal/character` defines the prompt-safe `AgentContext`
+  contract used by the model decision adapter. It is not durable game-backend
+  storage.
+- The old gateway in-memory character routes are disabled by default and may be
+  enabled only for local legacy smoke tests. Runtime profile, soul, stats,
+  memory, `BodyTime` / TIME, and activity state belong in Nakama.
 - `backend/gateway/internal/agent` validates model-backed JSON decisions from
   bounded context and safe world snapshots. If no provider key is configured,
   provider calls fail, or the model returns invalid intent, the endpoint falls
