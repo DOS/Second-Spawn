@@ -37,6 +37,9 @@ func TestModelBackedDeciderUsesProviderJSONIntent(t *testing.T) {
 	if !strings.Contains(provider.lastRequest.System, "Return exactly one JSON object") {
 		t.Fatalf("expected JSON-only system prompt, got %q", provider.lastRequest.System)
 	}
+	if !strings.Contains(provider.lastRequest.System, "Proactive social behavior is an agent policy decision") {
+		t.Fatalf("expected proactive social policy guidance, got %q", provider.lastRequest.System)
+	}
 	if !strings.Contains(provider.lastRequest.Messages[0].Content, `"safe_radius":5`) {
 		t.Fatalf("expected world snapshot in user prompt, got %q", provider.lastRequest.Messages[0].Content)
 	}
@@ -46,6 +49,44 @@ func TestDecodeDecisionJSONRejectsTrailingText(t *testing.T) {
 	_, err := DecodeDecisionJSON(`{"action":"stop","confidence":1} trailing`)
 	if err == nil {
 		t.Fatal("expected trailing text to be rejected")
+	}
+}
+
+func TestValidateDecisionRejectsSayTargetOutsideNearbyObjects(t *testing.T) {
+	req := modelDecisionTestRequest([]ActionType{ActionSay, ActionStop})
+	err := ValidateDecision(req, Decision{
+		Action:     ActionSay,
+		TargetID:   "npc-unknown",
+		Say:        "I see you.",
+		Confidence: 0.8,
+	})
+	if err == nil {
+		t.Fatal("expected say target outside nearby objects to be rejected")
+	}
+	if !errors.Is(err, ErrInvalidDecision) {
+		t.Fatalf("expected invalid decision error, got %v", err)
+	}
+}
+
+func TestValidateDecisionRejectsSayTargetThatIsNotActor(t *testing.T) {
+	req := modelDecisionTestRequest([]ActionType{ActionSay, ActionStop})
+	req.WorldSnapshot.NearbyObjects = append(req.WorldSnapshot.NearbyObjects, WorldObject{
+		ID:       "hub-origin",
+		Kind:     "safe_landmark",
+		Distance: 1,
+	})
+
+	err := ValidateDecision(req, Decision{
+		Action:     ActionSay,
+		TargetID:   "hub-origin",
+		Say:        "The hub is quiet.",
+		Confidence: 0.8,
+	})
+	if err == nil {
+		t.Fatal("expected non-actor say target to be rejected")
+	}
+	if !errors.Is(err, ErrInvalidDecision) {
+		t.Fatalf("expected invalid decision error, got %v", err)
 	}
 }
 
@@ -134,6 +175,15 @@ func modelDecisionTestRequest(allowed []ActionType) DecisionRequest {
 			Position:        Vector2{X: 0, Z: 0},
 			SafeRadius:      5,
 			BodyTimeSeconds: 3600,
+			NearbyObjects: []WorldObject{
+				{
+					ID:          "npc-route-courier-0244",
+					Kind:        "nearby_actor",
+					DisplayName: "Route Courier 0244",
+					Role:        "dead-belt runner",
+					Distance:    3.5,
+				},
+			},
 		},
 		Allowed: allowed,
 	}
