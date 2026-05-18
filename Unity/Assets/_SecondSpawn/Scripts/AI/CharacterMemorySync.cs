@@ -66,7 +66,7 @@ namespace SecondSpawn.AI
                 }
             }
 
-            Debug.LogWarning("[CharacterMemorySync] Profile sync requires Nakama. The LLM gateway no longer owns character profile state.");
+            Debug.LogWarning("[CharacterMemorySync] Profile sync requires Nakama. The model service does not own character profile state.");
         }
 
         public IEnumerator ApplyBodyTimeEvent(BodyTimeEventRequestDto request)
@@ -161,7 +161,7 @@ namespace SecondSpawn.AI
                 yield break;
             }
 
-            Debug.LogWarning("[CharacterMemorySync] Memory writes require Nakama. The LLM gateway no longer persists character memory.");
+            Debug.LogWarning("[CharacterMemorySync] Memory writes require Nakama. The model service does not persist character memory.");
         }
 
         private IEnumerator ApplyProfileToLocalPlayerWhenAvailable()

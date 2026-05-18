@@ -3,9 +3,9 @@
 *Status: Prototype implemented*
 *Created: 2026-05-15*
 *Author: Codex*
-*Last Verified: 2026-05-18 against `AGENTS.md`, ADR 0003, ADR 0004, `08-time-as-currency.md`, Cloud Run staging gateway, Nakama runtime smoke, Unity Play Mode profile sync, and [13-human-believable-npc-agent-model.md](13-human-believable-npc-agent-model.md)*
+*Last Verified: 2026-05-18 against `AGENTS.md`, ADR 0003, ADR 0004, `08-time-as-currency.md`, Nakama model-decision runtime, Nakama runtime smoke, Unity Play Mode profile sync, and [13-human-believable-npc-agent-model.md](13-human-believable-npc-agent-model.md)*
 
-> **Quick reference** - Layer: `Persistence / AI Agent` - Priority: `MVP foundation` - Key deps: `Auth`, `Fusion server authority`, `LLM gateway`, `TIME / SECOND economy`, `Reincarnation`
+> **Quick reference** - Layer: `Persistence / AI Agent` - Priority: `MVP foundation` - Key deps: `Auth`, `Fusion server authority`, `model service`, `TIME / SECOND economy`, `Reincarnation`
 
 ---
 
@@ -511,7 +511,8 @@ Safety rules:
 - They never mutate inventory, currency, quest, TIME, SECOND, level/stats, combat, or world state directly.
 - They may produce dialogue, social memory proposals, heartbeat updates, and structured intent.
 - Nakama owns identity binding, consent, moderation, rate limit, control binding, and activity logging.
-- `api.dos.ai` / Go LLM Gateway owns prompt safety and model routing.
+- Nakama owns the game-facing agent decision RPC and validates intent shape.
+- `api.dos.ai` owns prompt safety and model routing.
 - Fusion server remains the final validator for any in-world action.
 
 Design intent: OpenClaw agents should make SECOND SPAWN feel like an extension of the DOS.AI agent ecosystem, where users can bring their own agents into the world as social citizens rather than leaving them outside the game.
@@ -580,7 +581,7 @@ runtime decision RPC returns a deterministic prototype intent.
 
 Backend code now defines a prompt-safe context builder in:
 
-`backend/gateway/internal/character/profile.go`
+`backend/nakama/modules/index.ts`
 
 The builder converts a bounded `AgentContext` into stable key-value text. This is intentionally boring and deterministic so model behavior is easier to debug.
 
@@ -610,7 +611,7 @@ It does not include:
 
 Backend code now defines the first bounded offline-agent decision contract in:
 
-`backend/gateway/internal/agent/decision.go`
+`backend/nakama/modules/index.ts`
 
 Allowed action types for the first implementation:
 
@@ -622,7 +623,7 @@ Allowed action types for the first implementation:
 | `interact` | Request interaction with a nearby allowed object |
 | `say` | Produce dialogue/social text with no direct state mutation |
 
-The gateway validator checks:
+The Nakama runtime validator checks:
 
 - action is in the allowed set for this request
 - confidence is bounded from 0 to 1
@@ -660,28 +661,24 @@ Implemented surfaces:
 - Local Unity Play Mode can use Nakama device auth as a development fallback
   when Supabase anonymous auth is not configured yet. Production account binding
   must use Supabase custom auth or a later approved identity ADR.
-- `backend/gateway/internal/character` defines the prompt-safe `AgentContext`
-  contract used by the model decision adapter. It is not durable game-backend
-  storage.
-- The old gateway in-memory character routes are disabled by default and may be
-  enabled only for local legacy smoke tests. Runtime profile, soul, stats,
+- `backend/nakama/modules/index.ts` defines the prompt-safe `AgentContext`
+  contract used by the model decision path. Runtime profile, soul, stats,
   memory, `BodyTime` / TIME, and activity state belong in Nakama.
-- `backend/gateway/internal/agent` validates model-backed JSON decisions from
-  bounded context and safe world snapshots. If no provider key is configured,
-  provider calls fail, or the model returns invalid intent, the endpoint falls
-  back to deterministic prototype decisions.
+- `backend/nakama/modules/index.ts` validates model-backed JSON decisions from
+  bounded context and safe world snapshots. If no `DOS_AI_API_KEY` is
+  configured, provider calls fail, or the model returns invalid intent, the RPC
+  falls back to deterministic prototype decisions.
 - Model-backed NPC decisions now receive nearby actor context. Proactive social
   behavior is chosen by the model from `AgentPolicy`, `SoulProfile`,
   `MemoryRecord`, relationship state, and the safe world snapshot, while the
-  gateway and Nakama validate targets and persistence.
+  Nakama validates targets and persistence.
 - Unity prototype NPC brains persist model-selected `say` intents through
   Nakama so social speech becomes activity, memory, and relationship state
   instead of only a local speech bubble.
-- Cloud Run staging gateway:
-  `https://second-spawn-gateway-535583621422.asia-southeast1.run.app`
 - Unity `SecondSpawnGatewayClient` authenticates with Nakama, reads/writes
-  Nakama profile memory when a Nakama session exists, and calls the cloud
-  gateway for NPC text chat, voice-session contract, and prototype LLM decision.
+  Nakama profile memory when a Nakama session exists, and calls Nakama RPCs for
+  NPC text chat, placeholder voice-session status, and prototype model-backed
+  decisions.
 - Unity `CharacterMemorySync` loads the Nakama profile and applies the current
   body stats, prototype `BodyTime` / TIME, lifecycle, visual variant, weapon visual, and animation
   capability flags onto the authoritative local `NetworkPlayer`.
@@ -739,9 +736,9 @@ Initial offline-agent loop:
 
 1. Fusion server snapshots safe world state.
 2. Backend loads `PlayerProfile`, current `BodyProfile`, `SoulProfile`, `AgentPolicy`, and top memories.
-3. Gateway builds LLM context.
+3. Nakama builds LLM context.
 4. LLM returns structured intent only.
-5. Gateway validates the decision shape and allowed action set.
+5. Nakama validates the decision shape and allowed action set.
 6. Server validates intent against current authoritative state.
 7. Server applies allowed movement/combat/social action through the same path as player input.
 8. Backend appends an activity log entry for player review.

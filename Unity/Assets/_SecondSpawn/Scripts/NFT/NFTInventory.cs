@@ -9,7 +9,7 @@ namespace SecondSpawn.NFT
     ///
     /// API keys for thirdweb / DOS Chain NEVER live in this client
     /// (per Hard Rule #3). All chain interactions go through the Go
-    /// gateway (backend/gateway/) which signs + submits transactions.
+    /// server-side Nakama or wallet service which signs and submits transactions.
     ///
     /// TODO (slice phase 6):
     /// - Wire wallet auth (sign-message via Supabase + DOS Chain).

@@ -99,16 +99,12 @@ namespace SecondSpawn.AI
             {
                 var request = BuildDecisionRequest();
                 AgentDecisionDto decision = null;
-                string gatewayError = null;
-                yield return _gateway.Decide(request, value => decision = value, error => gatewayError = error);
+                string decisionError = null;
+                yield return _gateway.Decide(request, value => decision = value, error => decisionError = error);
 
-                if (decision == null && _gateway.HasNakamaSession)
+                if (decision == null && !string.IsNullOrWhiteSpace(decisionError))
                 {
-                    yield return _gateway.DecideWithNakamaFallback(request, value => decision = value, Debug.LogWarning);
-                }
-                else if (decision == null && !string.IsNullOrWhiteSpace(gatewayError))
-                {
-                    Debug.LogWarning(gatewayError);
+                    Debug.LogWarning(decisionError);
                 }
 
                 if (decision != null)

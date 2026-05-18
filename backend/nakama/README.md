@@ -1,8 +1,9 @@
 # SECOND SPAWN Nakama Backend
 
-Nakama OSS is the game backend. `api.dos.ai` / Go LLM Gateway is the shared AI
-gateway only. Nakama owns game sessions and verifies external identity through
-its runtime module.
+Nakama OSS is the game backend. `api.dos.ai` is the shared DOS.AI model
+service only. Nakama owns game sessions, durable character state, server-side
+intent validation, and the runtime call to `api.dos.ai` when an agent decision
+needs model reasoning.
 
 ## Supabase Auth Bridge
 
@@ -42,6 +43,21 @@ tools to force the death -> reincarnation loop. Leave it disabled outside
 local development. Real PvP, contested-zone, or player-loot time transfers must
 come from server-validated combat or zone events, not client self-reporting.
 
+Optional model-backed agent decision env:
+
+```text
+DOS_AI_API_KEY=...
+DOS_AI_BASE_URL=https://api.dos.ai/v1
+AGENT_DECISION_MODEL=dos-ai
+```
+
+When `DOS_AI_API_KEY` is present, `secondspawn_agent_decide` calls
+`api.dos.ai` from the Nakama runtime, parses a JSON intent, validates that the
+action is allowed and grounded in nearby world context, then returns
+`source=model`. If the key is absent, the request fails, or validation rejects
+the model output, Nakama returns a deterministic degraded decision with
+`source=fallback` and a `source_reason` that Unity can show over the NPC.
+
 Use `local.example.yml` as the public-safe local config template. Keep real
 per-machine config outside git. Nakama expects `runtime.env` as key-value
 entries such as:
@@ -59,9 +75,9 @@ back to Nakama device auth so local Play Mode is not blocked. That fallback is
 for local iteration only; production account binding must use Supabase custom
 auth or a later approved identity ADR.
 
-No game auth secret belongs in `api.dos.ai`. The LLM gateway can receive
-already-validated game context from Nakama or the Fusion server when an AI call
-is needed.
+No game auth secret belongs in `api.dos.ai`. The model service receives only
+bounded game context after Nakama has authenticated the player and shaped the
+request.
 
 ## Build and Test
 
@@ -95,8 +111,10 @@ The current prototype module registers:
 - `secondspawn_soul_update` - update soul, characteristics, and agent policy
 - `secondspawn_agent_activity_add` - append a bounded agent activity event and
   update runtime counters for offline sessions or Unity-side bootstrap
-- `secondspawn_agent_decide` - deterministic safe fallback decision for local
-  agent control when the LLM gateway is unavailable, with runtime counters
+- `secondspawn_agent_decide` - model-backed or deterministic fallback decision
+  for local agent control; Nakama calls `api.dos.ai` when configured, validates
+  the returned intent, records runtime counters, and exposes `source` plus
+  `source_reason`
 - `secondspawn_chat_send` - append a bounded prototype message to a named hub
   channel; this is an RPC storage log, not the final realtime socket
 - `secondspawn_chat_list` - read recent bounded messages for a named prototype
@@ -112,7 +130,7 @@ The current prototype module registers:
   between two permanent NPCs for fallback smoke testing only; this is not the
   main NPC brain
 - `secondspawn_npc_context_get` - return server-owned NPC context and nearby
-  actor context for an LLM worker or gateway decision call, including hard
+  actor context for a model worker decision call, including hard
   interaction limits and soft prompt guidance
 - `secondspawn_npc_intent_submit` - accept a validated NPC intent selected by
   the LLM path, currently limited to bounded `say` intent records; validates

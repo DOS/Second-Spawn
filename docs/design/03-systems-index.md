@@ -13,7 +13,7 @@ SECOND SPAWN is a hybrid MMO + top-down ARPG. The mechanical scope spans:
 - ARPG core (combat, movement, minimal controller baseline first; Opsive UCC evaluated after baseline)
 - Multiplayer networking (Photon Fusion 2 dedicated server)
 - Persistence (Nakama OSS + Postgres, with Supabase sidecar where useful)
-- LLM NPCs (Convai phase 1, api.dos.ai / Go LLM Gateway phase 2)
+- LLM NPCs (Convai phase 1, api.dos.ai model service phase 2)
 - AI agent autoplay (server-side, capability-capped)
 - OpenClaw-connected NPCs (user-owned agents as server-validated world actors)
 - Level/stat progression
@@ -36,12 +36,12 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 | 4 | Input system (Unity Input System) | Core | MVP | Prototype | - | Player Controller |
 | 5 | Zone scene management (1 zone vertical slice) | Core | MVP | Prototype | (TDD pending) | NetworkRunner |
 | 6 | Combat (ARPG action) | Gameplay | MVP | Not started | (TDD pending) | Player Controller, Networked state |
-| 7 | NPC dialogue and human-believable NPC agent model | Gameplay | MVP | Design | [13-human-believable-npc-agent-model.md](13-human-believable-npc-agent-model.md) | api.dos.ai / Go LLM Gateway (phase 2 ready), Profile persistence |
+| 7 | NPC dialogue and human-believable NPC agent model | Gameplay | MVP | Design | [13-human-believable-npc-agent-model.md](13-human-believable-npc-agent-model.md) | api.dos.ai model service (phase 2 ready), Profile persistence |
 | 8 | Quest system (linear, 3-5 quests slice scope) | Gameplay | VS | Not started | (TDD pending) | NPC dialogue, persistence |
 | 9 | Dungeon instance (1 dungeon, 1 boss) | Gameplay | VS | Not started | (TDD pending) | Combat, NPC dialogue, Photon |
 | 10 | Boss LLM dialogue (Convai grounded) | Gameplay | VS | Not started | (TDD pending) | NPC dialogue |
-| 11 | AI agent for offline players (server-side) | Gameplay | VS | Prototype | [10-character-profile-agent-memory.md](10-character-profile-agent-memory.md) | NetworkRunner, api.dos.ai / Go LLM Gateway, intent schema |
-| 37 | OpenClaw-connected NPC bridge (user-owned agents as NPC actors) | Gameplay / Meta | Alpha | Concept | [10-character-profile-agent-memory.md](10-character-profile-agent-memory.md) | Auth, Nakama, api.dos.ai / Go LLM Gateway, NPC dialogue, LLM safety |
+| 11 | AI agent for offline players (server-side) | Gameplay | VS | Prototype | [10-character-profile-agent-memory.md](10-character-profile-agent-memory.md) | NetworkRunner, api.dos.ai model service, intent schema |
+| 37 | OpenClaw-connected NPC bridge (user-owned agents as NPC actors) | Gameplay / Meta | Alpha | Concept | [10-character-profile-agent-memory.md](10-character-profile-agent-memory.md) | Auth, Nakama, api.dos.ai model service, NPC dialogue, LLM safety |
 | 12 | Level/stat progression | Progression | MVP | Prototype | (covered by profile/runtime contracts) | Persistence |
 | 13 | Reincarnation flow (death -> SECOND -> new Frame) | Progression | VS | Prototype | [12-game-design-document.md](12-game-design-document.md) | Level/stats, NFT escrow, Persistence |
 | 14 | SECOND economy | Economy | VS | Not designed | (GDD pending - JOY input) | DOS Chain integration |
@@ -62,8 +62,8 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 | 28 | AI agent activity log UI | UI | VS | Not started | (deferred) | AI agent |
 | 29 | Audio (SFX, ambient, music - placeholder for slice) | Audio | VS | Not started | (deferred template `_deferred/sound-bible.md`) | - |
 | 30 | Chat (Nakama channel first, Supabase Realtime sidecar only if useful) | Narrative / UI | VS | Not started | (TDD pending) | Nakama |
-| 31 | LLM intent validation (api.dos.ai / Go LLM Gateway pattern) | Meta / Engineering | MVP | Prototype | [11-npc-agent-brain-architecture.md](11-npc-agent-brain-architecture.md) | LLM provider |
-| 32 | LLM safety (rate limit, prompt injection defense) | Meta / Engineering | MVP | Partial | (TDD pending - reuse DOSafe patterns) | api.dos.ai / Go LLM Gateway |
+| 31 | LLM intent validation (api.dos.ai model service pattern) | Meta / Engineering | MVP | Prototype | [11-npc-agent-brain-architecture.md](11-npc-agent-brain-architecture.md) | LLM provider |
+| 32 | LLM safety (rate limit, prompt injection defense) | Meta / Engineering | MVP | Partial | (TDD pending - reuse DOSafe patterns) | api.dos.ai model service |
 | 33 | Anti-cheat / server-authority verification | Meta / Engineering | MVP | (Architectural) | [docs/ARCHITECTURE.md "Critical Invariants"](../ARCHITECTURE.md#critical-invariants) | All gameplay systems |
 | 34 | Telemetry / monitoring (Sentry + Grafana) | Meta | Alpha | Deferred | - | All systems |
 | 35 | Onboarding / tutorial | Meta | VS | Deferred (assume slice = no tutorial) | - | All gameplay systems |
@@ -95,7 +95,7 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 1. NetworkRunner / Photon Fusion 2 setup (#1)
 2. Auth (Nakama + DOS Chain wallet, Supabase sidecar if useful) (#22)
 3. Profile persistence (#18)
-4. api.dos.ai / Go LLM Gateway integration (DOSRouter pattern) (#31)
+4. api.dos.ai model service integration (DOSRouter pattern) (#31)
 5. LLM safety (rate limit, prompt injection) (#32)
 
 ### Core Layer (depends on foundation)
@@ -110,8 +110,8 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 ### Feature Layer (depends on core)
 
 12. Combat (#6) - depends on: Player Controller, networked state
-13. NPC dialogue (Convai + intent validation) (#7) - depends on: api.dos.ai / Go LLM Gateway
-14. OpenClaw-connected NPC bridge (#37) - depends on: Auth, Nakama, api.dos.ai / Go LLM Gateway, NPC dialogue, LLM safety
+13. NPC dialogue (Convai + intent validation) (#7) - depends on: api.dos.ai model service
+14. OpenClaw-connected NPC bridge (#37) - depends on: Auth, Nakama, api.dos.ai model service, NPC dialogue, LLM safety
 15. Level/stat progression (#12) - depends on: Profile persistence, Combat
 16. NFT inventory (#15) - depends on: Auth, thirdweb-api MCP
 17. Chat (Nakama channel first, Supabase Realtime sidecar only if useful) (#30) - depends on: Auth, Nakama
@@ -126,7 +126,7 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 23. Reincarnation flow (#13) - depends on: Level/stats, NFT escrow, Persistence
 24. TIME / SECOND economy (#36) - depends on: Reincarnation, Combat, Persistence
 25. SECOND economy (#14) - depends on: DOS Chain integration, Reincarnation
-26. AI agent for offline players (#11) - depends on: NetworkRunner, api.dos.ai / Go LLM Gateway, intent schema, Combat, TIME / SECOND economy
+26. AI agent for offline players (#11) - depends on: NetworkRunner, api.dos.ai model service, intent schema, Combat, TIME / SECOND economy
 
 ### Presentation Layer (depends on features)
 
@@ -158,7 +158,7 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 | Reincarnation flow (#13) | Design | Carryover too generous = no death weight; too punitive = grind | Tune cost during slice playtests |
 | TIME / SECOND economy (#36) | Design + Economy | Constant drain can feel oppressive; weak drain can feel invisible | Start with danger-zone drain, one earn source, one spend sink |
 | Photon Fusion 2 dedicated server (#1) | Technical | Solo dev capacity to run dedicated infra | Slice uses Photon Cloud free 20 CCU; production migration is post-slice |
-| Convai SDK in Unity (#7) | Technical | 3rd-party SDK may not test against Unity 6.5 beta | Have phase 2 fallback (`api.dos.ai` / Go LLM Gateway + custom LLM) ready in design |
+| Convai SDK in Unity (#7) | Technical | 3rd-party SDK may not test against Unity 6.5 beta | Have phase 2 fallback (`api.dos.ai` / api.dos.ai model service + custom LLM) ready in design |
 
 ---
 
@@ -175,7 +175,7 @@ Aligned with [02-vertical-slice-spec.md](02-vertical-slice-spec.md) build phases
 | 5 | Camera + Input (#3, #4) | Phase 2 | S | Standard URP |
 | 6 | Zone scene management (#5) | Phase 2 | M | |
 | 7 | Combat (#6) | Phase 2 | L | Server-authoritative critical |
-| 8 | api.dos.ai / Go LLM Gateway integration (#31) | Phase 2 | M | Reuse DOSRouter pattern |
+| 8 | api.dos.ai model service integration (#31) | Phase 2 | M | Reuse DOSRouter pattern |
 | 9 | NPC dialogue + Convai (#7) | Phase 3 | L | First LLM integration |
 | 10 | LLM safety (#32) | Phase 3 | M | Concurrent with #9 |
 | 11 | Quest system (#8) | Phase 4 | L | |

@@ -10,8 +10,8 @@ namespace SecondSpawn.AI
 {
     /// <summary>
     /// Prototype LLM-style brain for a local NPC actor.
-    /// The brain reads bounded character context from the gateway, asks for a
-    /// structured decision, then applies only narrow visual intents.
+    /// The brain sends bounded context to Nakama, receives a server-validated
+    /// model or fallback decision, then applies only narrow visual intents.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class PrototypeAgentBrain : MonoBehaviour
@@ -48,12 +48,8 @@ namespace SecondSpawn.AI
         [SerializeField] private bool _seedSoulOnStart = true;
         [SerializeField] private bool _alignFeetToGround = true;
         [SerializeField] private bool _logPhaseTransitions = true;
-        [SerializeField, Tooltip("Use the Nakama deterministic decision RPC when the model gateway is unavailable or rate-limited.")]
-        private bool _useNakamaFallbackOnGatewayFailure = true;
 
-        [SerializeField] private int _gatewayFailureErrorThreshold = 3;
-        [SerializeField, Tooltip("When the model gateway reports a daily token budget exhaustion, use Nakama fallback only for this long before probing the gateway again.")]
-        private float _gatewayBudgetBackoffSeconds = 60f;
+        [SerializeField] private int _decisionFailureErrorThreshold = 3;
         [SerializeField, Tooltip("Backoff after a model-selected NPC say intent fails Nakama persistence validation.")]
         private float _intentPersistenceFailureBackoffSeconds = 45f;
 
@@ -72,8 +68,7 @@ namespace SecondSpawn.AI
         private float _nextTalkAt;
         private int _pendingFootAlignFrames;
         private int _loopSequence;
-        private int _consecutiveGatewayFailures;
-        private float _gatewayBudgetBackoffUntil;
+        private int _consecutiveDecisionFailures;
         private float _intentPersistenceBackoffUntil;
         private ActorProfileDto _configuredActorProfile;
         private readonly List<string> _phaseTrace = new List<string>();
@@ -129,7 +124,7 @@ namespace SecondSpawn.AI
             if (_gateway == null)
             {
                 Debug.LogWarning("[PrototypeAgentBrain] No SecondSpawnGatewayClient found in scene.");
-                LogPhase(BrainPhase.Idle, "missing gateway");
+                LogPhase(BrainPhase.Idle, "missing Nakama client");
                 return;
             }
 
@@ -213,30 +208,14 @@ namespace SecondSpawn.AI
                 LogPhase(BrainPhase.Decide, BuildDecisionRequestLogDetail(request));
 
                 AgentDecisionDto decision = null;
-                string gatewayError = null;
-                string fallbackError = null;
+                string decisionError = null;
 
-                if (IsGatewayBudgetBackoffActive())
-                {
-                    if (_useNakamaFallbackOnGatewayFailure)
-                    {
-                        yield return _gateway.DecideWithNakamaFallback(request, value => decision = value, error => fallbackError = error);
-                    }
-                }
-                else
-                {
-                    yield return _gateway.Decide(request, value => decision = value, error => gatewayError = error);
-                }
+                yield return _gateway.Decide(request, value => decision = value, error => decisionError = error);
 
-                if (decision == null && _useNakamaFallbackOnGatewayFailure && !string.IsNullOrWhiteSpace(gatewayError))
-                {
-                    yield return _gateway.DecideWithNakamaFallback(request, value => decision = value, error => fallbackError = error);
-                }
+                TrackDecisionResult(decisionError);
+                UpdateBrainStatus(decision, decisionError);
 
-                TrackGatewayResult(gatewayError, decision != null, fallbackError);
-                UpdateBrainStatus(decision, gatewayError, fallbackError);
-
-                LogPhase(BrainPhase.Validate, BuildDecisionLogDetail(decision, gatewayError, fallbackError));
+                LogPhase(BrainPhase.Validate, BuildDecisionLogDetail(decision, decisionError));
 
                 if (decision != null)
                 {
@@ -267,7 +246,7 @@ namespace SecondSpawn.AI
                 var seed = BuildSoulSeed();
                 if (!_seedSoulOnStart)
                 {
-                    seed.soul.player_notes = "Local prototype context without gateway persistence.";
+                    seed.soul.player_notes = "Local prototype context without durable Nakama actor persistence.";
                 }
                 _context = BuildLocalPrototypeContext(_agentId, _displayName, _visualVariant, seed);
             }
@@ -497,19 +476,16 @@ namespace SecondSpawn.AI
             return $"allowed={allowed}, zone={snapshot.zone_id}, safe_radius={snapshot.safe_radius:0.00}";
         }
 
-        private static string BuildDecisionLogDetail(AgentDecisionDto decision, string gatewayError, string fallbackError = null)
+        private static string BuildDecisionLogDetail(AgentDecisionDto decision, string decisionError)
         {
             if (decision == null)
             {
-                if (!string.IsNullOrWhiteSpace(fallbackError))
-                {
-                    return $"decision=none, gateway_error={gatewayError}, fallback_error={fallbackError}";
-                }
-
-                return string.IsNullOrWhiteSpace(gatewayError) ? "decision=none" : $"decision=none, error={gatewayError}";
+                return string.IsNullOrWhiteSpace(decisionError) ? "decision=none" : $"decision=none, error={decisionError}";
             }
 
-            var degradedSuffix = string.IsNullOrWhiteSpace(gatewayError) ? "" : ", recovered_by=nakama_fallback";
+            var degradedSuffix = string.Equals(decision.source, "fallback", System.StringComparison.OrdinalIgnoreCase)
+                ? ", degraded=fallback"
+                : "";
             if (decision.action == "move" && decision.move != null)
             {
                 return $"action=move, target=({decision.move.x:0.00},{decision.move.z:0.00}), confidence={decision.confidence:0.00}{BuildDecisionSourceLogDetail(decision)}{degradedSuffix}";
@@ -536,45 +512,31 @@ namespace SecondSpawn.AI
                 : $", source={decision.source}, source_reason={decision.source_reason}";
         }
 
-        private void TrackGatewayResult(string gatewayError, bool recoveredByFallback, string fallbackError)
+        private void TrackDecisionResult(string decisionError)
         {
-            if (string.IsNullOrWhiteSpace(gatewayError))
+            if (string.IsNullOrWhiteSpace(decisionError))
             {
-                _consecutiveGatewayFailures = 0;
+                _consecutiveDecisionFailures = 0;
                 return;
             }
 
-            if (recoveredByFallback)
+            _consecutiveDecisionFailures++;
+            Debug.LogWarning($"[PrototypeAgentBrain] Nakama agent decision failed for agent={_agentId}, consecutive_failures={_consecutiveDecisionFailures}: {decisionError}");
+            if (_consecutiveDecisionFailures >= Mathf.Max(1, _decisionFailureErrorThreshold))
             {
-                _consecutiveGatewayFailures = 0;
-                if (IsTokenBudgetExhausted(gatewayError))
-                {
-                    StartGatewayBudgetBackoff(gatewayError);
-                    return;
-                }
-
-                Debug.LogWarning($"[PrototypeAgentBrain] Gateway decision failed for agent={_agentId}, recovered_by=nakama_fallback: {gatewayError}");
-                return;
-            }
-
-            _consecutiveGatewayFailures++;
-            var fallbackDetail = string.IsNullOrWhiteSpace(fallbackError) ? "" : $", fallback_error={fallbackError}";
-            Debug.LogWarning($"[PrototypeAgentBrain] Gateway decision failed for agent={_agentId}, consecutive_failures={_consecutiveGatewayFailures}{fallbackDetail}: {gatewayError}");
-            if (_consecutiveGatewayFailures >= Mathf.Max(1, _gatewayFailureErrorThreshold))
-            {
-                Debug.LogError($"[PrototypeAgentBrain] Gateway decision failure threshold reached for agent={_agentId}, threshold={_gatewayFailureErrorThreshold}{fallbackDetail}: {gatewayError}");
+                Debug.LogError($"[PrototypeAgentBrain] Nakama agent decision failure threshold reached for agent={_agentId}, threshold={_decisionFailureErrorThreshold}: {decisionError}");
             }
         }
 
-        private void UpdateBrainStatus(AgentDecisionDto decision, string gatewayError, string fallbackError)
+        private void UpdateBrainStatus(AgentDecisionDto decision, string decisionError)
         {
             if (decision == null)
             {
-                var hasError = !string.IsNullOrWhiteSpace(gatewayError) || !string.IsNullOrWhiteSpace(fallbackError);
+                var hasError = !string.IsNullOrWhiteSpace(decisionError);
                 SetBrainStatus(
                     hasError ? "AI ERROR" : "AI idle",
                     hasError ? new Color(1f, 0.24f, 0.22f) : new Color(0.82f, 0.86f, 0.9f),
-                    FirstNonEmpty(ExtractGatewayReason(gatewayError), ExtractGatewayReason(fallbackError)));
+                    ExtractDecisionReason(decisionError));
                 return;
             }
 
@@ -585,12 +547,12 @@ namespace SecondSpawn.AI
             }
 
             if (string.Equals(decision.source, "fallback", System.StringComparison.OrdinalIgnoreCase) ||
-                !string.IsNullOrWhiteSpace(gatewayError))
+                !string.IsNullOrWhiteSpace(decisionError))
             {
                 SetBrainStatus(
                     "AI FALLBACK",
                     new Color(1f, 0.62f, 0.16f),
-                    FirstNonEmpty(decision.source_reason, ExtractGatewayReason(gatewayError)));
+                    FirstNonEmpty(decision.source_reason, ExtractDecisionReason(decisionError)));
                 return;
             }
 
@@ -617,7 +579,7 @@ namespace SecondSpawn.AI
             return "";
         }
 
-        private static string ExtractGatewayReason(string error)
+        private static string ExtractDecisionReason(string error)
         {
             if (string.IsNullOrWhiteSpace(error))
             {
@@ -648,31 +610,7 @@ namespace SecondSpawn.AI
                 return "timeout";
             }
 
-            return "gateway_error";
-        }
-
-        private bool IsGatewayBudgetBackoffActive()
-        {
-            return Time.realtimeSinceStartup < _gatewayBudgetBackoffUntil;
-        }
-
-        private void StartGatewayBudgetBackoff(string gatewayError)
-        {
-            var backoffSeconds = Mathf.Max(_decisionIntervalSeconds, _gatewayBudgetBackoffSeconds);
-            var nextProbeAt = Time.realtimeSinceStartup + backoffSeconds;
-            if (nextProbeAt <= _gatewayBudgetBackoffUntil)
-            {
-                return;
-            }
-
-            _gatewayBudgetBackoffUntil = nextProbeAt;
-            Debug.LogWarning($"[PrototypeAgentBrain] Gateway decision budget exhausted for agent={_agentId}; using Nakama fallback for {backoffSeconds:0}s before retrying: {gatewayError}");
-        }
-
-        private static bool IsTokenBudgetExhausted(string gatewayError)
-        {
-            return !string.IsNullOrWhiteSpace(gatewayError)
-                && gatewayError.IndexOf("token_budget_exhausted", System.StringComparison.OrdinalIgnoreCase) >= 0;
+            return "decision_error";
         }
 
         private IEnumerator ApplyDecision(AgentDecisionDto decision, AgentDecisionRequestDto request)
@@ -730,7 +668,7 @@ namespace SecondSpawn.AI
                 actor_id = _agentId,
                 target_actor_id = targetId,
                 intent = "say",
-                source = "llm_gateway",
+                source = "dos_ai_model",
                 text = text,
                 reason = decision.reason,
                 distance_meters = distanceMeters

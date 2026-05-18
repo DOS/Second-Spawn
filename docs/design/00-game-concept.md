@@ -62,7 +62,7 @@ Ecosystem extension: a user's OpenClaw agent can also connect into SECOND SPAWN 
 ### Core Mechanics (3-5 systems generating the dynamics)
 
 1. Top-down ARPG action combat (minimal Fusion controller first; Opsive Ultimate Character Controller is an evaluation candidate)
-2. LLM-driven NPC dialogue with server-validated intent (Convai phase 1, `api.dos.ai` / Go LLM Gateway phase 2)
+2. LLM-driven NPC dialogue with server-validated intent (Convai phase 1, `api.dos.ai` / api.dos.ai model service phase 2)
 3. AI agent autonomous control of player character when offline (server-authoritative, capability-capped)
 4. Reincarnation via SECOND cost (neural-imprint transfer and current-body reset)
 5. TIME / SECOND body lifespan economy (earn SECOND, spend TIME; zero TIME triggers body death)
@@ -157,7 +157,7 @@ Complete a quest line or dungeon clear; converse with hub-town NPCs (LLM-driven)
 | **Engine** | Unity 6.5 beta (currently `6000.5.0b8`) + URP. JOY chose beta for newest features. |
 | **Networking** | Photon Fusion 2 (Server Mode dedicated for production; Host Mode + Photon Cloud free 20 CCU for dev) |
 | **Persistence** | Nakama OSS + Postgres (profile, inventory, quest, NFT lock state, level/stats) |
-| **LLM** | Convai phase 1 (NPC dialogue) -> `api.dos.ai` / Go LLM Gateway phase 2 (Haiku 4.5 for NPC chat, Sonnet 4.6 for boss / quest-critical NPCs). Server-side intent validation only. |
+| **LLM** | Convai phase 1 (NPC dialogue) -> `api.dos.ai` / api.dos.ai model service phase 2 (Haiku 4.5 for NPC chat, Sonnet 4.6 for boss / quest-critical NPCs). Server-side intent validation only. |
 | **NFT** | DOS Chain via thirdweb-api MCP. Wallet auth, escrow contracts, Hunter skin / weapon / pet inventory. |
 | **Art** | Synty / Quaternius stylized low-poly + reused MetaDOS Hunter skins |
 | **Key technical risks** | LLM intent validation at scale; AI agent server tick load; NFT-Unity inventory sync latency |

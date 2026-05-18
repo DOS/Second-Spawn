@@ -9,10 +9,10 @@ namespace SecondSpawn.AI
     /// the visual indicator + activity log surface for when the player
     /// returns and observes what happened while offline.
     ///
-    /// The actual decision loop lives in the dedicated server build:
-    ///   pull state from Fusion -> reason via Go LLM gateway
-    ///   (backend/gateway) -> emit action intent -> server validates
-    ///   per intent.go -> apply mutation.
+    /// The actual decision loop lives server-side:
+    ///   pull state from Fusion or Nakama -> ask api.dos.ai through Nakama
+    ///   runtime -> validate intent server-side -> apply mutation only through
+    ///   authoritative systems.
     ///
     /// TODO (slice phase 7):
     /// - Wire activity log UI (last N agent actions visible to player).

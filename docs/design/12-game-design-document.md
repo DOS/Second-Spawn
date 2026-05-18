@@ -42,7 +42,7 @@ When the player is offline, a bounded AI agent can continue controlling the char
 | Combat feel reference | Diablo IV, Path of Exile 2, Lost Ark |
 | Backend foundation | Nakama OSS + Postgres for game backend |
 | Network runtime | Photon Fusion 2, Server Mode dedicated for production |
-| AI gateway | `api.dos.ai` / Go LLM Gateway for model calls and safety |
+| AI model service | `api.dos.ai` for model calls and safety |
 | Phase 1 NPC dialogue | Convai SDK for MVP NPC dialogue |
 | Chain integration | DOS Chain via thirdweb for wallet, NFT, and SECOND surfaces |
 
@@ -61,8 +61,8 @@ promise that the same UI or tuning will ship.
 | Reincarnation loop | Nakama supports dead-body reincarnation into a fresh prototype body. The current test balance is 7 days of SECOND and the current test cost is 5 days. |
 | NPC/actor profiles | NPC-like actors can have their own body, stats, traits, soul, memory, relationships, policy, runtime, and activity records. |
 | Permanent NPCs | `ZoneTest_Hub` can seed and display 10 permanent prototype NPC Frames from Nakama, each with fixed body identity and visual variant. |
-| Prototype NPC brain | Permanent NPC brains sense nearby actors, call the model-backed gateway decision path, speak through model-selected `say` intent, and persist model speech through Nakama memory and relationship records. |
-| Backend foundation | Nakama owns durable game profile state. The Go gateway owns AI contracts and Cloud Run smoke tests. |
+| Prototype NPC brain | Permanent NPC brains sense nearby actors, call the model-backed Nakama decision path, speak through model-selected `say` intent, and persist model speech through Nakama memory and relationship records. |
+| Backend foundation | Nakama owns durable game profile state, model-decision RPCs, and server-side intent validation before gameplay systems consume LLM output. |
 | Not implemented yet | Real combat damage, enemy loot, quest rewards, production HUD, player-vs-player time loot, wallet escrow, dungeon boss, and dedicated server deployment. |
 
 ---
@@ -610,7 +610,7 @@ Canonical topology:
 - Production uses Server Mode dedicated headless Unity builds.
 - Nakama owns durable game backend state.
 - Photon Fusion owns in-zone session state and authoritative simulation.
-- `api.dos.ai` / Go LLM Gateway owns AI model calls and safety layers.
+- `api.dos.ai` owns AI model calls and safety layers.
 
 Session model:
 
@@ -632,9 +632,9 @@ The agent loop:
 
 1. Fusion server builds a safe world snapshot.
 2. Backend loads profile, body, soul, policy, and compact memories.
-3. Gateway builds bounded LLM context.
+3. Nakama builds bounded LLM context.
 4. LLM or deterministic fallback emits structured intent.
-5. Gateway validates intent shape.
+5. Nakama validates intent shape.
 6. Fusion server validates intent against authoritative state.
 7. Server applies movement, combat, social, or interaction action if allowed.
 8. Backend records activity for the player to review.
@@ -679,7 +679,7 @@ Hard boundaries:
 Phase direction:
 
 - Phase 1 uses Convai for MVP NPC dialogue.
-- Phase 2 moves deeper LLM behavior to `api.dos.ai` / Go LLM Gateway.
+- Phase 2 moves deeper LLM behavior to `api.dos.ai`.
 - Haiku-class models are candidates for fast NPC chat.
 - Sonnet-class models are candidates for bosses and quest-critical NPCs.
 - Voice remains deferred and must use server-minted ephemeral tokens or a server-side provider path.
@@ -980,7 +980,7 @@ Already proven in prototype:
 - Prototype NPC/agent brain loop with gateway model decision and deterministic
   fallback.
 - Proactive NPC social path: nearby actor sensing, model-selected `say` intent,
-  gateway target validation, and Nakama memory or relationship persistence.
+  Nakama target validation, and Nakama memory or relationship persistence.
 - TIME and reincarnation smoke path through debug controls.
 
 Still required before this feels like a game:
