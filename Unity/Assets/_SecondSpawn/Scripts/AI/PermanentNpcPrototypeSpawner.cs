@@ -381,6 +381,7 @@ namespace SecondSpawn.AI
         private float _visibleDistance = 24f;
         private int _fontSize = 18;
         private float _maxWidth = 260f;
+        private GUIContent _content;
         private GUIStyle _labelStyle;
         private GUIStyle _shadowStyle;
 
@@ -390,10 +391,16 @@ namespace SecondSpawn.AI
             _visibleDistance = Mathf.Max(1f, visibleDistance);
             _fontSize = Mathf.Clamp(fontSize, 12, 24);
             _maxWidth = Mathf.Max(96f, maxWidth);
+            _content = new GUIContent(_text);
         }
 
         private void OnGUI()
         {
+            if (Event.current.type != EventType.Repaint)
+            {
+                return;
+            }
+
             var cam = Camera.main;
             if (cam == null || string.IsNullOrWhiteSpace(_text))
             {
@@ -419,7 +426,7 @@ namespace SecondSpawn.AI
             }
 
             EnsureStyles();
-            var content = new GUIContent(_text);
+            var content = _content ??= new GUIContent(_text);
             var height = _labelStyle.CalcHeight(content, _maxWidth);
             var x = Mathf.Clamp(screenPoint.x - _maxWidth * 0.5f, ScreenPadding, Screen.width - _maxWidth - ScreenPadding);
             var y = Mathf.Clamp(Screen.height - screenPoint.y - height * 0.5f, ScreenPadding, Screen.height - height - ScreenPadding);

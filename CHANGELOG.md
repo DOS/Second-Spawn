@@ -169,6 +169,8 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   13-17: Berserker, Female, Heavy, Male, and Crafter.
 - Prototype NPC labels now render as camera-fixed screen-space nameplates, and
   the prototype HUD/debug text is larger for QHD Play Mode readability.
+- Permanent NPC agent visuals now load only after the server profile has picked
+  the fixed body variant, avoiding duplicate startup prefab/animator warmup.
 - Prototype agent brain now backs off model gateway retries after daily decision
   token budget exhaustion and uses Nakama fallback during the cooldown, reducing
   repeated Play Mode warning spam.
