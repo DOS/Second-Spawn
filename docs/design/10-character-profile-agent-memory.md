@@ -238,13 +238,16 @@ Current prototype runtime contract:
 | ---- | ---- |
 | `level` | Local body level |
 | `strength` | Physical power, melee force, carry, heavy weapons, and forceful body actions |
-| `agility` | Current movement and attack cadence prototype stat |
+| `dexterity` | Movement quality, handling, precision, attack cadence, and dodge scaling |
 | `endurance` | Health, energy reserve, body durability, recovery, and BodyTime efficiency hooks |
 | `perception` | Sensor quality, threat detection, stealth detection, weak-point read, and social or environmental cue input |
 | `focus` | Current energy and ability-use prototype stat |
 | `presence` | Active social pressure, confidence, command weight, negotiation posture, and intimidation attempts |
+| `intelligence` | Technical literacy, planning surface, analysis, and system understanding |
+| `luck` | Strictly capped variance for fortunate openings and backend-approved rolls |
 | `vitality` | Legacy compatibility alias for endurance-oriented health scaling |
 | `force` | Legacy compatibility alias for strength-oriented physical power |
+| `agility` | Legacy compatibility alias for dexterity-oriented movement |
 | `resilience` | Legacy compatibility alias for endurance-oriented mitigation |
 | `max_health` | Current derived or cached health cap |
 | `max_energy` | Current derived or cached energy cap |
@@ -252,9 +255,9 @@ Current prototype runtime contract:
 | `defense_power` | Current derived or cached defense output |
 
 These keys are implemented today by the gateway, Nakama runtime, and Unity
-prototype HUD. The six core stats are the canonical backend contract. The older
-serialized keys remain in runtime payloads as aliases until the Unity networked
-prototype stats are renamed in a coordinated compatibility pass.
+prototype HUD. The eight core stats are the canonical backend contract. The
+older serialized keys remain in runtime payloads as aliases until the Unity
+networked prototype stats are renamed in a coordinated compatibility pass.
 See
 [14-character-stat-and-relationship-system.md](14-character-stat-and-relationship-system.md)
 for the system-level stat, secondary stat, presentation, and relationship
@@ -266,11 +269,13 @@ MVP core stat taxonomy:
 | ---- | ---- |
 | `level` | Local body level |
 | `strength` | Physical power, melee force, carry, heavy weapons, and forceful body actions |
-| `agility` | Movement, handling, precision, attack cadence, and dodge scaling |
+| `dexterity` | Movement, handling, precision, attack cadence, and dodge scaling |
 | `endurance` | Health, energy reserve, body durability, recovery, and BodyTime efficiency hooks |
 | `perception` | Sensor quality, threat detection, stealth detection, weak-point read, and social or environmental cue input |
 | `focus` | Concentration, panic resistance, noise resistance, status pressure, and agent instruction stability |
 | `presence` | Active social influence such as persuasion, negotiation, leadership, command weight, and intimidation attempts |
+| `intelligence` | Technical literacy, planning surface, analysis, crafting, hacking, and system understanding |
+| `luck` | Strictly capped variance for fortunate openings, crit variance hooks, salvage bias, and backend-approved rolls |
 
 BodyTime is not a primary stat. It is a lifecycle and economy resource that may
 later read endurance, injuries, hazards, and stress when computing drains or
@@ -335,11 +340,10 @@ Design notes:
   mechanics.
 - `focus` must never be connected to prompt-injection defense. Security and
   moderation are harness constants, not stats.
-- Deferred candidate stats such as `intelligence`, `charisma`, `luck`, and
-  `dexterity` are not part of the MVP backend contract. If added later, they
-  must remain server-owned and must never grant new authority.
-- `luck`, if revived, must never mint loot, TIME, or SECOND directly. It can
-  only bias backend-approved rolls inside strict caps.
+- `intelligence` must never make the model smarter or grant new authority. It
+  can only affect server-approved technical actions and rolls inside policy.
+- `luck` must never mint loot, TIME, or SECOND directly. It can only bias
+  backend-approved rolls inside strict caps.
 
 ---
 
@@ -689,7 +693,7 @@ Implemented surfaces:
   capability flags onto the authoritative local `NetworkPlayer`.
 - The current player prototype starts at level 1 with stats selected from the
   server-owned body archetype pool instead of one fixed stat line.
-- The prototype HUD shows level, HP, energy, attack, defense, agility,
+- The prototype HUD shows level, HP, energy, attack, defense, dexterity,
   prototype `BodyTime` / TIME, lifecycle, SECOND balance, and reincarnation count.
 - The current prototype account reserve starts with 604800 SECOND seconds and
   reincarnation costs 432000 SECOND seconds.

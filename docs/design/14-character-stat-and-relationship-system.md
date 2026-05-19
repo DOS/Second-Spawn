@@ -48,25 +48,30 @@ authority. It is a design contract, not a final combat spreadsheet.
 
 ## Current Source of Truth
 
-The MVP backend uses six canonical body-bound core stats:
+The MVP backend uses eight canonical body-bound core stats:
 
 - `strength`
-- `agility`
+- `dexterity`
 - `endurance`
 - `perception`
 - `focus`
 - `presence`
+- `intelligence`
+- `luck`
 
 Older serialized prototype fields remain compatibility aliases until Unity
 networked stats are renamed safely:
 
 - `force`
+- `agility`
 - `vitality`
 - `resilience`
 
-The broader brainstorm candidates `intelligence`, `charisma`, `luck`, and
-`dexterity` are not current MVP backend contract fields. They are documented
-below as deferred candidates so the design discussion is not lost.
+`wisdom` is intentionally not a core stat. The design treats wisdom-like
+reading, judgment, and awareness as a mix of `perception`, `focus`,
+`SoulProfile`, `CharacterTraits`, `FrameMemory`, and `RelationshipLedger`.
+`charisma` remains folded into `presence` for MVP, and `appeal` remains a
+presentation attribute, not a core stat.
 
 ---
 
@@ -74,7 +79,7 @@ below as deferred candidates so the design discussion is not lost.
 
 | Layer | Examples | Authority |
 | ---- | ---- | ---- |
-| Core Stats | `strength`, `agility`, `endurance`, `perception`, `focus`, `presence` | Game backend, then Fusion server for live combat |
+| Core Stats | `strength`, `dexterity`, `endurance`, `perception`, `focus`, `presence`, `intelligence`, `luck` | Game backend, then Fusion server for live combat |
 | Secondary Stats | HP, energy, attack power, armor, elemental resistance, dodge, crit | Derived or cached by backend and server simulation |
 | Social Attributes | Appeal band, reputation, faction standing | Backend-owned profile and presentation data |
 | Body Presentation | Visual tags, intimidation tags, style, voice profile | Backend-owned, Unity-rendered |
@@ -94,12 +99,15 @@ The current prototype runtime should keep these fields stable:
 | ---- | ---- | ---- |
 | `level` | integer | Current body level, not durable soul level |
 | `strength` | integer | Canonical core stat |
-| `agility` | integer | Canonical core stat |
+| `dexterity` | integer | Canonical core stat |
 | `endurance` | integer | Canonical core stat |
 | `perception` | integer | Canonical core stat |
 | `focus` | integer | Canonical core stat |
 | `presence` | integer | Canonical core stat |
+| `intelligence` | integer | Canonical core stat |
+| `luck` | integer | Canonical core stat |
 | `force` | integer | Legacy alias for prototype compatibility |
+| `agility` | integer | Legacy alias for prototype compatibility |
 | `vitality` | integer | Legacy alias for prototype compatibility |
 | `resilience` | integer | Legacy alias for prototype compatibility |
 | `max_health` | integer | Derived or cached |
@@ -107,8 +115,8 @@ The current prototype runtime should keep these fields stable:
 | `attack_power` | integer | Derived or cached |
 | `defense_power` | integer | Derived or cached |
 
-New gameplay systems should read the canonical six. Legacy aliases should only
-exist at compatibility boundaries.
+New gameplay systems should read the canonical eight. Legacy aliases should
+only exist at compatibility boundaries.
 
 ---
 
@@ -117,11 +125,13 @@ exist at compatibility boundaries.
 | Stat | Meaning | Main Use |
 | ---- | ---- | ---- |
 | `strength` | Physical output, heavy weapon force, carry capacity, brute impact | Melee damage, stagger pressure, heavy tool use |
-| `agility` | Movement quality, handling, reaction, attack cadence, dodge scaling | Move speed, dodge rating, attack speed hooks |
+| `dexterity` | Movement quality, handling, reaction, attack cadence, dodge scaling | Move speed, dodge rating, attack speed hooks |
 | `endurance` | Body durability, recovery, energy reserve, survival tolerance | HP, energy, recovery, BodyTime efficiency hooks |
-| `perception` | Sensor quality and awareness input, not LLM intelligence | Detection, weak-point reads, social cue input, threat awareness |
+| `perception` | Sensor quality, awareness input, and wisdom-like reading of the world | Detection, weak-point reads, social cue input, threat awareness |
 | `focus` | Concentration, panic resistance, instruction stability, pressure tolerance | Channeling, interruption resistance, agent consistency under stress |
 | `presence` | Active social force and command weight | Persuasion, negotiation, leadership, intimidation, crowd effect hooks |
+| `intelligence` | Reasoning surface, technical literacy, planning, and system understanding | Hacking, crafting, analysis, tool use checks, tactical options |
+| `luck` | Controlled variance and fortunate openings | Rare event bias, crit variance hooks, salvage roll bias, strict server-capped outcomes |
 
 ### Why Not Wisdom
 
@@ -144,12 +154,9 @@ contract without a migration and balance pass.
 
 | Candidate | Current MVP Placement | Revisit When |
 | ---- | ---- | ---- |
-| `intelligence` | Represented through profession, skill, memory, and agent context, not body core stats | Technical builds need a readable stat for hacking, crafting, analysis, or device use |
 | `charisma` | Folded into `presence` | Social builds need a clear split between influence, command, intimidation, and charm |
-| `luck` | Deferred | Loot, crit variance, rare events, and TIME rewards need a server-owned variance stat with strict caps |
-| `dexterity` | Folded into `agility` | Precision weapons, finesse tools, or handling builds need separation from raw movement |
 
-If `luck` is added later, it must never mint loot, TIME, or SECOND directly. It
+`luck` is a core stat, but it must never mint loot, TIME, or SECOND directly. It
 can only bias backend-approved rolls inside explicit caps.
 
 ---
@@ -374,10 +381,13 @@ Rules:
 - `focus` must never weaken prompt-injection defense.
 - `presence` and `appeal` must never bypass consent, moderation, or faction
   rules.
-- `perception` controls what context is available, not how intelligent the
-  model is.
+- `perception` controls what sensory, social, and environmental context is
+  available.
+- `intelligence` controls technical and tactical options inside server-approved
+  checks. It does not make the model smarter or grant new authority.
 - A stronger LLM provider must not turn a low-perception Frame into an
   omniscient character.
+- `luck` can only bias server-approved rolls inside strict caps.
 - Tool access lives in `AgentPolicy` and server validation, not stats.
 - Memory and relationship writes are accepted only through backend rules.
 
@@ -387,7 +397,7 @@ Rules:
 
 For the vertical slice:
 
-- Ship the canonical six core stats.
+- Ship the canonical eight core stats.
 - Keep legacy aliases only at compatibility boundaries.
 - Use existing derived fields: `max_health`, `max_energy`, `attack_power`, and
   `defense_power`.
@@ -397,8 +407,9 @@ For the vertical slice:
   `respect`, `debt`, and `familiarity`.
 - Add `appeal_band` and simple presentation tags when the body profile schema is
   migrated.
-- Do not add `luck`, `charisma`, `intelligence`, or `dexterity` as MVP backend
-  contract fields.
+- Keep `wisdom` out of MVP because `perception` covers the useful gameplay
+  portion.
+- Keep `charisma` folded into `presence` for MVP.
 
 ---
 
@@ -422,7 +433,8 @@ For the vertical slice:
 
 - Should `presence` remain the single social core stat, or should a future
   system split it into `presence` and `charisma`?
-- Should `luck` exist at all, given economy, loot, TIME, and SECOND risk?
+- Which `luck` effects are allowed without damaging loot, TIME, and SECOND
+  balance?
 - Which relationship axes survive reincarnation, and how much decay should
   apply?
 - Should Appeal be visible in player-facing UI, debug-only, or only used for

@@ -1034,13 +1034,18 @@ namespace SecondSpawn.AI
             var stats = body.stats;
             if (stats != null)
             {
-                _moveSpeed = Mathf.Max(0.1f, _baseMoveSpeed * CalculateAgilitySpeedMultiplier(stats.agility));
+                _moveSpeed = Mathf.Max(0.1f, _baseMoveSpeed * CalculateDexteritySpeedMultiplier(ResolveStat(stats.dexterity, stats.agility, 8)));
             }
         }
 
-        private static float CalculateAgilitySpeedMultiplier(int agility)
+        private static int ResolveStat(int primary, int legacy, int fallback)
         {
-            return Mathf.Clamp(agility / 8f, 0.75f, 1.4f);
+            return primary > 0 ? primary : legacy > 0 ? legacy : fallback;
+        }
+
+        private static float CalculateDexteritySpeedMultiplier(int dexterity)
+        {
+            return Mathf.Clamp(dexterity / 8f, 0.75f, 1.4f);
         }
 
         private void LogPhase(BrainPhase phase, string detail)

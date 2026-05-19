@@ -26,9 +26,12 @@ namespace SecondSpawn.Networking
         [Networked] public int Level { get; set; }
         [Networked] public int Vitality { get; set; }
         [Networked] public int Force { get; set; }
+        [Networked] public int Dexterity { get; set; }
         [Networked] public int Agility { get; set; }
         [Networked] public int Focus { get; set; }
         [Networked] public int Resilience { get; set; }
+        [Networked] public int Intelligence { get; set; }
+        [Networked] public int Luck { get; set; }
         [Networked] public int MaxHealth { get; set; }
         [Networked] public int MaxEnergy { get; set; }
         [Networked] public int AttackPower { get; set; }
@@ -216,9 +219,11 @@ namespace SecondSpawn.Networking
             int level,
             int vitality,
             int force,
-            int agility,
+            int dexterity,
             int focus,
             int resilience,
+            int intelligence,
+            int luck,
             int maxHealth,
             int maxEnergy,
             int attackPower,
@@ -246,9 +251,12 @@ namespace SecondSpawn.Networking
             Level = Mathf.Max(1, level);
             Vitality = Mathf.Clamp(vitality, 1, 999);
             Force = Mathf.Clamp(force, 1, 999);
-            Agility = Mathf.Clamp(agility, 1, 999);
+            Dexterity = Mathf.Clamp(dexterity, 1, 999);
+            Agility = Dexterity;
             Focus = Mathf.Clamp(focus, 1, 999);
             Resilience = Mathf.Clamp(resilience, 1, 999);
+            Intelligence = Mathf.Clamp(intelligence, 1, 999);
+            Luck = Mathf.Clamp(luck, 1, 999);
             MaxHealth = Mathf.Max(1, maxHealth);
             MaxEnergy = Mathf.Max(1, maxEnergy);
             AttackPower = Mathf.Max(0, attackPower);
@@ -279,9 +287,12 @@ namespace SecondSpawn.Networking
             Level = 1;
             Vitality = 10;
             Force = 8;
+            Dexterity = 8;
             Agility = 8;
             Focus = 8;
             Resilience = 8;
+            Intelligence = 8;
+            Luck = 5;
             MaxHealth = 100;
             MaxEnergy = 50;
             AttackPower = 10;

@@ -2575,11 +2575,14 @@ function defaultCharacterStats(): any {
   return {
     level: 1,
     strength: 8,
+    dexterity: 8,
     agility: 8,
     endurance: 10,
     perception: 8,
     focus: 8,
     presence: 5,
+    intelligence: 8,
+    luck: 5,
     vitality: 10,
     force: 8,
     resilience: 8,
@@ -2593,19 +2596,24 @@ function defaultCharacterStats(): any {
 function normalizeStatsWithDefaults(stats: any, defaults: any): any {
   var base = normalizeStats(defaults || {});
   var strength = clampNumber(numberOrDefault(firstDefined(stats.strength, stats.force), base.strength), 1, 9999);
-  var agility = clampNumber(numberOrDefault(stats.agility, base.agility), 1, 9999);
+  var dexterity = clampNumber(numberOrDefault(firstDefined(stats.dexterity, stats.agility), base.dexterity), 1, 9999);
   var endurance = clampNumber(numberOrDefault(firstDefined(stats.endurance, firstDefined(stats.vitality, stats.resilience)), base.endurance), 1, 9999);
   var perception = clampNumber(numberOrDefault(stats.perception, base.perception), 1, 9999);
   var focus = clampNumber(numberOrDefault(stats.focus, base.focus), 1, 9999);
   var presence = clampNumber(numberOrDefault(stats.presence, base.presence), 1, 9999);
+  var intelligence = clampNumber(numberOrDefault(stats.intelligence, base.intelligence), 1, 9999);
+  var luck = clampNumber(numberOrDefault(stats.luck, base.luck), 1, 9999);
   return {
     level: clampNumber(numberOrDefault(stats.level, base.level), 1, 100),
     strength: strength,
-    agility: agility,
+    dexterity: dexterity,
+    agility: dexterity,
     endurance: endurance,
     perception: perception,
     focus: focus,
     presence: presence,
+    intelligence: intelligence,
+    luck: luck,
     vitality: clampNumber(numberOrDefault(stats.vitality, endurance), 1, 9999),
     force: clampNumber(numberOrDefault(stats.force, strength), 1, 9999),
     resilience: clampNumber(numberOrDefault(stats.resilience, endurance), 1, 9999),
@@ -2619,19 +2627,24 @@ function normalizeStatsWithDefaults(stats: any, defaults: any): any {
 function normalizeStats(stats: any): any {
   var defaults = defaultCharacterStats();
   var strength = clampNumber(numberOrDefault(firstDefined(stats.strength, stats.force), defaults.strength), 1, 9999);
-  var agility = clampNumber(numberOrDefault(stats.agility, defaults.agility), 1, 9999);
+  var dexterity = clampNumber(numberOrDefault(firstDefined(stats.dexterity, stats.agility), defaults.dexterity), 1, 9999);
   var endurance = clampNumber(numberOrDefault(firstDefined(stats.endurance, firstDefined(stats.vitality, stats.resilience)), defaults.endurance), 1, 9999);
   var perception = clampNumber(numberOrDefault(stats.perception, defaults.perception), 1, 9999);
   var focus = clampNumber(numberOrDefault(stats.focus, defaults.focus), 1, 9999);
   var presence = clampNumber(numberOrDefault(stats.presence, defaults.presence), 1, 9999);
+  var intelligence = clampNumber(numberOrDefault(stats.intelligence, defaults.intelligence), 1, 9999);
+  var luck = clampNumber(numberOrDefault(stats.luck, defaults.luck), 1, 9999);
   return {
     level: clampNumber(numberOrDefault(stats.level, defaults.level), 1, 100),
     strength: strength,
-    agility: agility,
+    dexterity: dexterity,
+    agility: dexterity,
     endurance: endurance,
     perception: perception,
     focus: focus,
     presence: presence,
+    intelligence: intelligence,
+    luck: luck,
     vitality: clampNumber(numberOrDefault(stats.vitality, endurance), 1, 9999),
     force: clampNumber(numberOrDefault(stats.force, strength), 1, 9999),
     resilience: clampNumber(numberOrDefault(stats.resilience, endurance), 1, 9999),

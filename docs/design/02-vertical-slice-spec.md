@@ -45,7 +45,7 @@ Already implemented:
 - The spawned player has networked level, combat stats, prototype `BodyTime` /
   TIME, lifecycle,
   SECOND balance, reincarnation count, visual key, and agent-control state.
-- Prototype HUD displays level, HP, energy, attack, defense, agility,
+- Prototype HUD displays level, HP, energy, attack, defense, dexterity,
   prototype `BodyTime` / TIME, lifecycle, SECOND balance, and reincarnation count.
 - Nakama profile bootstrap persists player profile, current body, stats, traits,
   soul, memory, agent policy, runtime, activity, prototype `BodyTime` / TIME,
