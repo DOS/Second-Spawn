@@ -141,8 +141,11 @@ namespace SecondSpawn.AI
         public int endurance = 10;
         public int perception = 8;
         public int presence = 5;
+        public int intelligence = 8;
+        public int luck = 5;
         public int vitality = 10;
         public int force = 8;
+        public int dexterity = 8;
         public int agility = 8;
         public int focus = 8;
         public int resilience = 8;

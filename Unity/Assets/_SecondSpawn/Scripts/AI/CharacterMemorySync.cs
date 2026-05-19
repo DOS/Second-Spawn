@@ -231,15 +231,18 @@ namespace SecondSpawn.AI
             var time = body.time ?? new BodyTimeDto();
             var account = _context?.player ?? new PlayerProfileDto();
             var strength = ResolveStat(stats.strength, stats.force, 8);
+            var dexterity = ResolveStat(stats.dexterity, stats.agility, 8);
             var endurance = ResolveStat(stats.endurance, stats.vitality, 10);
             var resilience = ResolveStat(stats.resilience, endurance, 8);
             player.ApplyProfileStats(
                 stats.level,
                 endurance,
                 strength,
-                stats.agility,
+                dexterity,
                 stats.focus,
                 resilience,
+                stats.intelligence,
+                stats.luck,
                 stats.max_health,
                 stats.max_energy,
                 stats.attack_power,

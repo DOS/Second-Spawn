@@ -54,7 +54,7 @@ promise that the same UI or tuning will ship.
 | Area | Current State |
 | ---- | ---- |
 | Unity scene | `ZoneTest_Hub` can enter Play Mode and spawn a Fusion local player. |
-| Player visible stats | The prototype HUD shows level, HP, energy, attack, defense, agility, prototype `BodyTime` / TIME, lifecycle, SECOND balance, and reincarnation count. |
+| Player visible stats | The prototype HUD shows level, HP, energy, attack, defense, dexterity, prototype `BodyTime` / TIME, lifecycle, SECOND balance, and reincarnation count. |
 | Player profile sync | Unity loads the Nakama profile and applies current-body stats, prototype `BodyTime` / TIME, lifecycle, SECOND balance, reincarnation count, and visual key to the authoritative local `NetworkPlayer`. |
 | Default player body | New profiles start at level 1 with server-selected stats from the prototype body archetype pool. |
 | TIME loop | Nakama supports prototype earn, spend, drain, duplicate-earn cooldown, zero-time death, and activity logging. Current implementation field names still use `BodyTime`. |
@@ -411,16 +411,18 @@ mood or stress context, body presentation data, and validated action surface. Se
 
 Target character-model taxonomy:
 
-The MVP backend uses six canonical body-bound core stats: `strength`, `agility`,
-`endurance`, `perception`, `focus`, and `presence`. The older serialized keys
-`vitality`, `force`, and `resilience` remain compatibility aliases until the
-Unity networked prototype stats are renamed safely. See
+The MVP backend uses eight canonical body-bound core stats: `strength`,
+`dexterity`, `endurance`, `perception`, `focus`, `presence`, `intelligence`,
+and `luck`. The older serialized keys `vitality`, `force`, `agility`, and
+`resilience` remain compatibility aliases until the Unity networked prototype
+stats are renamed safely. See
 [14-character-stat-and-relationship-system.md](14-character-stat-and-relationship-system.md)
 for the detailed stat, secondary stat, presentation, and relationship baseline.
 
-- Core stats: body-bound gameplay numbers such as strength, agility, endurance,
-  perception, focus, and presence. Do not add wisdom as a core stat and do not
-  expose accuracy as a player-facing stat for MVP.
+- Core stats: body-bound gameplay numbers such as strength, dexterity,
+  endurance, perception, focus, presence, intelligence, and luck. Do not add
+  wisdom as a core stat and do not expose accuracy as a player-facing stat for
+  MVP.
 - Secondary stats: derived gameplay values such as HP, energy, attack power,
   skill power, armor rating, five elemental resistance ratings, dodge rating,
   dodge chance, crit chance, crit damage, attack speed, move speed, cooldown

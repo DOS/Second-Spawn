@@ -114,7 +114,8 @@ namespace SecondSpawn.UI
 
             GUILayout.Label($"Level {player.Level}", _labelStyle);
             GUILayout.Label($"HP {player.Hp:0}/{player.MaxHealth} | Energy {player.Stamina:0}/{player.MaxEnergy}", _labelStyle);
-            GUILayout.Label($"ATK {player.AttackPower} | DEF {player.DefensePower} | AGI {player.Agility}", _labelStyle);
+            GUILayout.Label($"ATK {player.AttackPower} | DEF {player.DefensePower} | DEX {player.Dexterity}", _labelStyle);
+            GUILayout.Label($"INT {player.Intelligence} | LUCK {player.Luck} | FOC {player.Focus}", _labelStyle);
             GUILayout.Label($"TIME {FormatSeconds(player.BodyTimeRemainingSeconds)} / {FormatSeconds(player.BodyTimeMaxSeconds)}", _labelStyle);
             GUILayout.Label($"Lifecycle {(player.IsBodyDead ? "dead" : "alive")} | Drain {player.BodyTimeDangerDrainRate}s/tick", _labelStyle);
             GUILayout.Label($"SECOND {FormatSeconds(player.SecondBalanceSeconds)} | Reincarnations {player.ReincarnationCount}", _labelStyle);

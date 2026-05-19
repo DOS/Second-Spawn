@@ -10,7 +10,7 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 - Character-model taxonomy covering core stats, derived stats, social
   attributes, body presentation, identity fields, and multi-axis relationships
   for NPC-like Frames and player-inhabitable bodies.
-- Character stat and relationship system GDD covering the six-stat MVP backend
+- Character stat and relationship system GDD covering the eight-stat MVP backend
   contract, deferred stat candidates, secondary stat direction, presentation
   attributes, relationship axes, and reincarnation carryover boundaries.
 - Human-believable NPC agent design doc covering trait axes, relationship
@@ -19,7 +19,7 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
 - Unity `NetworkPlayer` now carries prototype level, combat stats, BodyTime,
   lifecycle, SECOND balance, reincarnation count, visual key, and agent-control
   state as networked fields.
-- Prototype HUD now shows level, HP, energy, attack, defense, agility,
+- Prototype HUD now shows level, HP, energy, attack, defense, dexterity,
   BodyTime, lifecycle, SECOND balance, and reincarnation count.
 - Unity `CharacterMemorySync` now applies Nakama profile body state onto the
   authoritative local player after profile load.
@@ -182,10 +182,11 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   visible in Play Mode.
 - Nakama agent decisions now default to the `dos-ai` model on `api.dos.ai`;
   Claude aliases are not the default path for the prototype NPC brain.
-- Nakama character stats now use the six canonical MVP core stats:
-  `strength`, `agility`, `endurance`, `perception`, `focus`, and `presence`.
-  Legacy `force`, `vitality`, and `resilience` fields remain as compatibility
-  aliases for the current Unity prototype.
+- Nakama character stats now use the eight canonical MVP core stats:
+  `strength`, `dexterity`, `endurance`, `perception`, `focus`, `presence`,
+  `intelligence`, and `luck`. Legacy `force`, `agility`, `vitality`, and
+  `resilience` fields remain as compatibility aliases for the current Unity
+  prototype.
 - Removed the in-repo Second Spawn Go LLM adapter. Durable profile, soul,
   stats, memory, BodyTime, activity state, and model-backed intent validation
   now stay on the Nakama side of the backend boundary.

@@ -76,7 +76,7 @@ Recommended views:
   AI offline control, agent workflow, and backend boundaries.
 - [x] Character-model taxonomy documented for core stats, secondary stats,
   social attributes, body presentation, identity, and multi-axis relationships.
-- [x] Character stat and relationship system GDD added for the six-stat MVP
+- [x] Character stat and relationship system GDD added for the eight-stat MVP
   backend contract, secondary stat direction, presentation attributes, and
   reincarnation carryover boundaries.
 - [x] Backend tests for Nakama runtime behavior and model-backed fallback.
@@ -90,7 +90,7 @@ Recommended views:
 - [x] `ZoneTest_Hub` enters Play Mode with a Fusion-spawned local player.
 - [x] The spawned player has networked level, combat stats, BodyTime, lifecycle,
   SECOND balance, reincarnation count, visual key, and agent-control flag.
-- [x] Unity prototype HUD shows level, HP, energy, attack, defense, agility,
+- [x] Unity prototype HUD shows level, HP, energy, attack, defense, dexterity,
   BodyTime, lifecycle, SECOND balance, and reincarnation count.
 - [x] Unity prototype HUD shows synced agent runtime counters and recent
   activity rows from the Nakama body profile.
