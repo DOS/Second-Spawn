@@ -2,7 +2,7 @@
 
 *Status: Living index*
 *Created: 2026-05-14*
-*Last updated: 2026-05-18*
+*Last updated: 2026-05-19*
 
 ---
 
@@ -19,6 +19,7 @@ SECOND SPAWN is a hybrid MMO + top-down ARPG. The mechanical scope spans:
 - Level/stat progression
 - Reincarnation loop (death -> SECOND -> new Frame)
 - TIME / SECOND body lifespan economy
+- Gate first-clear economy through server-issued Pioneer Charter records
 - NFT integration (DOS Chain via thirdweb)
 - Server-authoritative invariants (anti-cheat assumes open source)
 
@@ -46,6 +47,7 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 | 13 | Reincarnation flow (death -> SECOND -> new Frame) | Progression | VS | Prototype | [12-game-design-document.md](12-game-design-document.md) | Level/stats, NFT escrow, Persistence |
 | 14 | SECOND economy | Economy | VS | Not designed | (GDD pending - JOY input) | DOS Chain integration |
 | 36 | TIME / SECOND economy | Economy | VS | Prototype | [08-time-as-currency.md](08-time-as-currency.md) | Reincarnation, Combat, Persistence |
+| 38 | Gate first-clear and Pioneer Charter economy | Economy / Gameplay | Alpha | Concept | [15-gate-dungeon-pioneer-charter-system.md](15-gate-dungeon-pioneer-charter-system.md) | Dungeon, Combat, Persistence, Rewards, Anti-cheat |
 | 15 | NFT inventory (Hunter Frame skin slice scope) | Economy | VS | Not started | (TDD pending) | thirdweb-api MCP, Persistence |
 | 16 | NFT escrow (lock on equip, release on unequip) | Economy | VS | Not started | (TDD pending) | NFT inventory, DOS Chain |
 | 17 | Loot / drop tables | Economy | VS | Not started | (TDD pending) | Combat, persistence |
@@ -68,7 +70,7 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 | 34 | Telemetry / monitoring (Sentry + Grafana) | Meta | Alpha | Deferred | - | All systems |
 | 35 | Onboarding / tutorial | Meta | VS | Deferred (assume slice = no tutorial) | - | All gameplay systems |
 
-**Total: 37 systems identified for slice scope and post-slice roadmap.**
+**Total: 38 systems identified for slice scope and post-slice roadmap.**
 
 ---
 
@@ -79,7 +81,7 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 | **Core** | Foundation systems everything depends on | 5 (NetworkRunner, Controller, Camera, Input, Zone management) |
 | **Gameplay** | The systems that make the game fun | 7 (Combat, NPC dialogue, Quest, Dungeon, Boss LLM, AI agent, OpenClaw-connected NPC bridge) |
 | **Progression** | How the player grows over time | 2 (Level/stats, Reincarnation) |
-| **Economy** | Resource creation and consumption | 5 (SECOND, TIME / SECOND economy, NFT inventory, NFT escrow, Loot) |
+| **Economy** | Resource creation and consumption | 6 (SECOND, TIME / SECOND economy, Pioneer Charter, NFT inventory, NFT escrow, Loot) |
 | **Persistence** | Save state and continuity | 5 (Profile, Inventory, Quest, Level/stats, Auth) |
 | **UI** | Player-facing information displays | 6 (HUD, Inventory UI, NPC dialogue UI, Quest tracker, Reincarnation UI, Agent log) |
 | **Audio** | Sound and music systems | 1 (placeholder for slice) |
@@ -127,23 +129,24 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 24. TIME / SECOND economy (#36) - depends on: Reincarnation, Combat, Persistence
 25. SECOND economy (#14) - depends on: DOS Chain integration, Reincarnation
 26. AI agent for offline players (#11) - depends on: NetworkRunner, api.dos.ai model service, intent schema, Combat, TIME / SECOND economy
+27. Gate first-clear and Pioneer Charter economy (#38) - depends on: Dungeon, Combat, Persistence, Rewards, Anti-cheat
 
 ### Presentation Layer (depends on features)
 
-27. HUD (#23)
-28. Inventory UI (#24)
-29. NPC dialogue UI (#25)
-30. Quest tracker UI (#26)
-31. Reincarnation UI (#27)
-32. AI agent activity log UI (#28)
-33. Audio (#29)
+28. HUD (#23)
+29. Inventory UI (#24)
+30. NPC dialogue UI (#25)
+31. Quest tracker UI (#26)
+32. Reincarnation UI (#27)
+33. AI agent activity log UI (#28)
+34. Audio (#29)
 
 ### Meta Layer
 
-34. Anti-cheat verification (#33) - cuts across everything
-35. Quest progress persistence (#20) - depends on: Quest system
-36. Telemetry (#34) - depends on: everything
-37. Onboarding (#35) - depends on: all gameplay (deferred for slice)
+35. Anti-cheat verification (#33) - cuts across everything
+36. Quest progress persistence (#20) - depends on: Quest system
+37. Telemetry (#34) - depends on: everything
+38. Onboarding (#35) - depends on: all gameplay (deferred for slice)
 
 ---
 
@@ -157,6 +160,7 @@ This index enumerates every system the game needs, categorizes by Core/Gameplay/
 | NFT escrow (#16) | Technical | Latency between Unity equip action and DOS Chain confirmation | Optimistic UI + reconcile-on-failure; cache lock state in Supabase |
 | Reincarnation flow (#13) | Design | Carryover too generous = no death weight; too punitive = grind | Tune cost during slice playtests |
 | TIME / SECOND economy (#36) | Design + Economy | Constant drain can feel oppressive; weak drain can feel invisible | Start with danger-zone drain, one earn source, one spend sink |
+| Gate first-clear and Pioneer Charter economy (#38) | Economy + Anti-cheat | First-clear rewards can become exploit magnets or feel unfair if autonomous agents claim them while players sleep | Start with non-economic first-clear records; require server clear logs, caps, expiry, and human-led eligibility for economic Charters |
 | Photon Fusion 2 dedicated server (#1) | Technical | Solo dev capacity to run dedicated infra | Slice uses Photon Cloud free 20 CCU; production migration is post-slice |
 | Convai SDK in Unity (#7) | Technical | 3rd-party SDK may not test against Unity 6.5 beta | Have phase 2 fallback (`api.dos.ai` / api.dos.ai model service + custom LLM) ready in design |
 
@@ -190,6 +194,7 @@ Aligned with [02-vertical-slice-spec.md](02-vertical-slice-spec.md) build phases
 | 20 | Audio placeholder (#29) | Phase 9 | S | Slice-quality only |
 | 21 | Chat (#30) | Phase 9 | M | Nakama channel first, Supabase sidecar only if useful |
 | 22 | Polish + playtest | Phase 9 | XL | |
+| 23 | Gate first-clear and Pioneer Charter economy (#38) | Post-slice / Alpha | L | Start with ledger and badge before in-game royalty |
 
 Effort estimate: S = 1-3 days, M = 4-7 days, L = 1-2 weeks, XL = 2-4 weeks (solo dev + AI agent).
 
@@ -199,9 +204,9 @@ Effort estimate: S = 1-3 days, M = 4-7 days, L = 1-2 weeks, XL = 2-4 weeks (solo
 
 | Metric | Count |
 | ---- | ---- |
-| Total systems identified | 37 |
+| Total systems identified | 38 |
 | Systems with prototype implementation | 14 |
-| Design docs started | 12 |
+| Design docs started | 13 |
 | Design docs reviewed | 0 |
 | Design docs approved | 0 |
 | MVP systems with TDD started | 0 |
@@ -216,3 +221,4 @@ Effort estimate: S = 1-3 days, M = 4-7 days, L = 1-2 weeks, XL = 2-4 weeks (solo
 - [ ] Per-system TDD as each system is started (use `templates/technical-design-document.md`)
 - [ ] Re-run systems-index review at slice midpoint to add missed systems
 - [ ] Decompose AI agent autoplay (#11) into sub-systems before Phase 7 (highest risk)
+- [ ] Write TDD for Gate clear logs before implementing Pioneer Charter rewards

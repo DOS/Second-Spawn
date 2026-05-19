@@ -28,6 +28,7 @@ Relevant docs:
 - [Overview Design](design/06-overview-design.md)
 - [Networked Player Controller Prototype](design/07-player-controller-prototype.md)
 - [Pirate Adventure Reference Review](design/09-pirate-adventure-reference-review.md)
+- [Gate, Dungeon, and Pioneer Charter System](design/15-gate-dungeon-pioneer-charter-system.md)
 
 ## Signature Features
 

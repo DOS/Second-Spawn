@@ -2,7 +2,7 @@
 
 *Status: Pre-alpha GDD*
 *Created: 2026-05-16*
-*Last updated: 2026-05-18*
+*Last updated: 2026-05-19*
 *Source of truth level: Consolidates current design decisions from `docs/design/`, `AGENTS.md`, and accepted architecture direction. Per-system docs remain authoritative for implementation details.*
 
 ---
@@ -63,6 +63,7 @@ promise that the same UI or tuning will ship.
 | Permanent NPCs | `ZoneTest_Hub` can seed and display 10 permanent prototype NPC Frames from Nakama, each with fixed body identity and visual variant. |
 | Prototype NPC brain | Permanent NPC brains sense nearby actors, call the model-backed Nakama decision path, speak through model-selected `say` intent, and persist model speech through Nakama memory and relationship records. |
 | Backend foundation | Nakama owns durable game profile state, model-decision RPCs, and server-side intent validation before gameplay systems consume LLM output. |
+| Gate / dungeon economy | Design now includes temporary `Pioneer Charter` terminology for server-issued first-clear rights and in-game-only Clearance Royalty loops. No runtime implementation yet. |
 | Not implemented yet | Real combat damage, enemy loot, quest rewards, production HUD, player-vs-player time loot, wallet escrow, dungeon boss, and dedicated server deployment. |
 
 ---
@@ -170,6 +171,40 @@ Tone requirements:
 - Nibiru may appear as the historical event and source material behind TIME,
   but TIME is the player-facing life medium. Do not add Nibiru-derived XP,
   cultivation tiers, rituals, or vertical-slice progression.
+
+### Gate and Dungeon Fantasy
+
+SECOND SPAWN can use the Korean manhwa-style fantasy of ranked Gates appearing
+in the real world, but the explanation remains sci-fi. Gates are unstable
+Nibiru-influenced breaches where ruined infrastructure, memory residue, spatial
+collapse, and TIME density form bounded combat instances.
+
+Useful reference pool:
+
+- Solo Leveling.
+- Omniscient Reader's Viewpoint.
+- Leveling with the Gods.
+- The Player Who Can't Level Up.
+- My S-Class Hunters.
+- SSS-Class Revival Hunter.
+- Second Life Ranker.
+- Return to Player.
+
+Secondary references include Murim Login, Solo Max-Level Newbie, The Advanced
+Player of the Tutorial Tower, Kill the Hero, Return of the Disaster-Class Hero,
+and Seoul Station's Necromancer. Do not use Tomb Raider King as a primary
+reference.
+
+Working vocabulary:
+
+- `Gate`, `Breach`, or `Shard Dungeon`: dungeon portal or instance source.
+- `Pioneer Charter`: temporary name for the server-issued first-clear right.
+- `Clearance Royalty`: temporary name for the in-game reward pool paid from
+  later clears of the same Gate version.
+
+All revenue language in this system means in-game resources only. It does not
+mean real-world revenue share, external yield, securities-like ownership, or
+passive income. See [15-gate-dungeon-pioneer-charter-system.md](15-gate-dungeon-pioneer-charter-system.md).
 
 ### MetaDOS Continuity / Timeline
 
@@ -620,6 +655,9 @@ Session model:
 
 - Players join instanced zones of roughly 4-20 players in the vertical slice.
 - Dungeons are separate instances.
+- Ranked Gates can become the fiction and discovery layer around dungeon
+  instances. The current rank vocabulary is F, E, D, C, B, A, and S, with S+,
+  SS, and SSS deferred until live-ops scale justifies them.
 - Guild PvP up to 50v50 is a future target, not vertical slice scope.
 - Server interest management must keep replication bounded.
 - Offline agents act inside server-approved contexts, not client-local simulations.
@@ -799,6 +837,7 @@ The economy is not fully designed. This GDD only defines resource roles and boun
 | TIME | Life medium loaded into humans and Frames, measured in SECOND | Body-bound once loaded, lost on body death unless future rules say otherwise |
 | SECOND | Unit, currency, and tokenized measure of TIME, used for rewards and reincarnation | Account or wallet-level, exact source and sink design undecided |
 | Loot and supplies | Tactical power and run support | Server-owned, no client-granted drops |
+| Pioneer Charter | Server-issued first-clear right for a Gate version | Concept only; can grant in-game prestige or capped in-game Clearance Royalty later |
 | NFT assets | Ownership-linked skins, weapons, pets | Bound through DOS Chain and escrow rules |
 
 Design constraints:
@@ -808,6 +847,8 @@ Design constraints:
 - Do not let LLMs mutate economy state.
 - Do not place chain or wallet mutation authority in the Unity client.
 - Keep vertical slice economy small: one SECOND earn source, one TIME spend sink, and test-token reincarnation.
+- Keep Gate first-clear rewards in-game only. Pioneer Charter and Clearance
+  Royalty must never be framed as real-world revenue share or external yield.
 
 ### TIME and SECOND Relationship
 
@@ -825,7 +866,53 @@ Open economy decisions:
 - Whether SECOND directly seeds body TIME or only gates body creation: [TODO: JOY input]
 - SECOND earning and sink design beyond reincarnation: [TODO: JOY input]
 - TIME earn, spend, drain, and transfer values: [TODO: JOY input]
+- First Pioneer Charter reward resource and duration: [TODO: JOY input]
 - Marketplace design: [TODO: JOY input]
+
+### Gate First-Clear Economy
+
+The temporary design direction is `Pioneer Charter`: when a party is the first
+to clear a newly discovered Gate version under server-validated conditions, the
+server may issue a first-clear right. In the short term this should be a badge,
+title, guild record, or debug ledger entry. Later it may grant a capped,
+time-limited in-game `Clearance Royalty` from later clears of that Gate.
+
+Pioneer Charter requirements:
+
+- The server records `gate_id`, `gate_version`, seed, party members, controller
+  types, clear time, objective hash, combat log hash, deaths, reincarnations,
+  reward ledger, and exploit-review state.
+- Clients, LLMs, offline agents, and OpenClaw-connected actors cannot grant or
+  self-report first-clear rights.
+- Human-led clears should be the first eligible category. Agent-assisted clears
+  can earn normal loot and activity, but should not claim the primary economic
+  Charter in the MVP.
+- Any in-game royalty must have caps, expiry, and exploit invalidation.
+
+Candidate royalty tuning remains placeholder only: F-E Gates could pay a small
+1-2 percent in-game pool for roughly a week, while high-rank Gates could pay
+larger capped shares for a season or until stabilization. Do not implement these
+numbers until combat, dungeon clear validation, append-only reward ledgers, and
+abuse review exist.
+
+Genre mechanics that should inform this system:
+
+- Gates, Towers, Scenarios, and dungeon rules are a visible rule layer added to
+  a modern world.
+- Rank exists at multiple levels: Frame, Gate, monster, item, guild, and clear
+  record.
+- Leveling is body-bound in SECOND SPAWN. Current-body level and stat growth can
+  reset on reincarnation while durable memories, titles, and clear records can
+  remain on the soul or account layer.
+- Skills should be layered as Frame skills, Soul/title records, and Agent
+  behavior policy instead of one generic fantasy skill sheet.
+- Hidden knowledge should come from NPC memory, Gate intel, previous clear
+  records, and agent logs rather than random untelegraphed secrets.
+- Rank is a public estimate and social permission layer, not absolute truth.
+  Body traits, equipment, TIME pressure, AI policy, memory, and Gate intel can
+  all make the real outcome diverge from rank.
+- Guilds, associations, registries, insurance, and clear records should become
+  useful social infrastructure, not just villains or quest flavor.
 
 ### Loot, Items, and Cosmetics
 

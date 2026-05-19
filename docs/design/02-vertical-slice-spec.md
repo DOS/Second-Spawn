@@ -2,7 +2,7 @@
 
 *Status: Spec with prototype progress*
 *Created: 2026-05-14*
-*Last updated: 2026-05-17*
+*Last updated: 2026-05-19*
 *Target completion: 3-6 months from setup (T+3 to T+6 from 2026-05-14)*
 
 > Note: This is the SPEC version (planning the slice). After slice is built, rename to `02-vertical-slice-report.md` and fill the report template (build velocity, playtest results, recommendation PROCEED/PIVOT/KILL).
@@ -24,6 +24,7 @@ This is two questions in one: **does the design loop fun?** AND **is the archite
 | **Zone** | 1 small open area + 1 hub town |
 | **Character class** | 1 combat Frame archetype (may use one MetaDOS Hunter Frame skin as the visual direction) |
 | **Dungeon instance** | 1 (single instance with 1 boss encounter) |
+| **Gate first-clear record** | Concept-only slice surface: one server-owned clear log or badge if dungeon validation exists; no in-game royalty payout yet |
 | **Boss with LLM dialogue** | 1 (Convai-driven, grounded in zone state) |
 | **Quest line** | 1 (3-5 quests sequential) |
 | **Reincarnation MVP** | Die -> test SECOND -> new Frame with current-body reset |
@@ -63,6 +64,8 @@ Still missing from the playable slice:
 - Normal-play TIME earn and spend sources outside debug controls.
 - Player-vs-player or contested-zone time-loot rules.
 - Questline, dungeon, boss, and grounded dialogue content.
+- Pioneer Charter runtime reward payouts. The slice may add a first-clear debug
+  record after dungeon clear validation exists, but not Clearance Royalty.
 - Production HUD and reincarnation presentation flow.
 - NFT skin equip and escrow.
 - Dedicated server deployment and 4-20 player load validation.
@@ -147,6 +150,7 @@ When slice is complete, decision tree:
 | ---- | ---- | ---- |
 | SECOND economy (cost per reincarnation, source, sink) | Phase 5 | JOY (input later) |
 | TIME economy tuning (drain, earn, spend, transfer, top-up rules) | Phase 6 | JOY (input later) |
+| Pioneer Charter first-clear reward resource and duration | Post-slice / Alpha | JOY (input later) |
 | Hunter Frame NFT integration approach (Option 1 vs Hybrid 1+3) | Phase 6 | JOY (input later) |
 | Voice NPC vendor | NOT in slice | Defer |
 | Hetzner VPS specs | Phase 8 (load test) | JOY |

@@ -1,7 +1,7 @@
 # SECOND SPAWN Roadmap
 
 Status: Pre-alpha, vertical slice foundation in development.
-Last updated: 2026-05-18.
+Last updated: 2026-05-19.
 
 This roadmap tracks implementation status. Detailed design remains in `docs/`,
 especially `docs/design/02-vertical-slice-spec.md` and
@@ -209,6 +209,11 @@ MVP, and a visible offline-agent prototype.
 - [ ] Implement the first server-authoritative contested loot rule for taking
   BodyTime or SECOND from another user after a validated PvP or zone event.
 - [ ] Add one dungeon instance with one boss and grounded dialogue.
+- [ ] Add a server-owned dungeon clear ledger before any Pioneer Charter
+  rewards.
+- [ ] Add a non-economic first-clear record for the first Gate or dungeon.
+- [ ] Design capped in-game Pioneer Charter / Clearance Royalty rules after
+  combat, dungeon validation, and reward ledgers exist.
 - [ ] Add one Hunter NFT skin equip placeholder with DOS Chain escrow design
   still server-authoritative.
 - [ ] Run Multiplayer Play Mode smoke for 2-4 local clients.
@@ -232,6 +237,7 @@ MVP, and a visible offline-agent prototype.
 - [ ] Pet breeding system.
 - [ ] Movement-only mount system.
 - [ ] Economy balancing.
+- [ ] Gate tiering, Pioneer Charter, and in-game Clearance Royalty balancing.
 - [ ] Live ops infrastructure.
 - [ ] Public beta launch.
 
