@@ -87,6 +87,9 @@ versioned release tag yet, so entries are organized as pre-alpha snapshots.
   by loading the server-owned Nakama NPC Frame list on Play Mode start.
 - Prototype debug panels now default to hidden hotkey toggles so they no longer
   overlap the main HUD in Play Mode.
+- Gate, dungeon, and Pioneer Charter design doc for ranked Gates,
+  server-issued first-clear rights, common Tower/Gate genre mechanics, and
+  in-game-only Clearance Royalty loops.
 
 ### Changed
 

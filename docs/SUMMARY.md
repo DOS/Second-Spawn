@@ -20,6 +20,7 @@
 - [Pirate Adventure Reference Review](design/09-pirate-adventure-reference-review.md)
 - [Character Profile, Soul, and Agent Memory](design/10-character-profile-agent-memory.md)
 - [NPC Agent Brain Architecture](design/11-npc-agent-brain-architecture.md)
+- [Gate, Dungeon, and Pioneer Charter System](design/15-gate-dungeon-pioneer-charter-system.md)
 
 ## Architecture Decision Records
 
